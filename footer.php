@@ -29,12 +29,22 @@
         </div>
     </div>
 
+    <!-- PWA Install Action Prompt Card -->
+    <?php if (isset($_SESSION['user_id'])): ?>
+        <div id="installAppContainer" class="hidden max-w-md mx-auto px-4 mt-8 mb-4">
+            <button onclick="installPWA()" class="w-full flex items-center justify-center space-x-2 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-sm shadow-xl shadow-amber-500/10 tap-target">
+                <span class="material-symbols-rounded">download</span>
+                <span>Download Dasgold App</span>
+            </button>
+        </div>
+    <?php endif; ?>
+
     <!-- Desktop Footer -->
     <footer class="mt-16 mb-8 md:mb-6 text-center text-xs text-slate-600">
-        <p>&copy; 2026 Karigor Ledger Pro. All rights reserved.</p>
+        <p>&copy; 2026 Dasgold Ledger Pro. All rights reserved.</p>
     </footer>
 
-    <!-- Service Worker Installer Script -->
+    <!-- Service Worker Installer & PWA Install Listener Script -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -43,6 +53,53 @@
                     .catch((err) => console.error('PWA Service Worker: Registration failed', err));
             });
         }
+
+        // PWA Native Installation Prompter Logic
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installContainer = document.getElementById('installAppContainer');
+            if (installContainer) {
+                installContainer.classList.remove('hidden');
+            }
+        });
+
+        function installPWA() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the PWA install prompt');
+                }
+                deferredPrompt = null;
+                const installContainer = document.getElementById('installAppContainer');
+                if (installContainer) {
+                    installContainer.classList.add('hidden');
+                }
+            });
+        }
+
+        // iOS Safari Specific Installation Tooltip Fallback
+        window.addEventListener('DOMContentLoaded', () => {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            if (isIOS && !isStandalone) {
+                const installContainer = document.getElementById('installAppContainer');
+                if (installContainer) {
+                    const installBtn = installContainer.querySelector('button');
+                    if (installBtn) {
+                        installBtn.outerHTML = `
+                            <div class="w-full bg-[#1E293B] border border-white/[0.06] p-4 rounded-2xl text-center text-xs text-slate-300 shadow-xl">
+                                <span class="font-semibold text-white flex items-center justify-center mb-1.5"><span class="material-symbols-rounded text-base text-[#F4B400] mr-1.5">download</span> Install Dasgold App</span>
+                                To install on iPhone, tap the <span class="font-bold text-white">Share</span> button below and select <span class="font-bold text-[#F4B400]">Add to Home Screen</span>.
+                            </div>
+                        `;
+                    }
+                    installContainer.classList.remove('hidden');
+                }
+            }
+        });
     </script>
 </body>
 </html>
