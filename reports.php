@@ -77,6 +77,32 @@ $baparisList = $stmt->fetchAll();
 require_once 'header.php';
 ?>
 
+<style>
+    @media print {
+        body {
+            background: white !important;
+            color: black !important;
+            padding: 10px !important;
+        }
+        header, footer, .fab-btn, .btn-gold, .btn-secondary, .tap-target, .no-print {
+            display: none !important;
+        }
+        .premium-card {
+            background: transparent !important;
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: none !important;
+            color: black !important;
+            margin-bottom: 12px !important;
+        }
+        .text-white {
+            color: black !important;
+        }
+        .text-slate-400, .text-slate-500, .text-desc {
+            color: #475569 !important;
+        }
+    }
+</style>
+
 <!-- Title -->
 <div class="mb-6 mt-2">
     <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center">
@@ -85,8 +111,14 @@ require_once 'header.php';
     <p class="text-slate-400 text-xs mt-1">Generate dynamic statements, check margins, and track transactions.</p>
 </div>
 
+<!-- Rebrand watermark header on Print View -->
+<div class="hidden print:block mb-6 border-b pb-3">
+    <h1 class="text-2xl font-bold text-slate-900">Dasgold Aggregate Business Summary Report</h1>
+    <p class="text-xs text-slate-600 mt-1">Generated on: <?= date('d-M-Y H:i') ?></p>
+</div>
+
 <!-- Filters Card -->
-<div class="premium-card mb-6">
+<div class="premium-card mb-6 no-print">
     <form method="GET" class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
@@ -129,6 +161,18 @@ require_once 'header.php';
     </form>
 </div>
 
+<!-- Print & Share Actions -->
+<div class="grid grid-cols-2 gap-3 mb-6 no-print">
+    <button onclick="window.print()" class="btn-secondary text-xs py-3 flex items-center justify-center space-x-1.5 tap-target">
+        <span class="material-symbols-rounded text-base">print</span>
+        <span>Download PDF / Print</span>
+    </button>
+    <button onclick="shareReportText()" class="btn-gold text-xs py-3 flex items-center justify-center space-x-1.5 tap-target">
+        <span class="material-symbols-rounded text-base">share</span>
+        <span>Share WhatsApp</span>
+    </button>
+</div>
+
 <!-- Aggregated Metrics Grid -->
 <div class="grid grid-cols-2 gap-4 mb-6">
     <div class="premium-card">
@@ -161,7 +205,7 @@ require_once 'header.php';
         </div>
         
         <!-- Premium Visual Progress Indicator -->
-        <div class="w-full bg-slate-900 rounded-full h-1.5 mt-4 overflow-hidden">
+        <div class="w-full bg-slate-900 rounded-full h-1.5 mt-4 overflow-hidden print:hidden">
             <?php 
             $maxGold = max(1, $totalJama + $totalKajFine);
             $percentage = min(100, round(($totalJama / $maxGold) * 100));
@@ -179,7 +223,7 @@ require_once 'header.php';
         </div>
         
         <!-- Premium Visual Progress Indicator -->
-        <div class="w-full bg-slate-900 rounded-full h-1.5 mt-4 overflow-hidden">
+        <div class="w-full bg-slate-900 rounded-full h-1.5 mt-4 overflow-hidden print:hidden">
             <?php 
             $maxCash = max(1, $totalRec + $totalBill);
             $cashPercentage = min(100, round(($totalRec / $maxCash) * 100));
@@ -189,6 +233,21 @@ require_once 'header.php';
         <p class="text-[9px] text-slate-500 mt-2">Active Cash collection ratio: <?= $cashPercentage ?>% settled</p>
     </div>
 </div>
+
+<script>
+    function shareReportText() {
+        let text = "*Dasgold Summary Business Report*\n";
+        text += "*Total Gold Jama:* <?= number_format($totalJama, 3) ?> g\n";
+        text += "*Total Gold Billed:* -<?= number_format($totalKajFine, 3) ?> g\n";
+        text += "*Total Profit Gold:* <?= number_format($totalProfitFine, 3) ?> g\n";
+        text += "*Net Cash Collected:* ₹<?= number_format($totalRec, 2) ?>\n\n";
+        text += "*Net Gold Balance:* <?= number_format($fineBal, 3) ?> g\n";
+        text += "*Net Cash Balance:* ₹<?= number_format($cashBal, 2) ?>\n";
+        
+        const encodedText = encodeURIComponent(text);
+        window.open("https://api.whatsapp.com/send?text=" + encodedText, "_blank");
+    }
+</script>
 
 <?php
 require_once 'footer.php';
