@@ -1,0 +1,16 @@
+{
+  "name": "karigor-ledger-pro-php-mobile",
+  "version": "1.0.0",
+  "description": "Capacitor wrapper for Karigor Ledger Pro PHP",
+  "main": "index.js",
+  "scripts": {
+    "init-android": "cap add android",
+    "sync": "cap sync",
+    "open-android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}
