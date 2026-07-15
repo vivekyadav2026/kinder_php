@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $stmt = $pdo->prepare("INSERT INTO baparis (user_id, name, mobile, address) VALUES (?, ?, ?, ?)");
             $stmt->execute([$userId, $name, $mobile, $address]);
-            $success = 'Bapari added successfully!';
+            $success = 'Customer added successfully!';
             $action = 'list';
         }
     } elseif (isset($_POST['edit_bapari'])) {
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $stmt = $pdo->prepare("UPDATE baparis SET name = ?, mobile = ?, address = ? WHERE id = ? AND user_id = ?");
             $stmt->execute([$name, $mobile, $address, $id, $userId]);
-            $success = 'Bapari updated successfully!';
+            $success = 'Customer details updated successfully!';
             $action = 'list';
         }
     }
@@ -42,7 +42,7 @@ if (isset($_GET['delete'])) {
     $id = intval($_GET['delete']);
     $stmt = $pdo->prepare("DELETE FROM baparis WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
-    $success = 'Bapari deleted successfully!';
+    $success = 'Customer deleted successfully!';
     header("Location: baparis.php");
     exit();
 }
@@ -57,43 +57,43 @@ require_once 'header.php';
 
 <!-- Feedback Messages -->
 <?php if ($error): ?>
-    <div class="mb-5 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center space-x-2">
-        <i class="fa-solid fa-circle-exclamation"></i> <span><?= htmlspecialchars($error) ?></span>
+    <div class="mb-5 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-2">
+        <span class="material-symbols-rounded text-lg">error</span> <span><?= htmlspecialchars($error) ?></span>
     </div>
 <?php endif; ?>
 
 <?php if ($success): ?>
-    <div class="mb-5 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center space-x-2">
-        <i class="fa-solid fa-circle-check"></i> <span><?= htmlspecialchars($success) ?></span>
+    <div class="mb-5 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-2">
+        <span class="material-symbols-rounded text-lg">check_circle</span> <span><?= htmlspecialchars($success) ?></span>
     </div>
 <?php endif; ?>
 
 <?php if ($action === 'new'): ?>
     <!-- Add Bapari Form -->
-    <div class="max-w-xl mx-auto glass-card rounded-2xl p-6 border border-slate-800">
-        <h2 class="text-xl font-bold text-white mb-6 flex items-center">
-            <i class="fa-solid fa-user-plus text-amber-400 mr-2"></i> Add New Bapari
+    <div class="max-w-xl mx-auto premium-card">
+        <h2 class="title-section text-white mb-6 flex items-center">
+            <span class="material-symbols-rounded text-[#F4B400] mr-2">person_add</span> Add New Customer
         </h2>
         
         <form method="POST" class="space-y-5">
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Bapari Name *</label>
-                <input type="text" name="name" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-400 transition-colors" placeholder="e.g. Rahul Jewellers">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Customer Name *</label>
+                <input type="text" name="name" required class="premium-input" placeholder="e.g. Suman Das">
             </div>
             
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Mobile Number</label>
-                <input type="text" name="mobile" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-400 transition-colors" placeholder="e.g. +91 9876543210">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Mobile / Contact Number</label>
+                <input type="text" name="mobile" class="premium-input" placeholder="e.g. +91 98765 43210">
             </div>
             
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Address</label>
-                <textarea name="address" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-400 transition-colors" placeholder="e.g. Zaveri Bazaar, Mumbai"></textarea>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">City / Business Address</label>
+                <input type="text" name="address" class="premium-input" placeholder="e.g. Zaveri Bazaar, Mumbai">
             </div>
             
             <div class="flex items-center justify-end space-x-3 pt-4">
-                <a href="baparis.php" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-all">Cancel</a>
-                <button type="submit" name="add_bapari" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-950 gold-bg hover:opacity-90 shadow-md shadow-amber-500/10 transition-all">Save Bapari</button>
+                <a href="baparis.php" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
+                <button type="submit" name="add_bapari" class="btn-gold text-sm px-5 py-2.5">Save Customer</button>
             </div>
         </form>
     </div>
@@ -102,94 +102,100 @@ require_once 'header.php';
     $editId = intval($_GET['id'] ?? 0);
     $stmt = $pdo->prepare("SELECT * FROM baparis WHERE id = ? AND user_id = ?");
     $stmt->execute([$editId, $userId]);
-    $bapari = $stmt->fetch();
-    if (!$bapari) {
-        echo "<p class='text-center py-10'>Bapari not found.</p>";
+    $b = $stmt->fetch();
+    if (!$b) {
+        echo "<p class='text-center py-10 text-slate-400'>Customer not found.</p>";
         require_once 'footer.php';
         exit();
     }
 ?>
     <!-- Edit Bapari Form -->
-    <div class="max-w-xl mx-auto glass-card rounded-2xl p-6 border border-slate-800">
-        <h2 class="text-xl font-bold text-white mb-6 flex items-center">
-            <i class="fa-solid fa-user-pen text-amber-400 mr-2"></i> Edit Bapari Details
+    <div class="max-w-xl mx-auto premium-card">
+        <h2 class="title-section text-white mb-6 flex items-center">
+            <span class="material-symbols-rounded text-[#F4B400] mr-2">edit_note</span> Edit Customer Details
         </h2>
         
         <form method="POST" class="space-y-5">
-            <input type="hidden" name="id" value="<?= $bapari['id'] ?>">
+            <input type="hidden" name="id" value="<?= $b['id'] ?>">
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Bapari Name *</label>
-                <input type="text" name="name" value="<?= htmlspecialchars($bapari['name']) ?>" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-400 transition-colors">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Customer Name *</label>
+                <input type="text" name="name" value="<?= htmlspecialchars($b['name']) ?>" required class="premium-input">
             </div>
             
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Mobile Number</label>
-                <input type="text" name="mobile" value="<?= htmlspecialchars($bapari['mobile']) ?>" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-400 transition-colors">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Mobile / Contact Number</label>
+                <input type="text" name="mobile" value="<?= htmlspecialchars($b['mobile']) ?>" class="premium-input">
             </div>
             
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Address</label>
-                <textarea name="address" rows="3" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-400 transition-colors"><?= htmlspecialchars($bapari['address']) ?></textarea>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">City / Business Address</label>
+                <input type="text" name="address" value="<?= htmlspecialchars($b['address']) ?>" class="premium-input">
             </div>
             
             <div class="flex items-center justify-end space-x-3 pt-4">
-                <a href="baparis.php" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-all">Cancel</a>
-                <button type="submit" name="edit_bapari" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-950 gold-bg hover:opacity-90 shadow-md shadow-amber-500/10 transition-all">Update Bapari</button>
+                <a href="baparis.php" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
+                <button type="submit" name="edit_bapari" class="btn-gold text-sm px-5 py-2.5">Save Changes</button>
             </div>
         </form>
     </div>
 
 <?php else: ?>
     <!-- Baparis List View -->
-    <div class="mb-8 flex items-center justify-between">
+    <div class="mb-6 flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center">
-                <span class="gold-text mr-2"><i class="fa-solid fa-users"></i></span> Bapari Directory
+                <span class="material-symbols-rounded text-[#F4B400] mr-2 text-3xl">group</span> Customers
             </h1>
-            <p class="text-slate-400 text-sm mt-1">Manage and edit your business client accounts.</p>
+            <p class="text-slate-400 text-xs mt-1">Directory of jewelers, merchants, and karigars.</p>
         </div>
-        <a href="baparis.php?action=new" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-950 gold-bg hover:opacity-90 shadow-md shadow-amber-500/10 transition-all flex items-center space-x-2">
-            <i class="fa-solid fa-user-plus"></i> <span>Add Bapari</span>
+        <a href="baparis.php?action=new" class="btn-gold inline-flex items-center text-xs px-3.5 py-2 shadow-md">
+            <span class="material-symbols-rounded text-sm mr-1">person_add</span> Add New
         </a>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Redesigned Customer Cards Stack -->
+    <div class="space-y-4">
         <?php if (empty($baparis)): ?>
-            <div class="col-span-full glass-card rounded-2xl p-12 text-center text-slate-500">
-                <i class="fa-regular fa-user text-4xl mb-3 text-slate-600 block"></i>
-                <p class="text-sm">No Baparis added yet.</p>
-                <a href="baparis.php?action=new" class="text-amber-400 hover:underline mt-2 inline-block text-xs font-semibold">Create one now</a>
+            <div class="premium-card text-center py-12 flex flex-col items-center justify-center">
+                <span class="material-symbols-rounded text-5xl text-slate-600 mb-3">group_off</span>
+                <h3 class="text-sm font-semibold text-slate-300">No Customers Found</h3>
+                <p class="text-xs text-slate-500 mt-1">Register customers to record custom balance metrics.</p>
             </div>
         <?php else: ?>
-            <?php foreach ($baparis as $b): ?>
-                <div class="glass-card rounded-2xl p-5 border border-slate-800 hover:border-amber-400/40 transition-all group flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-start justify-between mb-2">
-                            <h3 class="text-lg font-bold text-white group-hover:text-amber-400 transition-colors truncate pr-2"><?= htmlspecialchars($b['name']) ?></h3>
-                            <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-1 rounded border border-slate-700/50 uppercase font-mono">ID: BP-<?= $b['id'] ?></span>
+            <?php foreach ($baparis as $b): 
+                $initials = strtoupper(substr($b['name'], 0, 2));
+            ?>
+                <div class="premium-card">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center space-x-3.5 min-w-0">
+                            <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-[#F4B400] text-sm shrink-0">
+                                <?= $initials ?>
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="font-bold text-white text-base truncate"><?= htmlspecialchars($b['name']) ?></h3>
+                                <div class="flex flex-col space-y-0.5 mt-1 text-[11px] text-slate-400">
+                                    <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-slate-500">call</span> <?= htmlspecialchars($b['mobile'] ?: 'No mobile') ?></span>
+                                    <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-slate-500">location_on</span> <?= htmlspecialchars($b['address'] ?: 'No address') ?></span>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-sm text-slate-300 flex items-center space-x-2 mb-3">
-                            <i class="fa-solid fa-phone text-xs text-amber-500/80"></i>
-                            <span><?= htmlspecialchars($b['mobile'] ?: 'No Contact') ?></span>
-                        </p>
-                        <p class="text-xs text-slate-400 line-clamp-2 min-h-[2rem]">
-                            <?= htmlspecialchars($b['address'] ?: 'No address specified.') ?>
-                        </p>
+                        
+                        <!-- Actions Dropdown Trigger or row of buttons -->
+                        <div class="flex items-center space-x-1.5 shrink-0">
+                            <a href="baparis.php?action=edit&id=<?= $b['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300 transition-colors tap-target" title="Edit">
+                                <span class="material-symbols-rounded text-base">edit</span>
+                            </a>
+                            <a href="baparis.php?delete=<?= $b['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? All connected Gold deposits and Kaarigari Jobs will be deleted!')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete">
+                                <span class="material-symbols-rounded text-base">delete</span>
+                            </a>
+                        </div>
                     </div>
                     
-                    <div class="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between">
-                        <a href="ledger.php?bapari_id=<?= $b['id'] ?>" class="text-xs font-semibold text-amber-400 hover:underline">
-                            <i class="fa-solid fa-book-open mr-1"></i> Ledger
+                    <!-- Bottom Quick Actions inside Card -->
+                    <div class="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between gap-3">
+                        <a href="ledger.php?bapari_id=<?= $b['id'] ?>" class="flex-1 py-2 text-center text-xs font-semibold text-[#F4B400] bg-[#F4B400]/5 border border-[#F4B400]/10 rounded-xl hover:bg-[#F4B400] hover:text-slate-950 transition-all inline-flex items-center justify-center space-x-1">
+                            <span class="material-symbols-rounded text-sm">book_open</span> <span>View Ledger</span>
                         </a>
-                        
-                        <div class="flex items-center space-x-2">
-                            <a href="baparis.php?action=edit&id=<?= $b['id'] ?>" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors" title="Edit">
-                                <i class="fa-solid fa-pen text-xs"></i>
-                            </a>
-                            <a href="baparis.php?delete=<?= $b['id'] ?>" onclick="return confirm('Are you sure you want to delete this Bapari and all of their related deposits/kaj transactions?')" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors" title="Delete">
-                                <i class="fa-solid fa-trash text-xs"></i>
-                            </a>
-                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>

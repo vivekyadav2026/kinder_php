@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $items = $_POST['items'] ?? []; // Array of items
 
         if ($bapariIdInput <= 0 || empty($items)) {
-            $error = 'Invalid Bapari or items list is empty!';
+            $error = 'Invalid Customer or items list is empty!';
         } else {
             try {
                 $pdo->beginTransaction();
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtUpdate->execute([$totalKajFine, $totalProfitFine, $kajEntryId]);
                 
                 $pdo->commit();
-                $success = 'Kaj Entry saved successfully!';
+                $success = 'Kaarigari Job saved successfully!';
                 $action = 'list';
             } catch (Exception $e) {
                 $pdo->rollBack();
@@ -78,7 +78,7 @@ if (isset($_GET['delete'])) {
     $id = intval($_GET['delete']);
     $stmt = $pdo->prepare("DELETE FROM kaj_entries WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
-    $success = 'Kaj Entry deleted successfully!';
+    $success = 'Kaarigari Job deleted successfully!';
     header("Location: kaj.php");
     exit();
 }
@@ -104,33 +104,33 @@ require_once 'header.php';
 
 <!-- Feedback Messages -->
 <?php if ($error): ?>
-    <div class="mb-5 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center space-x-2">
-        <i class="fa-solid fa-circle-exclamation"></i> <span><?= htmlspecialchars($error) ?></span>
+    <div class="mb-5 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center space-x-2">
+        <span class="material-symbols-rounded text-lg">error</span> <span><?= htmlspecialchars($error) ?></span>
     </div>
 <?php endif; ?>
 
 <?php if ($success): ?>
-    <div class="mb-5 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center space-x-2">
-        <i class="fa-solid fa-circle-check"></i> <span><?= htmlspecialchars($success) ?></span>
+    <div class="mb-5 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-2">
+        <span class="material-symbols-rounded text-lg">check_circle</span> <span><?= htmlspecialchars($success) ?></span>
     </div>
 <?php endif; ?>
 
 <?php if ($action === 'new'): ?>
     <!-- Add Kaj Entry Form -->
-    <div class="glass-card rounded-2xl p-6 border border-slate-800">
-        <h2 class="text-xl font-bold text-white mb-6 flex items-center">
-            <i class="fa-solid fa-hammer text-indigo-400 mr-2"></i> Add Kaj (Manufacturing) Entry
+    <div class="premium-card">
+        <h2 class="title-section text-white mb-6 flex items-center">
+            <span class="material-symbols-rounded text-[#F4B400] mr-2">construction</span> Add Kaarigari Job Entry
         </h2>
         
-        <form method="POST" id="kajForm" class="space-y-6">
+        <form method="POST" id="kajForm" class="space-y-5">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
-                    <input type="date" name="date" value="<?= date('Y-m-d') ?>" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-400 transition-colors">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
+                    <input type="date" name="date" value="<?= date('Y-m-d') ?>" required class="premium-input">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Select Bapari *</label>
-                    <select name="bapari_id" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-400 transition-colors">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Select Customer *</label>
+                    <select name="bapari_id" required class="premium-input">
                         <option value="">-- Choose --</option>
                         <?php foreach ($baparisList as $b): ?>
                             <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
@@ -138,53 +138,37 @@ require_once 'header.php';
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Labor Bill/Cash Charge (₹)</label>
-                    <input type="number" step="0.01" name="cash_bill" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-400 transition-colors" placeholder="0.00">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Majdoori Bill / Labor Charge (₹)</label>
+                    <input type="number" step="0.01" name="cash_bill" class="premium-input" placeholder="0.00">
                 </div>
             </div>
             
             <!-- Items Area -->
-            <div>
-                <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Items List</h3>
-                    <button type="button" onclick="addItemRow()" class="px-3 py-1.5 rounded-lg bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all text-xs font-bold flex items-center space-x-1">
-                        <i class="fa-solid fa-plus"></i> <span>Add Item</span>
+            <div class="mt-4">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Items List</h3>
+                    <button type="button" onclick="addItemRow()" class="px-3 py-1.5 rounded-lg bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all text-[11px] font-bold flex items-center space-x-1">
+                        <span class="material-symbols-rounded text-sm">add</span> <span>Add Item</span>
                     </button>
                 </div>
                 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[700px]">
-                        <thead>
-                            <tr class="text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-800 pb-2">
-                                <th class="py-2 pr-2 w-1/4">Item Name</th>
-                                <th class="py-2 px-2 text-right">Gross (g)</th>
-                                <th class="py-2 px-2 text-right">Less (g)</th>
-                                <th class="py-2 px-2 text-right">Milting (%)</th>
-                                <th class="py-2 px-2 text-right">Wastage (%)</th>
-                                <th class="py-2 px-2 text-right">Kaj Fine (g)</th>
-                                <th class="py-2 px-2 text-right">Profit (g)</th>
-                                <th class="py-2 pl-2 text-center w-10"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="itemRows" class="divide-y divide-slate-800/40">
-                            <!-- JS will inject dynamic rows here -->
-                        </tbody>
-                    </table>
+                <div id="itemRows" class="space-y-4">
+                    <!-- Dynamic rows injected here -->
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Remark / Narration</label>
-                <input type="text" name="remark" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-400 transition-colors" placeholder="Optional details...">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Remark / Narration</label>
+                <input type="text" name="remark" class="premium-input" placeholder="Optional details...">
             </div>
             
             <div class="flex items-center justify-between pt-4 border-t border-slate-800">
-                <div class="text-sm font-mono text-slate-400">
-                    Est. Total Fine: <span id="totalFineDisp" class="text-red-400 font-semibold">0.000 g</span>
+                <div class="text-xs font-mono text-slate-400">
+                    Est. Total Gold: <span id="totalFineDisp" class="text-rose-400 font-bold">0.000 g</span>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <a href="kaj.php" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-all">Cancel</a>
-                    <button type="submit" name="add_kaj" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/10 transition-all">Save Kaj Entry</button>
+                    <a href="kaj.php" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
+                    <button type="submit" name="add_kaj" class="btn-gold text-sm px-5 py-2.5">Save Job</button>
                 </div>
             </div>
         </form>
@@ -194,38 +178,44 @@ require_once 'header.php';
         var rowCount = 0;
         
         function addItemRow() {
-            var tbody = document.getElementById('itemRows');
-            var tr = document.createElement('tr');
-            tr.id = 'row_' + rowCount;
-            tr.className = 'hover:bg-slate-800/10 transition-colors';
+            var container = document.getElementById('itemRows');
+            var div = document.createElement('div');
+            div.id = 'row_' + rowCount;
+            div.className = 'premium-card bg-slate-900/50 p-4 border border-slate-850 space-y-3';
             
-            tr.innerHTML = `
-                <td class="py-3 pr-2">
-                    <input type="text" name="items[\${rowCount}][item]" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 text-sm focus:outline-none focus:border-indigo-500" placeholder="e.g. Chain">
-                </td>
-                <td class="py-3 px-2">
-                    <input type="number" step="0.001" name="items[\${rowCount}][gross]" id="gross_\${rowCount}" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 text-sm text-right font-mono focus:outline-none" placeholder="0.000" oninput="calculateRow(\${rowCount})">
-                </td>
-                <td class="py-3 px-2">
-                    <input type="number" step="0.001" name="items[\${rowCount}][less]" id="less_\${rowCount}" value="0" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 text-sm text-right font-mono focus:outline-none" oninput="calculateRow(\${rowCount})">
-                </td>
-                <td class="py-3 px-2">
-                    <input type="number" step="0.01" name="items[\${rowCount}][milting]" id="milting_\${rowCount}" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 text-sm text-right font-mono focus:outline-none" placeholder="0.00" oninput="calculateRow(\${rowCount})">
-                </td>
-                <td class="py-3 px-2">
-                    <input type="number" step="0.01" name="items[\${rowCount}][wastage]" id="wastage_\${rowCount}" value="0" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-200 text-sm text-right font-mono focus:outline-none" oninput="calculateRow(\${rowCount})">
-                </td>
-                <td class="py-3 px-2 text-right">
-                    <span id="kajfine_\${rowCount}" class="font-mono text-slate-400 text-sm">0.000</span>
-                </td>
-                <td class="py-3 px-2 text-right">
-                    <span id="profit_\${rowCount}" class="font-mono text-slate-400 text-sm">0.000</span>
-                </td>
-                <td class="py-3 pl-2 text-center">
-                    <button type="button" onclick="removeRow(\${rowCount})" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white transition-all"><i class="fa-solid fa-trash-can text-xs"></i></button>
-                </td>
+            div.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Item #\${rowCount + 1}</span>
+                    <button type="button" onclick="removeRow(\${rowCount})" class="text-rose-400 hover:text-rose-500 tap-target flex items-center justify-center"><span class="material-symbols-rounded text-lg">delete</span></button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="col-span-2">
+                        <input type="text" name="items[\${rowCount}][item]" required class="premium-input" placeholder="Ornament Name (e.g. Chain)">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Gross (g)</label>
+                        <input type="number" step="0.001" name="items[\${rowCount}][gross]" id="gross_\${rowCount}" required class="premium-input text-right font-mono" placeholder="0.000" oninput="calculateRow(\${rowCount})">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Less (g)</label>
+                        <input type="number" step="0.001" name="items[\${rowCount}][less]" id="less_\${rowCount}" value="0" class="premium-input text-right font-mono" oninput="calculateRow(\${rowCount})">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Mel / Purity (%)</label>
+                        <input type="number" step="0.01" name="items[\${rowCount}][milting]" id="milting_\${rowCount}" required class="premium-input text-right font-mono" placeholder="0.00" oninput="calculateRow(\${rowCount})">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Chhij / Wastage (%)</label>
+                        <input type="number" step="0.01" name="items[\${rowCount}][wastage]" id="wastage_\${rowCount}" value="0" class="premium-input text-right font-mono" oninput="calculateRow(\${rowCount})">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3 pt-2 text-[11px] font-mono border-t border-slate-800/40 text-slate-400">
+                    <div>Gold Billed: <span id="kajfine_\${rowCount}" class="font-bold text-white">0.000</span>g</div>
+                    <div>Profit Gold: <span id="profit_\${rowCount}" class="font-bold text-white">0.000</span>g</div>
+                </div>
             `;
-            tbody.appendChild(tr);
+            container.appendChild(div);
             rowCount++;
         }
         
@@ -270,72 +260,66 @@ require_once 'header.php';
 
 <?php else: ?>
     <!-- Kaj Entries View -->
-    <div class="mb-8 flex items-center justify-between">
+    <div class="mb-6 flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center">
-                <span class="gold-text mr-2"><i class="fa-solid fa-hammer"></i></span> Kaj Entries
+                <span class="material-symbols-rounded text-[#F4B400] mr-2 text-3xl">construction</span> Kaarigari Jobs
             </h1>
-            <p class="text-slate-400 text-sm mt-1">Record gold ornament manufacturing metrics and wastage earnings.</p>
+            <p class="text-slate-400 text-xs mt-1">Logs of jewelry manufacturing and metal wastage calculations.</p>
         </div>
-        <a href="kaj.php?action=new" class="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/10 transition-all flex items-center space-x-2">
-            <i class="fa-solid fa-plus"></i> <span>Add Kaj Entry</span>
+        <a href="kaj.php?action=new" class="btn-gold inline-flex items-center text-xs px-3.5 py-2 shadow-md">
+            <span class="material-symbols-rounded text-sm mr-1">add</span> Add Job
         </a>
     </div>
 
-    <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-900/40 text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-800">
-                        <th class="px-6 py-4.5">Date</th>
-                        <th class="px-6 py-4.5">Bapari</th>
-                        <th class="px-6 py-4.5 text-right">Labor Bill</th>
-                        <th class="px-6 py-4.5 text-right">Kaj Fine (g)</th>
-                        <th class="px-6 py-4.5 text-right">Profit Earned (g)</th>
-                        <th class="px-6 py-4.5">Remark</th>
-                        <th class="px-6 py-4.5 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/60">
-                    <?php if (empty($kajEntries)): ?>
-                    <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-slate-500 text-sm">
-                            <i class="fa-regular fa-face-frown text-3xl mb-2 text-slate-600 block"></i>
-                            No Kaj Entries found.
-                        </td>
-                    </tr>
-                    <?php else: ?>
-                        <?php foreach ($kajEntries as $k): ?>
-                        <tr class="hover:bg-slate-800/25 transition-colors text-sm">
-                            <td class="px-6 py-4 font-mono text-slate-300">
-                                <?= date('d-m-Y', strtotime($k['date'])) ?>
-                            </td>
-                            <td class="px-6 py-4 font-semibold text-white">
-                                <?= htmlspecialchars($k['bapari_name']) ?>
-                            </td>
-                            <td class="px-6 py-4 text-right font-mono text-rose-400">
-                                <?= $k['cash_bill'] > 0 ? '₹' . number_format($k['cash_bill'], 2) : '--' ?>
-                            </td>
-                            <td class="px-6 py-4 text-right font-mono text-amber-500 font-semibold">
-                                -<?= number_format($k['total_kaj_fine'], 3) ?> g
-                            </td>
-                            <td class="px-6 py-4 text-right font-mono text-pink-400">
-                                +<?= number_format($k['total_profit_fine'], 3) ?> g
-                            </td>
-                            <td class="px-6 py-4 text-slate-400 max-w-xs truncate">
-                                <?= htmlspecialchars($k['remark'] ?: '--') ?>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <a href="kaj.php?delete=<?= $k['id'] ?>" onclick="return confirm('Are you sure you want to delete this Kaj entry? This will also delete all of its items.')" class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors" title="Delete">
-                                    <i class="fa-solid fa-trash text-xs"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
+    <!-- Redesigned Jobs Mobile Cards Stack -->
+    <div class="space-y-4">
+        <?php if (empty($kajEntries)): ?>
+            <div class="premium-card text-center py-12 flex flex-col items-center justify-center">
+                <span class="material-symbols-rounded text-5xl text-slate-600 mb-3">folder_open</span>
+                <h3 class="text-sm font-semibold text-slate-300">No Job Work Found</h3>
+                <p class="text-xs text-slate-500 mt-1">Record a new Kaarigari Job to calculate metal weight outcomes.</p>
+            </div>
+        <?php else: ?>
+            <?php foreach ($kajEntries as $k): ?>
+                <div class="premium-card">
+                    <div class="flex items-start justify-between border-b border-slate-800/80 pb-3 mb-3">
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-semibold font-mono"><?= date('d-M-Y', strtotime($k['date'])) ?></span>
+                            <h3 class="font-bold text-white text-base mt-0.5"><?= htmlspecialchars($k['bapari_name']) ?></h3>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-slate-500 block">Majdoori Bill</span>
+                            <span class="font-mono text-rose-400 font-bold text-sm"><?= $k['cash_bill'] > 0 ? '₹' . number_format($k['cash_bill'], 2) : '--' ?></span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-[10px] text-slate-500 uppercase block font-semibold">Gold Billed</span>
+                            <span class="font-mono font-bold text-rose-400 text-base">-<?= number_format($k['total_kaj_fine'], 3) ?> g</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 uppercase block font-semibold">Profit Gold</span>
+                            <span class="font-mono font-bold text-pink-400 text-base">+<?= number_format($k['total_profit_fine'], 3) ?> g</span>
+                        </div>
+                    </div>
+
+                    <?php if ($k['remark']): ?>
+                        <div class="bg-slate-900/50 p-2.5 rounded-xl border border-slate-800/80 text-[11px] text-slate-400 mt-3 flex items-start space-x-1">
+                            <span class="material-symbols-rounded text-sm text-slate-500 mt-0.5">sticky_note</span>
+                            <span class="truncate"><?= htmlspecialchars($k['remark']) ?></span>
+                        </div>
                     <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+
+                    <div class="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-slate-800/40">
+                        <a href="kaj.php?delete=<?= $k['id'] ?>" onclick="return confirm('Are you sure you want to delete this Kaarigari Job entry? This will also delete all of its items.')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete">
+                            <span class="material-symbols-rounded text-base">delete</span>
+                        </a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 <?php endif; ?>
 

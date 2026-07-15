@@ -3,11 +3,21 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
+// $host = 'localhost';
+// $db   = 'kinder_db';
+// $user = 'root';
+// $pass = '';
+
 $host = 'localhost';
-$db   = 'kinder_db';
-$user = 'root';
-$pass = '';
+$db   = 'u798623491_dasgolddb';
+$user = 'u798623491_dasgold';
+$pass = 'Dasgold2026@';
+
+
 $charset = 'utf8mb4';
+
+
+
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 $options = [

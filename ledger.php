@@ -4,7 +4,7 @@ require_once 'db.php';
 $bapariId = intval($_GET['bapari_id'] ?? 0);
 
 if ($bapariId <= 0) {
-    echo "Invalid Bapari ID";
+    echo "Invalid Customer ID";
     exit();
 }
 
@@ -14,7 +14,7 @@ $stmt->execute([$bapariId, $userId]);
 $bapari = $stmt->fetch();
 
 if (!$bapari) {
-    echo "Bapari not found";
+    echo "Customer not found";
     exit();
 }
 
@@ -82,132 +82,110 @@ require_once 'header.php';
 ?>
 
 <!-- Back & Title -->
-<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div class="mb-6 flex items-center justify-between mt-2">
     <div class="flex items-center space-x-3">
-        <a href="index.php" class="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700/60 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
-            <i class="fa-solid fa-arrow-left text-sm"></i>
+        <a href="index.php" class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700/60 flex items-center justify-center text-slate-300 hover:text-white transition-colors tap-target">
+            <span class="material-symbols-rounded text-xl">arrow_back</span>
         </a>
-        <div>
-            <h1 class="text-2xl font-extrabold text-white flex items-center">
-                <?= htmlspecialchars($bapari['name']) ?>
-            </h1>
-            <p class="text-xs text-slate-400">Mobile: <?= htmlspecialchars($bapari['mobile'] ?: '--') ?> | Address: <?= htmlspecialchars($bapari['address'] ?: '--') ?></p>
+        <div class="min-w-0">
+            <h1 class="text-xl font-bold text-white truncate leading-tight"><?= htmlspecialchars($bapari['name']) ?></h1>
+            <p class="text-[11px] text-slate-500 truncate mt-0.5"><?= htmlspecialchars($bapari['mobile'] ?: 'No mobile') ?> | <?= htmlspecialchars($bapari['address'] ?: 'No address') ?></p>
         </div>
     </div>
-    
-    <div class="flex items-center space-x-2">
-        <a href="deposits.php?action=new" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-950 gold-bg hover:opacity-90 shadow-md transition-all">
-            <i class="fa-solid fa-plus mr-1"></i> Add Deposit
-        </a>
-        <a href="kaj.php?action=new" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md transition-all">
-            <i class="fa-solid fa-plus mr-1"></i> Add Kaj
-        </a>
+</div>
+
+<!-- Balances Row (Two Column Grid) -->
+<div class="grid grid-cols-2 gap-4 mb-6">
+    <div class="premium-card gold-gradient-border glow-gold">
+        <span class="text-desc font-semibold uppercase text-[10px] block mb-1">Gold Balance</span>
+        <div class="text-xl font-bold text-[#F4B400] font-mono leading-none"><?= number_format($fineBal, 3) ?> g</div>
+        <p class="text-[9px] text-slate-500 mt-1">Outstanding pure gold</p>
+    </div>
+    <div class="premium-card">
+        <span class="text-desc font-semibold uppercase text-[10px] block mb-1">Cash Balance</span>
+        <div class="text-xl font-bold text-blue-400 font-mono leading-none">₹<?= number_format($cashBal, 2) ?></div>
+        <p class="text-[9px] text-slate-500 mt-1">Outstanding cash</p>
     </div>
 </div>
 
-<!-- Balances Row -->
-<div class="grid grid-cols-2 gap-5 mb-8">
-    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-emerald-500">
-        <span class="text-slate-400 text-xs font-bold uppercase tracking-wider block mb-1">Fine Gold Balance</span>
-        <div class="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono"><?= number_format($fineBal, 3) ?> g</div>
-        <p class="text-[10px] text-slate-500 mt-0.5">Estimated outstanding weight</p>
-    </div>
-    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-blue-500">
-        <span class="text-slate-400 text-xs font-bold uppercase tracking-wider block mb-1">Cash Balance</span>
-        <div class="text-2xl sm:text-3xl font-extrabold text-blue-400 font-mono">₹<?= number_format($cashBal, 2) ?></div>
-        <p class="text-[10px] text-slate-500 mt-0.5">Estimated outstanding cash</p>
-    </div>
+<!-- Statement Cards -->
+<div class="mb-4 flex items-center justify-between">
+    <h2 class="title-section text-white flex items-center">
+        <span class="material-symbols-rounded text-[#F4B400] mr-2">receipt_long</span> Ledger Statement
+    </h2>
 </div>
 
-<!-- Ledger Transaction Table -->
-<div class="glass-card rounded-2xl border border-slate-800 overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between">
-        <h3 class="text-base font-bold text-white"><i class="fa-solid fa-receipt text-amber-400 mr-2"></i> Account Ledger Statement</h3>
-    </div>
-    
-    <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
-            <thead>
-                <tr class="bg-slate-900/40 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
-                    <th class="px-4 py-3.5">Date</th>
-                    <th class="px-4 py-3.5">Type</th>
-                    <th class="px-4 py-3.5">Narration / Details</th>
-                    <th class="px-4 py-3.5 text-right">Jama Fine (g)</th>
-                    <th class="px-4 py-3.5 text-right">Kaj Fine (g)</th>
-                    <th class="px-4 py-3.5 text-right">Fine Bal (g)</th>
-                    <th class="px-4 py-3.5 text-right">Cash Rec.</th>
-                    <th class="px-4 py-3.5 text-right">Cash Bill</th>
-                    <th class="px-4 py-3.5 text-right">Cash Bal</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800/60 font-mono text-slate-300">
-                <?php if (empty($displayEntries)): ?>
-                <tr>
-                    <td colspan="9" class="px-6 py-12 text-center text-slate-500 text-sm">
-                        No transactions recorded for this Bapari yet.
-                    </td>
-                </tr>
-                <?php else: ?>
-                    <?php foreach ($displayEntries as $e): ?>
-                    <tr class="hover:bg-slate-800/20 transition-colors">
-                        <td class="px-4 py-3 text-slate-400 font-sans">
-                            <?= date('d-m-Y', strtotime($e['date'])) ?>
-                        </td>
-                        <td class="px-4 py-3 font-sans">
+<div class="space-y-4">
+    <?php if (empty($displayEntries)): ?>
+        <div class="premium-card text-center py-12 flex flex-col items-center justify-center">
+            <span class="material-symbols-rounded text-5xl text-slate-600 mb-3">receipt</span>
+            <h3 class="text-sm font-semibold text-slate-300">No Transactions</h3>
+            <p class="text-xs text-slate-500 mt-1">No transaction records found for this customer.</p>
+        </div>
+    <?php else: ?>
+        <?php foreach ($displayEntries as $e): ?>
+            <div class="premium-card">
+                <div class="flex items-start justify-between border-b border-slate-800/80 pb-2.5 mb-2.5">
+                    <div>
+                        <span class="text-[10px] text-slate-500 font-mono"><?= date('d-M-Y', strtotime($e['date'])) ?></span>
+                        <div class="mt-0.5">
                             <?php if ($e['type'] === 'deposit'): ?>
-                                <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 text-[10px]">Deposit</span>
+                                <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 text-[9px] font-bold uppercase tracking-wider">Gold Jama</span>
                             <?php else: ?>
-                                <span class="bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20 text-[10px]">Kaj</span>
+                                <span class="bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-lg border border-indigo-500/20 text-[9px] font-bold uppercase tracking-wider">Kaarigari Job</span>
                             <?php endif; ?>
-                        </td>
-                        <td class="px-4 py-3 text-slate-400 font-sans">
+                        </div>
+                    </div>
+                    
+                    <div class="text-right">
+                        <span class="text-[9px] text-slate-500 block uppercase font-semibold">Running Balance</span>
+                        <span class="font-mono text-white text-xs font-semibold block"><?= number_format($e['running_fine'], 3) ?> g</span>
+                        <span class="font-mono text-slate-400 text-[10px] block mt-0.5">₹<?= number_format($e['running_cash'], 2) ?></span>
+                    </div>
+                </div>
+
+                <!-- Transaction values -->
+                <div class="grid grid-cols-2 gap-3 my-2 text-xs">
+                    <div>
+                        <span class="text-[9px] text-slate-500 uppercase block">Gold Weight Change</span>
+                        <span class="font-mono font-bold text-sm <?= $e['type'] == 'deposit' ? 'text-emerald-400' : 'text-rose-400' ?>">
+                            <?= $e['type'] == 'deposit' ? '+' : '-' ?><?= number_format($e['type'] == 'deposit' ? $e['jama_fine'] : $e['kaj_fine'], 3) ?> g
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] text-slate-500 uppercase block">Cash Amount Change</span>
+                        <span class="font-mono font-bold text-sm <?= $e['type'] == 'deposit' ? 'text-blue-400' : 'text-rose-400' ?>">
                             <?php 
-                            if ($e['type'] === 'deposit') {
-                                echo htmlspecialchars($e['remark'] ?: 'Gold deposit');
+                            if ($e['type'] == 'deposit') {
+                                echo $e['cash_received'] > 0 ? '₹' . number_format($e['cash_received'], 2) : '--';
                             } else {
-                                $itemsStr = [];
-                                foreach ($e['items'] as $it) {
-                                    $itemsStr[] = htmlspecialchars($it['item']) . " ({$it['gross']}g)";
-                                }
-                                echo implode(', ', $itemsStr) ?: 'Kaj ornament job';
+                                echo $e['cash_bill'] > 0 ? '₹' . number_format($e['cash_bill'], 2) : '--';
                             }
                             ?>
-                        </td>
-                        <td class="px-4 py-3 text-right font-medium text-emerald-400">
-                            <?= $e['jama_fine'] > 0 ? '+' . number_format($e['jama_fine'], 3) : '--' ?>
-                        </td>
-                        <td class="px-4 py-3 text-right font-medium text-rose-400">
-                            <?= $e['kaj_fine'] > 0 ? '-' . number_format($e['kaj_fine'], 3) : '--' ?>
-                        </td>
-                        <td class="px-4 py-3 text-right font-semibold text-slate-200">
-                            <?= number_format($e['running_fine'], 3) ?>
-                        </td>
-                        <td class="px-4 py-3 text-right text-blue-400">
-                            <?= $e['cash_received'] > 0 ? '₹' . number_format($e['cash_received'], 2) : '--' ?>
-                        </td>
-                        <td class="px-4 py-3 text-right text-rose-400">
-                            <?= $e['cash_bill'] > 0 ? '₹' . number_format($e['cash_bill'], 2) : '--' ?>
-                        </td>
-                        <td class="px-4 py-3 text-right font-semibold text-slate-200">
-                            ₹<?= number_format($e['running_cash'], 2) ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-            <tfoot>
-                <tr class="bg-slate-900/30 text-slate-200 font-bold border-t border-slate-800">
-                    <td colspan="3" class="px-4 py-4 text-left font-sans">Totals</td>
-                    <td class="px-4 py-4 text-right text-emerald-400 font-mono">+<?= number_format($totalJama, 3) ?> g</td>
-                    <td class="px-4 py-4 text-right text-rose-400 font-mono">-<?= number_format($totalKaj, 3) ?> g</td>
-                    <td class="px-4 py-4 text-right text-slate-200 font-mono"><?= number_format($fineBal, 3) ?> g</td>
-                    <td class="px-4 py-4 text-right text-blue-400 font-mono">₹<?= number_format($totalRec, 2) ?></td>
-                    <td class="px-4 py-4 text-right text-rose-400 font-mono">₹<?= number_format($totalBill, 2) ?></td>
-                    <td class="px-4 py-4 text-right text-slate-200 font-mono">₹<?= number_format($cashBal, 2) ?></td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Detail description -->
+                <div class="bg-slate-900/50 p-2.5 rounded-xl border border-slate-800/80 text-[11px] text-slate-400 mt-2.5 flex items-start space-x-1">
+                    <span class="material-symbols-rounded text-sm text-slate-500 mt-0.5">sticky_note</span>
+                    <span>
+                        <?php 
+                        if ($e['type'] === 'deposit') {
+                            echo htmlspecialchars($e['remark'] ?: 'Gold Jama deposit');
+                        } else {
+                            $itemsStr = [];
+                            foreach ($e['items'] as $it) {
+                                $itemsStr[] = htmlspecialchars($it['item']) . " ({$it['gross']}g)";
+                            }
+                            echo implode(', ', $itemsStr) ?: 'Kaarigari Job ornaments';
+                        }
+                        ?>
+                    </span>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 <?php

@@ -48,138 +48,195 @@ $stmt = $pdo->prepare("
 $stmt->execute([$userId, $userId, $userId]);
 $baparis = $stmt->fetchAll();
 
+// Dynamic Greeting
+$hour = date('H');
+$greeting = "Good Day";
+if ($hour < 12) {
+    $greeting = "Good Morning";
+} elseif ($hour < 17) {
+    $greeting = "Good Afternoon";
+} else {
+    $greeting = "Good Evening";
+}
+
 require_once 'header.php';
 ?>
 
-<!-- Header Banner -->
-<div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div>
-        <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center">
-            <span class="gold-text mr-2"><i class="fa-solid fa-chart-line"></i></span> Dashboard
-        </h1>
-        <p class="text-slate-400 text-sm mt-1">Overview of your gold accounts, baparis, and transaction summaries.</p>
+<!-- Dynamic Greeting & Header -->
+<div class="mb-6 mt-2">
+    <span class="text-desc uppercase tracking-widest text-[10px] font-bold">Workspace Overview</span>
+    <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight mt-0.5">
+        <?= $greeting ?>, <span class="text-[#F4B400]"><?= htmlspecialchars($_SESSION['user_name'] ?? 'User') ?></span>
+    </h1>
+</div>
+
+<!-- 2x2 Quick Statistics Grid -->
+<div class="grid grid-cols-2 gap-4 mb-6">
+    <!-- Stat 1: Gold Bal -->
+    <div class="premium-card gold-gradient-border glow-gold">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-desc font-semibold uppercase text-[10px]">Gold Balance</span>
+            <span class="material-symbols-rounded text-lg text-[#F4B400]">scale</span>
+        </div>
+        <div class="text-xl font-bold text-white font-mono leading-none">
+            <?= number_format($netFineBalance, 3) ?><span class="text-xs font-normal text-slate-400 ml-0.5">g</span>
+        </div>
+        <p class="text-[10px] text-slate-500 mt-1">Outstanding weight</p>
     </div>
-    
-    <div class="flex flex-wrap gap-2.5">
-        <a href="baparis.php?action=new" class="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700/60 transition-all flex items-center space-x-2">
-            <i class="fa-solid fa-user-plus text-amber-400"></i> <span>Add Bapari</span>
-        </a>
-        <a href="deposits.php?action=new" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-950 gold-bg hover:opacity-90 shadow-md shadow-amber-500/10 transition-all flex items-center space-x-2">
-            <i class="fa-solid fa-circle-down"></i> <span>Add Fine Deposit</span>
-        </a>
-        <a href="kaj.php?action=new" class="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-600/10 transition-all flex items-center space-x-2">
-            <i class="fa-solid fa-hammer"></i> <span>Add Kaj Entry</span>
-        </a>
+
+    <!-- Stat 2: Cash Bal -->
+    <div class="premium-card">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-desc font-semibold uppercase text-[10px]">Cash Balance</span>
+            <span class="material-symbols-rounded text-lg text-emerald-400">payments</span>
+        </div>
+        <div class="text-xl font-bold text-white font-mono leading-none">
+            ₹<?= number_format($netCashBalance, 2) ?>
+        </div>
+        <p class="text-[10px] text-slate-500 mt-1">Outstanding cash</p>
+    </div>
+
+    <!-- Stat 3: Total Customers -->
+    <div class="premium-card">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-desc font-semibold uppercase text-[10px]">Customers</span>
+            <span class="material-symbols-rounded text-lg text-indigo-400">group</span>
+        </div>
+        <div class="text-xl font-bold text-white leading-none">
+            <?= $totalBaparis ?>
+        </div>
+        <p class="text-[10px] text-slate-500 mt-1">Registered accounts</p>
+    </div>
+
+    <!-- Stat 4: Profit Gold -->
+    <div class="premium-card">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-desc font-semibold uppercase text-[10px]">Profit Gold</span>
+            <span class="material-symbols-rounded text-lg text-pink-400">trending_up</span>
+        </div>
+        <div class="text-xl font-bold text-pink-400 font-mono leading-none">
+            <?= number_format($totalProfitFine, 3) ?><span class="text-xs font-normal text-slate-400 ml-0.5">g</span>
+        </div>
+        <p class="text-[10px] text-slate-500 mt-1">Wastage earnings</p>
     </div>
 </div>
 
-<!-- Metrics Row -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-    <!-- Stat Card 1 -->
-    <div class="glass-card gold-glow rounded-2xl p-5 border-l-4 border-l-amber-500">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Baparis</span>
-            <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400"><i class="fa-solid fa-users"></i></div>
-        </div>
-        <div class="text-3xl font-extrabold text-white"><?= $totalBaparis ?></div>
-        <p class="text-[11px] text-slate-500 mt-1">Active ledger accounts</p>
+<!-- Customer Ledger Accounts Section -->
+<div class="mb-6">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="title-section text-white flex items-center">
+            <span class="material-symbols-rounded text-[#F4B400] mr-2">account_balance_wallet</span> Customer Ledger
+        </h2>
+        <a href="baparis.php" class="text-xs text-[#F4B400] hover:underline flex items-center font-medium">
+            View All <span class="material-symbols-rounded text-sm ml-0.5">arrow_forward</span>
+        </a>
     </div>
 
-    <!-- Stat Card 2 -->
-    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-emerald-500">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Net Fine Balance</span>
-            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-scale-balanced"></i></div>
-        </div>
-        <div class="text-3xl font-extrabold text-emerald-400"><?= number_format($netFineBalance, 3) ?> <span class="text-xs font-medium text-slate-400">g</span></div>
-        <p class="text-[11px] text-slate-500 mt-1">Total outstanding gold weight</p>
-    </div>
-
-    <!-- Stat Card 3 -->
-    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-blue-500">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Net Cash Balance</span>
-            <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400"><i class="fa-solid fa-indian-rupee-sign"></i></div>
-        </div>
-        <div class="text-3xl font-extrabold text-blue-400">₹<?= number_format($netCashBalance, 2) ?></div>
-        <p class="text-[11px] text-slate-500 mt-1">Outstanding cash ledger</p>
-    </div>
-
-    <!-- Stat Card 4 -->
-    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-pink-500">
-        <div class="flex items-center justify-between mb-3">
-            <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Profit Fine</span>
-            <div class="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-400"><i class="fa-solid fa-chart-line-up"></i></div>
-        </div>
-        <div class="text-3xl font-extrabold text-pink-400"><?= number_format($totalProfitFine, 3) ?> <span class="text-xs font-medium text-slate-400">g</span></div>
-        <p class="text-[11px] text-slate-500 mt-1">Wastage earnings accumulated</p>
-    </div>
-</div>
-
-<!-- Baparis Ledger Summary Table -->
-<div class="glass-card rounded-2xl border border-slate-800 overflow-hidden">
-    <div class="px-6 py-4.5 border-b border-slate-800/80 flex items-center justify-between">
-        <h3 class="text-lg font-bold text-white flex items-center">
-            <i class="fa-solid fa-list-check text-amber-400 mr-2 text-base"></i> Bapari Ledger Accounts
-        </h3>
-        <span class="text-xs bg-slate-800 text-slate-400 px-3 py-1.5 rounded-lg border border-slate-700/50">Sorted A-Z</span>
-    </div>
-    
-    <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-slate-900/40 text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-800">
-                    <th class="px-6 py-3.5">Bapari Name</th>
-                    <th class="px-6 py-3.5">Contact Details</th>
-                    <th class="px-6 py-3.5 text-right">Fine Balance (g)</th>
-                    <th class="px-6 py-3.5 text-right">Cash Balance</th>
-                    <th class="px-6 py-3.5 text-center">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800/60">
-                <?php if (empty($baparis)): ?>
-                <tr>
-                    <td colspan="5" class="px-6 py-12 text-center text-slate-500 text-sm">
-                        <div class="flex flex-col items-center justify-center space-y-2">
-                            <i class="fa-regular fa-folder-open text-3xl text-slate-600"></i>
-                            <p>No Bapari accounts found. Start by adding a Bapari.</p>
-                            <a href="baparis.php?action=new" class="text-amber-400 hover:underline text-xs font-semibold">Add First Bapari &rarr;</a>
+    <div class="space-y-3">
+        <?php if (empty($baparis)): ?>
+            <!-- Redesigned Empty State -->
+            <div class="premium-card text-center py-10 flex flex-col items-center justify-center">
+                <span class="material-symbols-rounded text-5xl text-slate-600 mb-3">folder_open</span>
+                <h3 class="text-sm font-semibold text-slate-300">No Customers Added</h3>
+                <p class="text-xs text-slate-500 mt-1 max-w-[240px]">Create customer profiles to start recording Gold Jama and Kaarigari Jobs.</p>
+                <a href="baparis.php?action=new" class="btn-gold mt-5 inline-flex items-center text-xs px-4 py-2">
+                    <span class="material-symbols-rounded text-sm mr-1">person_add</span> Add First Customer
+                </a>
+            </div>
+        <?php else: ?>
+            <?php foreach ($baparis as $b): 
+                $fineBal = round($b['total_jama'] - $b['total_kaj'], 3);
+                $cashBal = round($b['total_rec'] - $b['total_bill'], 2);
+                $initials = strtoupper(substr($b['name'], 0, 2));
+            ?>
+                <!-- Customer Card Tile -->
+                <div class="premium-card flex items-center justify-between hover:border-slate-700/80 transition-all">
+                    <div class="flex items-center space-x-3.5 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-[#F4B400] text-sm shrink-0">
+                            <?= $initials ?>
                         </div>
-                    </td>
-                </tr>
-                <?php else: ?>
-                    <?php foreach ($baparis as $b): 
-                        $fineBal = round($b['total_jama'] - $b['total_kaj'], 3);
-                        $cashBal = round($b['total_rec'] - $b['total_bill'], 2);
-                    ?>
-                    <tr class="hover:bg-slate-800/25 transition-colors">
-                        <td class="px-6 py-4">
-                            <a href="ledger.php?bapari_id=<?= $b['id'] ?>" class="font-semibold text-white hover:text-amber-400 transition-colors block">
+                        <div class="min-w-0">
+                            <a href="ledger.php?bapari_id=<?= $b['id'] ?>" class="font-semibold text-white hover:text-[#F4B400] transition-colors block text-sm truncate">
                                 <?= htmlspecialchars($b['name']) ?>
                             </a>
-                            <span class="text-xs text-slate-500 block truncate max-w-xs"><?= htmlspecialchars($b['address'] ?? 'No address') ?></span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-slate-300">
-                            <?= htmlspecialchars($b['mobile'] ?: '--') ?>
-                        </td>
-                        <td class="px-6 py-4 text-right font-mono font-medium text-sm <?= $fineBal >= 0 ? 'text-emerald-400' : 'text-red-400' ?>">
-                            <?= number_format($fineBal, 3) ?> g
-                        </td>
-                        <td class="px-6 py-4 text-right font-mono font-medium text-sm <?= $cashBal >= 0 ? 'text-blue-400' : 'text-rose-400' ?>">
+                            <span class="text-[11px] text-slate-500 block truncate mt-0.5"><?= htmlspecialchars($b['mobile'] ?: 'No mobile') ?></span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-right shrink-0">
+                        <div class="text-xs font-mono font-bold <?= $fineBal >= 0 ? 'text-emerald-400' : 'text-rose-400' ?>">
+                            <?= $fineBal >= 0 ? '+' : '' ?><?= number_format($fineBal, 3) ?> g
+                        </div>
+                        <div class="text-[10px] font-mono text-slate-500 mt-1">
                             ₹<?= number_format($cashBal, 2) ?>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <a href="ledger.php?bapari_id=<?= $b['id'] ?>" class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-slate-950 transition-all text-xs font-semibold">
-                                <i class="fa-solid fa-book-open"></i> <span>View Ledger</span>
-                            </a>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </div>
+
+<!-- Floating Action Button (FAB) and Modal -->
+<button onclick="toggleFabMenu()" class="fab-btn tap-target" id="fabBtn">
+    <span class="material-symbols-rounded text-2xl" id="fabIcon">add</span>
+</button>
+
+<!-- FAB Menu Backdrop -->
+<div id="fabBackdrop" onclick="toggleFabMenu()" class="fixed inset-0 bg-[#0F172A]/80 backdrop-blur-sm z-30 hidden opacity-0 transition-opacity duration-300"></div>
+
+<!-- FAB Actions Sheet -->
+<div id="fabMenu" class="fixed bottom-[160px] right-5 z-40 hidden flex-col items-end space-y-3 pointer-events-none transform translate-y-4 scale-95 opacity-0 transition-all duration-300">
+    <!-- Action 1 -->
+    <a href="baparis.php?action=new" class="pointer-events-auto flex items-center space-x-2.5 px-5 py-2.5 rounded-xl bg-[#1E293B] border border-white/[0.06] text-white shadow-xl tap-target">
+        <span class="text-xs font-semibold">New Customer</span>
+        <span class="material-symbols-rounded text-lg text-[#F4B400] bg-[#F4B400]/10 p-1.5 rounded-lg">person_add</span>
+    </a>
+    <!-- Action 2 -->
+    <a href="deposits.php?action=new" class="pointer-events-auto flex items-center space-x-2.5 px-5 py-2.5 rounded-xl bg-[#1E293B] border border-white/[0.06] text-white shadow-xl tap-target">
+        <span class="text-xs font-semibold">Gold Jama Entry</span>
+        <span class="material-symbols-rounded text-lg text-emerald-400 bg-emerald-400/10 p-1.5 rounded-lg">arrow_downward</span>
+    </a>
+    <!-- Action 3 -->
+    <a href="kaj.php?action=new" class="pointer-events-auto flex items-center space-x-2.5 px-5 py-2.5 rounded-xl bg-[#1E293B] border border-white/[0.06] text-white shadow-xl tap-target">
+        <span class="text-xs font-semibold">New Kaarigari Job</span>
+        <span class="material-symbols-rounded text-lg text-indigo-400 bg-indigo-400/10 p-1.5 rounded-lg">construction</span>
+    </a>
+</div>
+
+<script>
+    let isFabOpen = false;
+    function toggleFabMenu() {
+        const backdrop = document.getElementById('fabBackdrop');
+        const menu = document.getElementById('fabMenu');
+        const icon = document.getElementById('fabIcon');
+        const fabBtn = document.getElementById('fabBtn');
+        
+        isFabOpen = !isFabOpen;
+        
+        if (isFabOpen) {
+            backdrop.classList.remove('hidden');
+            menu.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.add('opacity-100');
+                menu.classList.remove('opacity-0', 'translate-y-4', 'scale-95');
+                menu.classList.add('opacity-100', 'translate-y-0', 'scale-100');
+            }, 10);
+            icon.innerText = 'close';
+            fabBtn.style.transform = 'rotate(90deg)';
+        } else {
+            backdrop.classList.remove('opacity-100');
+            menu.classList.remove('opacity-100', 'translate-y-0', 'scale-100');
+            menu.classList.add('opacity-0', 'translate-y-4', 'scale-95');
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+                menu.classList.add('hidden');
+            }, 300);
+            icon.innerText = 'add';
+            fabBtn.style.transform = 'rotate(0deg)';
+        }
+    }
+</script>
 
 <?php
 require_once 'footer.php';
