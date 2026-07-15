@@ -217,13 +217,13 @@ require_once 'header.php';
                 <div class="grid grid-cols-2 gap-3 my-2 text-xs">
                     <div>
                         <span class="text-[9px] text-slate-500 uppercase block">Gold Weight Change</span>
-                        <span class="font-mono font-bold text-sm <?= $e['type'] == 'deposit' ? 'text-emerald-400' : 'text-rose-400' print:text-black">
+                        <span class="font-mono font-bold text-sm <?= $e['type'] == 'deposit' ? 'text-emerald-400' : 'text-rose-400' ?> print:text-black">
                             <?= $e['type'] == 'deposit' ? '+' : '-' ?><?= number_format($e['type'] == 'deposit' ? $e['jama_fine'] : $e['kaj_fine'], 3) ?> g
                         </span>
                     </div>
                     <div>
                         <span class="text-[9px] text-slate-500 uppercase block">Cash Amount Change</span>
-                        <span class="font-mono font-bold text-sm <?= $e['type'] == 'deposit' ? 'text-blue-400' : 'text-rose-400' print:text-black">
+                        <span class="font-mono font-bold text-sm <?= $e['type'] == 'deposit' ? 'text-blue-400' : 'text-rose-400' ?> print:text-black">
                             <?php 
                             if ($e['type'] == 'deposit') {
                                 echo $e['cash_received'] > 0 ? '₹' . number_format($e['cash_received'], 2) : '--';
