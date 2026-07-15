@@ -1,12 +1,12 @@
 {
-  "name": "Karigor Ledger Pro",
-  "short_name": "Karigor Pro",
+  "name": "Dasgold Ledger Pro",
+  "short_name": "Dasgold",
   "description": "Goldsmith Ledger and Accounts Management App",
   "start_url": "./index.php",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f172a",
-  "theme_color": "#1e1b4b",
+  "background_color": "#0F172A",
+  "theme_color": "#0F172A",
   "icons": [
     {
       "src": "assets/images/icon.png",

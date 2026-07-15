@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dasgold</string>
+    <string name="title_activity_main">Dasgold</string>
+    <string name="package_name">com.dasgold.ledger</string>
+    <string name="custom_url_scheme">com.dasgold.ledger</string>
+</resources>

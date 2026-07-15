@@ -1,6 +1,6 @@
 {
-  "appId": "com.dasgold.karigorledgerpro.php",
-  "appName": "Karigor Ledger Pro PHP",
+  "appId": "com.dasgold.ledger",
+  "appName": "Dasgold",
   "webDir": "www",
   "server": {
     "url": "http://192.168.1.5/kinder_php/",
