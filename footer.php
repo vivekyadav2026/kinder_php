@@ -1,30 +1,36 @@
     </div> <!-- Close max-w-6xl -->
     
-    <!-- Mobile Sticky Bottom Navigation Bar (Pill style) -->
-    <div class="fixed bottom-0 left-0 right-0 z-50 bg-[#0F172A]/90 backdrop-blur-lg border-t border-white/[0.04] md:hidden block shadow-2xl" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
-        <div class="flex justify-around items-center h-16 px-2">
+    <!-- Mobile Sticky Bottom Navigation Bar (Matching Reference Image 1) -->
+    <div class="fixed bottom-0 left-0 right-0 z-50 bg-[#0A0A0A]/95 backdrop-blur-md border-t border-white/[0.04] md:hidden block shadow-2xl animate-fade-in" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
+        <div class="flex justify-around items-center h-16 px-1 text-[10px] font-bold">
             <?php 
             $curr = basename($_SERVER['PHP_SELF']); 
             ?>
-            <a href="index.php" class="flex flex-col items-center justify-center py-1.5 w-16 rounded-2xl transition-all tap-target <?= $curr == 'index.php' ? 'text-[#F4B400]' : 'text-slate-400' ?>">
-                <span class="material-symbols-rounded text-[22px] <?= $curr == 'index.php' ? 'fill-1' : '' ?>">grid_view</span>
-                <span class="text-[9px] mt-1 font-semibold">Home</span>
+            <a href="index.php" class="flex flex-col items-center justify-center py-1 w-16 transition-colors tap-target <?= $curr == 'index.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[24px] <?= $curr == 'index.php' ? 'fill-1' : '' ?>">grid_view</span>
+                <span class="mt-1">Dashboard</span>
             </a>
-            <a href="baparis.php" class="flex flex-col items-center justify-center py-1.5 w-16 rounded-2xl transition-all tap-target <?= $curr == 'baparis.php' ? 'text-[#F4B400]' : 'text-slate-400' ?>">
-                <span class="material-symbols-rounded text-[22px] <?= $curr == 'baparis.php' ? 'fill-1' : '' ?>">group</span>
-                <span class="text-[9px] mt-1 font-semibold">Customers</span>
+            <a href="baparis.php" class="flex flex-col items-center justify-center py-1 w-16 transition-colors tap-target <?= $curr == 'baparis.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[24px] <?= $curr == 'baparis.php' ? 'fill-1' : '' ?>">group</span>
+                <span class="mt-1">Bapari</span>
             </a>
-            <a href="deposits.php" class="flex flex-col items-center justify-center py-1.5 w-16 rounded-2xl transition-all tap-target <?= $curr == 'deposits.php' ? 'text-[#F4B400]' : 'text-slate-400' ?>">
-                <span class="material-symbols-rounded text-[22px] <?= $curr == 'deposits.php' ? 'fill-1' : '' ?>">arrow_downward</span>
-                <span class="text-[9px] mt-1 font-semibold">Jama</span>
+            <a href="entry.php" class="flex flex-col items-center justify-center py-1 w-16 transition-colors tap-target <?= $curr == 'entry.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[24px] <?= $curr == 'entry.php' ? 'fill-1' : '' ?>">add_circle</span>
+                <span class="mt-1">Entry</span>
             </a>
-            <a href="kaj.php" class="flex flex-col items-center justify-center py-1.5 w-16 rounded-2xl transition-all tap-target <?= $curr == 'kaj.php' ? 'text-[#F4B400]' : 'text-slate-400' ?>">
-                <span class="material-symbols-rounded text-[22px] <?= $curr == 'kaj.php' ? 'fill-1' : '' ?>">construction</span>
-                <span class="text-[9px] mt-1 font-semibold">Jobs</span>
+            <a href="reports.php" class="flex flex-col items-center justify-center py-1 w-14 transition-colors tap-target <?= $curr == 'reports.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[24px] <?= $curr == 'reports.php' ? 'fill-1' : '' ?>">book</span>
+                <span class="mt-1">Ledger</span>
             </a>
-            <a href="reports.php" class="flex flex-col items-center justify-center py-1.5 w-16 rounded-2xl transition-all tap-target <?= $curr == 'reports.php' ? 'text-[#F4B400]' : 'text-slate-400' ?>">
-                <span class="material-symbols-rounded text-[22px] <?= $curr == 'reports.php' ? 'fill-1' : '' ?>">analytics</span>
-                <span class="text-[9px] mt-1 font-semibold">Reports</span>
+            <?php if ($isAdmin): ?>
+                <a href="admin.php" class="flex flex-col items-center justify-center py-1 w-14 transition-colors tap-target <?= $curr == 'admin.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                    <span class="material-symbols-rounded text-[24px] <?= $curr == 'admin.php' ? 'fill-1' : '' ?>">shield</span>
+                    <span class="mt-1">Admin</span>
+                </a>
+            <?php endif; ?>
+            <a href="settings.php" class="flex flex-col items-center justify-center py-1 w-14 transition-colors tap-target <?= $curr == 'settings.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[24px] <?= $curr == 'settings.php' ? 'fill-1' : '' ?>">settings</span>
+                <span class="mt-1">Settings</span>
             </a>
         </div>
     </div>
@@ -91,8 +97,8 @@
                     if (installBtn) {
                         installBtn.outerHTML = `
                             <div class="w-full bg-[#1E293B] border border-white/[0.06] p-4 rounded-2xl text-center text-xs text-slate-300 shadow-xl">
-                                <span class="font-semibold text-white flex items-center justify-center mb-1.5"><span class="material-symbols-rounded text-base text-[#F4B400] mr-1.5">download</span> Install Dasgold App</span>
-                                To install on iPhone, tap the <span class="font-bold text-white">Share</span> button below and select <span class="font-bold text-[#F4B400]">Add to Home Screen</span>.
+                                <span class="font-semibold text-white flex items-center justify-center mb-1.5"><span class="material-symbols-rounded text-base text-[#d8a735] mr-1.5">download</span> Install Dasgold App</span>
+                                To install on iPhone, tap the <span class="font-bold text-white">Share</span> button below and select <span class="font-bold text-[#d8a735]">Add to Home Screen</span>.
                             </div>
                         `;
                     }

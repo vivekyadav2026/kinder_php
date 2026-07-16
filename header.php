@@ -8,22 +8,22 @@
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0F172A">
+    <meta name="theme-color" content="#050505">
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Material Symbols Rounded Icon Pack -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="assets/images/karigor-icon.png">
+    <link class="rounded-lg" rel="icon" type="image/png" href="assets/images/karigor-icon.png">
     
     <style>
         :root {
-            --bg-color: #0F172A;
-            --card-color: #1E293B;
-            --gold-color: #F4B400;
+            --bg-color: #050505;
+            --card-color: #111111;
+            --gold-color: #d8a735;
             --accent-color: #6366F1;
             --success-color: #10B981;
             --danger-color: #EF4444;
@@ -36,62 +36,46 @@
             min-height: 100vh;
             color: #ffffff;
             overscroll-behavior-y: contain;
-            padding-top: calc(env(safe-area-inset-top, 0px) + 64px);
-            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+            padding-top: calc(env(safe-area-inset-top, 0px) + 56px); /* Mobile Padding: Rates bar only */
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
         }
 
-        /* Card styles with gradient borders & modern elevations */
+        @media (min-width: 768px) {
+            body {
+                padding-top: calc(env(safe-area-inset-top, 0px) + 112px); /* Desktop Padding: Rates bar + Logo Header */
+            }
+        }
+
+        /* Glassmorphic premium card layouts */
         .premium-card {
             background-color: var(--card-color);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            border-radius: 16px;
+            padding: 18px;
             border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .premium-card:active {
-            transform: scale(0.98);
-            border-color: rgba(244, 180, 0, 0.3);
-        }
         
-        .gold-gradient-border {
-            border: 1px solid transparent;
-            background: linear-gradient(var(--card-color), var(--card-color)) padding-box,
-                        linear-gradient(135deg, var(--gold-color), rgba(255,255,255,0.05)) border-box;
-        }
-        
-        .glow-gold {
-            box-shadow: 0 0 20px rgba(244, 180, 0, 0.1);
+        .gold-border {
+            border: 1px solid rgba(216, 167, 53, 0.35);
+            box-shadow: 0 4px 20px rgba(216, 167, 53, 0.05);
         }
 
         /* Typography Override */
-        .title-large {
-            font-size: 24px;
-            font-weight: 700;
-            line-height: 1.3;
-            letter-spacing: -0.01em;
-        }
-        .title-section {
-            font-size: 16px;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-        }
-        .card-value {
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
         .text-desc {
-            font-size: 12px;
+            font-size: 10px;
             color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.08em;
         }
 
         /* Modern Input Styling */
         .premium-input {
             width: 100%;
-            background-color: rgba(15, 23, 42, 0.6);
+            background-color: rgba(20, 20, 20, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
+            border-radius: 12px;
             padding: 14px 16px;
             color: #ffffff;
             font-size: 14px;
@@ -100,118 +84,185 @@
         .premium-input:focus {
             outline: none;
             border-color: var(--gold-color);
-            box-shadow: 0 0 0 3px rgba(244, 180, 0, 0.15);
+            box-shadow: 0 0 0 3px rgba(216, 167, 53, 0.15);
         }
         
         /* Premium Buttons */
         .btn-gold {
-            background: linear-gradient(135deg, var(--gold-color) 0%, #D99B00 100%);
-            color: #0F172A;
-            font-weight: 600;
-            border-radius: 14px;
-            padding: 12px 24px;
+            background: linear-gradient(135deg, #e5b842 0%, #c19224 100%);
+            color: #050505;
+            font-weight: 700;
+            border-radius: 24px;
+            padding: 14px 28px;
             font-size: 15px;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(244, 180, 0, 0.2);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            box-shadow: 0 4px 14px rgba(216, 167, 53, 0.2);
         }
         .btn-gold:active {
             transform: scale(0.97);
-            opacity: 0.9;
+            opacity: 0.95;
         }
         
         .btn-secondary {
-            background-color: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: #ffffff;
-            font-weight: 600;
-            border-radius: 14px;
-            padding: 12px 24px;
+            font-weight: 700;
+            border-radius: 24px;
+            padding: 14px 28px;
             font-size: 15px;
             transition: all 0.2s ease;
+            text-align: center;
         }
         .btn-secondary:active {
             transform: scale(0.97);
-            background-color: rgba(255, 255, 255, 0.1);
         }
 
         /* Material Symbols Utilities */
         .material-symbols-rounded {
-            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
             display: inline-block;
             vertical-align: middle;
         }
         
         /* Tap feedback */
         .tap-target {
-            transition: transform 0.1s ease, opacity 0.1s ease;
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
         }
         .tap-target:active {
-            transform: scale(0.96);
-            opacity: 0.85;
+            transform: scale(0.95);
+            opacity: 0.8;
         }
 
         /* Floating Action Button */
         .fab-btn {
             position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 28px;
-            background: linear-gradient(135deg, var(--gold-color) 0%, #D99B00 100%);
-            color: #0F172A;
+            bottom: 78px;
+            right: 16px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #e5b842 0%, #c19224 100%);
+            color: #050505;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 6px 20px rgba(244, 180, 0, 0.35);
+            box-shadow: 0 6px 20px rgba(216, 167, 53, 0.35);
             z-index: 40;
             transition: all 0.2s ease;
         }
         .fab-btn:active {
             transform: scale(0.9);
         }
+
+        /* CSS Keyframe Animations for premium feel on mobile */
+        @keyframes slideUp {
+            from {
+                transform: translateY(12px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
     </style>
 </head>
-<body>
-    <!-- Premium Compact Top Header with responsive desktop menu navigation -->
-    <header class="fixed top-0 left-0 right-0 z-50 bg-[#0F172A]/85 backdrop-blur-md border-b border-white/[0.04] px-4 py-3 flex items-center justify-between" style="padding-top: calc(env(safe-area-inset-top, 0px) + 12px);">
-        <div class="max-w-6xl w-full mx-auto flex items-center justify-between">
-            <a href="index.php" class="flex items-center space-x-2.5">
-                <img src="assets/images/karigor-icon.png" alt="Dasgold Logo" class="w-8 h-8 rounded-lg object-cover border border-[#F4B400]/25">
-                <span class="font-bold text-base tracking-tight text-white">Dasgold</span>
-            </a>
+<body class="animate-fade-in">
+    <!-- Live Rate Top Bar (Replicated from screenshot) -->
+    <div class="fixed top-0 left-0 right-0 z-50 bg-[#050505] border-b border-white/[0.05] h-10 px-3 flex items-center justify-between text-[10px] font-bold text-[#d8a735]" style="padding-top: env(safe-area-inset-top, 0px);">
+        <div class="flex items-center space-x-3.5">
+            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">diamond</span> 24K ₹12,565 <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
+            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">diamond</span> 22K ₹11,510 <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
+            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">circle</span> AG ₹179 <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
+        </div>
+        <button onclick="window.location.reload()" class="flex items-center justify-center text-slate-400 hover:text-[#d8a735] transition-colors">
+            <span class="material-symbols-rounded text-sm">refresh</span>
+        </button>
+    </div>
 
-            <!-- Laptop/Desktop Navigation Links (Shown only on larger screens) -->
-            <div class="hidden md:flex items-center space-x-6 text-sm font-medium">
-                <?php 
-                $currHeader = basename($_SERVER['PHP_SELF']); 
-                ?>
-                <a href="index.php" class="transition-colors flex items-center space-x-1.5 <?= $currHeader == 'index.php' ? 'text-[#F4B400]' : 'text-slate-300 hover:text-[#F4B400]' ?>">
-                    <span class="material-symbols-rounded text-lg">grid_view</span> <span>Home</span>
-                </a>
-                <a href="baparis.php" class="transition-colors flex items-center space-x-1.5 <?= $currHeader == 'baparis.php' ? 'text-[#F4B400]' : 'text-slate-300 hover:text-[#F4B400]' ?>">
-                    <span class="material-symbols-rounded text-lg">group</span> <span>Customers</span>
-                </a>
-                <a href="deposits.php" class="transition-colors flex items-center space-x-1.5 <?= $currHeader == 'deposits.php' ? 'text-[#F4B400]' : 'text-slate-300 hover:text-[#F4B400]' ?>">
-                    <span class="material-symbols-rounded text-lg">arrow_downward</span> <span>Gold Jama</span>
-                </a>
-                <a href="kaj.php" class="transition-colors flex items-center space-x-1.5 <?= $currHeader == 'kaj.php' ? 'text-[#F4B400]' : 'text-slate-300 hover:text-[#F4B400]' ?>">
-                    <span class="material-symbols-rounded text-lg">construction</span> <span>Jobs</span>
-                </a>
-                <a href="reports.php" class="transition-colors flex items-center space-x-1.5 <?= $currHeader == 'reports.php' ? 'text-[#F4B400]' : 'text-slate-300 hover:text-[#F4B400]' ?>">
-                    <span class="material-symbols-rounded text-lg">analytics</span> <span>Reports</span>
-                </a>
-            </div>
+    <!-- Main Header Bar (Desktop Only - Hidden on Mobile Views to match screenshots) -->
+    <header class="hidden md:flex fixed top-10 left-0 right-0 z-40 bg-[#0A0A0A]/95 backdrop-blur-md border-b border-white/[0.04] h-16 px-4 flex items-center justify-between">
+        <!-- Logo and Brand Title -->
+        <a href="index.php" class="flex items-center space-x-2.5">
+            <img src="assets/images/karigor-icon.png" alt="Dasgold Logo" class="w-9 h-9 rounded-xl object-cover border border-[#d8a735]/30 shadow-md">
+            <span class="text-lg font-extrabold text-white tracking-tight">Dasgold</span>
+        </a>
+
+        <!-- Desktop Horizontal Navigation (Menu & Submenus) -->
+        <nav class="flex items-center space-x-6 text-xs font-bold text-slate-400">
+            <a href="index.php" class="hover:text-[#d8a735] transition-colors py-2">Dashboard</a>
             
-            <div class="flex items-center space-x-3.5 text-white/80">
-                <button class="tap-target flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.04]" title="Notifications">
-                    <span class="material-symbols-rounded text-xl text-desc">notifications</span>
+            <!-- Customers Menu with Dropdown -->
+            <div class="relative group">
+                <button class="hover:text-[#d8a735] transition-colors py-2 flex items-center space-x-1 focus:outline-none">
+                    <span>Bapari</span>
+                    <span class="material-symbols-rounded text-sm">keyboard_arrow_down</span>
                 </button>
-                <a href="logout.php" class="tap-target flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.04] text-rose-400" title="Logout">
-                    <span class="material-symbols-rounded text-xl">power_settings_new</span>
-                </a>
+                <div class="absolute left-0 mt-1 w-44 rounded-xl bg-[#121212] border border-white/[0.06] p-1.5 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <a href="baparis.php" class="block px-3.5 py-2 rounded-lg hover:bg-white/[0.03] hover:text-[#d8a735]">Bapari List</a>
+                    <a href="baparis.php?action=new" class="block px-3.5 py-2 rounded-lg hover:bg-white/[0.03] hover:text-[#d8a735]">Add Bapari</a>
+                </div>
             </div>
+
+            <!-- Entry Menu with Dropdown -->
+            <div class="relative group">
+                <button class="hover:text-[#d8a735] transition-colors py-2 flex items-center space-x-1 focus:outline-none">
+                    <span>Entry</span>
+                    <span class="material-symbols-rounded text-sm">keyboard_arrow_down</span>
+                </button>
+                <div class="absolute left-0 mt-1 w-44 rounded-xl bg-[#121212] border border-white/[0.06] p-1.5 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <a href="entry.php?tab=deposit" class="block px-3.5 py-2 rounded-lg hover:bg-white/[0.03] hover:text-[#d8a735]">Fine Deposit</a>
+                    <a href="entry.php?tab=kaj" class="block px-3.5 py-2 rounded-lg hover:bg-white/[0.03] hover:text-[#d8a735]">Kaj Entry</a>
+                </div>
+            </div>
+
+            <a href="reports.php" class="hover:text-[#d8a735] transition-colors py-2">Ledger Reports</a>
+            <?php if ($isAdmin): ?>
+                <a href="admin.php" class="hover:text-[#d8a735] transition-colors py-2 text-[#d8a735] flex items-center space-x-0.5"><span class="material-symbols-rounded text-xs">shield</span> <span>Admin</span></a>
+            <?php endif; ?>
+            <a href="settings.php" class="hover:text-[#d8a735] transition-colors py-2">Settings</a>
+        </nav>
+
+        <!-- Right Side Icons (Notification & Logout) -->
+        <div class="flex items-center space-x-3.5">
+            <button class="w-9 h-9 rounded-xl bg-slate-900/60 border border-white/[0.04] flex items-center justify-center text-slate-400 hover:text-[#d8a735] transition-colors tap-target relative">
+                <span class="material-symbols-rounded text-xl">notifications</span>
+                <span class="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></span>
+            </button>
+            <a href="logout.php" class="w-9 h-9 rounded-xl bg-slate-900/60 border border-white/[0.04] flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors tap-target">
+                <span class="material-symbols-rounded text-xl">power_settings_new</span>
+            </a>
         </div>
     </header>
+
+    <?php if (isset($_SESSION['impersonator_id'])): ?>
+        <div class="fixed top-10 left-0 right-0 z-30 bg-amber-500 text-slate-950 px-4 py-2 text-center text-xs font-bold flex items-center justify-center space-x-2 shadow-md" style="padding-top: env(safe-area-inset-top, 0px);">
+            <span>⚠️ Viewing: <strong><?= htmlspecialchars($_SESSION['user_name']) ?></strong></span>
+            <a href="admin.php?stop_impersonating=1" class="underline hover:text-slate-800 ml-2 font-extrabold flex items-center"><span class="material-symbols-rounded text-xs mr-0.5">logout</span> Return to Admin</a>
+        </div>
+        <!-- Adjust body top padding when banner is active -->
+        <style>
+            body {
+                padding-top: calc(env(safe-area-inset-top, 0px) + 92px) !important;
+            }
+            @media (min-width: 768px) {
+                body {
+                    padding-top: calc(env(safe-area-inset-top, 0px) + 148px) !important;
+                }
+            }
+        </style>
+    <?php endif; ?>
     
-    <div class="max-w-6xl mx-auto px-4 py-2">
+    <div class="max-w-6xl mx-auto px-4 pt-4 animate-slide-up">

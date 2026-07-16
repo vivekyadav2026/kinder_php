@@ -1,251 +1,153 @@
 <?php
 require_once 'db.php';
 
-// Get filters
-$filterBapari = intval($_GET['bapari_id'] ?? 0);
-$filterMonth = $_GET['month'] ?? '';
-$filterYear = $_GET['year'] ?? '';
+// Handle CSV export request
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    $bapariId = intval($_GET['bapari_id'] ?? 0);
+    $from = $_GET['from'] ?? '';
+    $to = $_GET['to'] ?? '';
 
-// Build query components for deposits
-$depQuery = "SELECT * FROM fine_deposits WHERE user_id = ?";
-$depParams = [$userId];
+    if ($bapariId > 0) {
+        // Fetch Bapari
+        $stmt = $pdo->prepare("SELECT name FROM baparis WHERE id = ? AND user_id = ?");
+        $stmt->execute([$bapariId, $userId]);
+        $bapari = $stmt->fetch();
+        $filename = ($bapari ? str_replace(' ', '_', $bapari['name']) : 'Bapari') . "_Statement_" . date('Ymd') . ".csv";
 
-if ($filterBapari > 0) {
-    $depQuery .= " AND bapari_id = ?";
-    $depParams[] = $filterBapari;
-}
-if ($filterYear) {
-    $depQuery .= " AND YEAR(date) = ?";
-    $depParams[] = $filterYear;
-}
-if ($filterMonth) {
-    $depQuery .= " AND MONTH(date) = ?";
-    $depParams[] = $filterMonth;
-}
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
 
-$stmt = $pdo->prepare($depQuery);
-$stmt->execute($depParams);
-$deposits = $stmt->fetchAll();
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['Date', 'Type', 'Gold Weight (g)', 'Purity (%)', 'Jama/Kaj Fine (g)', 'Cash Amount (Rs)', 'Remark']);
 
-// Build query components for kaj entries
-$kajQuery = "SELECT * FROM kaj_entries WHERE user_id = ?";
-$kajParams = [$userId];
+        // Fetch Deposits
+        $depQuery = "SELECT date, 'Gold Jama' as type, fine_weight, purity, jama_fine as fine, cash_received as cash, remark FROM fine_deposits WHERE bapari_id = ? AND user_id = ?";
+        $params = [$bapariId, $userId];
+        if ($from) { $depQuery .= " AND date >= ?"; $params[] = $from; }
+        if ($to) { $depQuery .= " AND date <= ?"; $params[] = $to; }
+        $stmt = $pdo->prepare($depQuery);
+        $stmt->execute($params);
+        $deposits = $stmt->fetchAll();
 
-if ($filterBapari > 0) {
-    $kajQuery .= " AND bapari_id = ?";
-    $kajParams[] = $filterBapari;
-}
-if ($filterYear) {
-    $kajQuery .= " AND YEAR(date) = ?";
-    $kajParams[] = $filterYear;
-}
-if ($filterMonth) {
-    $kajQuery .= " AND MONTH(date) = ?";
-    $kajParams[] = $filterMonth;
-}
+        // Fetch Kaj Entries
+        $kajQuery = "SELECT date, 'Kaarigari Job' as type, 0.0 as fine_weight, 0.0 as purity, total_kaj_fine as fine, cash_bill as cash, remark FROM kaj_entries WHERE bapari_id = ? AND user_id = ?";
+        $paramsK = [$bapariId, $userId];
+        if ($from) { $kajQuery .= " AND date >= ?"; $paramsK[] = $from; }
+        if ($to) { $kajQuery .= " AND date <= ?"; $paramsK[] = $to; }
+        $stmt = $pdo->prepare($kajQuery);
+        $stmt->execute($paramsK);
+        $kajs = $stmt->fetchAll();
 
-$stmt = $pdo->prepare($kajQuery);
-$stmt->execute($kajParams);
-$kajEntries = $stmt->fetchAll();
+        $entries = array_merge($deposits, $kajs);
+        usort($entries, function($a, $b) { return strcmp($a['date'], $b['date']); });
 
-// Process aggregates
-$totalJama = 0.0;
-$totalRec = 0.0;
-foreach ($deposits as $d) {
-    $totalJama += floatval($d['jama_fine']);
-    $totalRec += floatval($d['cash_received']);
-}
-
-$totalKajFine = 0.0;
-$totalProfitFine = 0.0;
-$totalBill = 0.0;
-
-foreach ($kajEntries as $k) {
-    $totalKajFine += floatval($k['total_kaj_fine']);
-    $totalProfitFine += floatval($k['total_profit_fine']);
-    $totalBill += floatval($k['cash_bill']);
+        foreach ($entries as $e) {
+            fputcsv($output, [
+                $e['date'],
+                $e['type'],
+                $e['fine_weight'] > 0 ? $e['fine_weight'] : '--',
+                $e['purity'] > 0 ? $e['purity'] . '%' : '--',
+                $e['fine'],
+                $e['cash'] > 0 ? $e['cash'] : '--',
+                $e['remark']
+            ]);
+        }
+        fclose($output);
+        exit();
+    }
 }
 
-$fineBal = round($totalJama - $totalKajFine, 3);
-$cashBal = round($totalRec - $totalBill, 2);
-
-// Fetch Baparis for filter dropdown
+// Fetch baparis for selector
 $stmt = $pdo->prepare("SELECT id, name FROM baparis WHERE user_id = ? ORDER BY name ASC");
 $stmt->execute([$userId]);
-$baparisList = $stmt->fetchAll();
+$baparis = $stmt->fetchAll();
 
 require_once 'header.php';
 ?>
 
-<style>
-    @media print {
-        body {
-            background: white !important;
-            color: black !important;
-            padding: 10px !important;
-        }
-        header, footer, .fab-btn, .btn-gold, .btn-secondary, .tap-target, .no-print {
-            display: none !important;
-        }
-        .premium-card {
-            background: transparent !important;
-            border: 1px solid #cbd5e1 !important;
-            box-shadow: none !important;
-            color: black !important;
-            margin-bottom: 12px !important;
-        }
-        .text-white {
-            color: black !important;
-        }
-        .text-slate-400, .text-slate-500, .text-desc {
-            color: #475569 !important;
-        }
-    }
-</style>
-
-<!-- Title -->
-<div class="mb-6 mt-2">
-    <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center">
-        <span class="material-symbols-rounded text-[#F4B400] mr-2 text-3xl">analytics</span> Reports
+<!-- Title (Matching Image 1) -->
+<div class="mb-5 mt-2">
+    <h1 class="text-3xl font-extrabold tracking-tight text-[#d8a735]">
+        Ledger
     </h1>
-    <p class="text-slate-400 text-xs mt-1">Generate dynamic statements, check margins, and track transactions.</p>
 </div>
 
-<!-- Rebrand watermark header on Print View -->
-<div class="hidden print:block mb-6 border-b pb-3">
-    <h1 class="text-2xl font-bold text-slate-900">Dasgold Aggregate Business Summary Report</h1>
-    <p class="text-xs text-slate-600 mt-1">Generated on: <?= date('d-M-Y H:i') ?></p>
-</div>
+<form id="ledgerForm" method="GET" action="ledger.php" class="space-y-6">
+    <!-- Select Bapari Dropdown -->
+    <div class="relative">
+        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+            <span class="material-symbols-rounded text-lg">person</span>
+        </span>
+        <select name="bapari_id" id="bapariId" required class="premium-input pl-10 text-sm appearance-none">
+            <option value="">Select Bapari</option>
+            <?php foreach ($baparis as $b): ?>
+                <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500">
+            <span class="material-symbols-rounded text-lg">keyboard_arrow_down</span>
+        </span>
+    </div>
 
-<!-- Filters Card -->
-<div class="premium-card mb-6 no-print">
-    <form method="GET" class="space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-                <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Customer Filter</label>
-                <select name="bapari_id" class="premium-input text-xs">
-                    <option value="">All Customers</option>
-                    <?php foreach ($baparisList as $b): ?>
-                        <option value="<?= $b['id'] ?>" <?= $filterBapari == $b['id'] ? 'selected' : '' ?>><?= htmlspecialchars($b['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            
-            <div>
-                <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Month</label>
-                <select name="month" class="premium-input text-xs">
-                    <option value="">All Months</option>
-                    <?php for ($m = 1; $m <= 12; $m++): ?>
-                        <option value="<?= $m ?>" <?= $filterMonth == $m ? 'selected' : '' ?>><?= date('F', mktime(0, 0, 0, $m, 1)) ?></option>
-                    <?php endfor; ?>
-                </select>
-            </div>
-            
-            <div>
-                <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Year</label>
-                <select name="year" class="premium-input text-xs">
-                    <option value="">All Years</option>
-                    <?php 
-                    $currentYear = intval(date('Y'));
-                    for ($y = $currentYear; $y >= $currentYear - 5; $y--): ?>
-                        <option value="<?= $y ?>" <?= $filterYear == $y ? 'selected' : '' ?>><?= $y ?></option>
-                    <?php endfor; ?>
-                </select>
-            </div>
+    <!-- From and To Date Pickers Side by Side -->
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">From</label>
+            <input type="date" name="from" id="fromDate" class="premium-input text-sm">
         </div>
+        <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">To</label>
+            <input type="date" name="to" id="toDate" class="premium-input text-sm">
+        </div>
+    </div>
+
+    <!-- Action Buttons Row (PDF and CSV) -->
+    <div class="grid grid-cols-2 gap-4 pt-2">
+        <button type="button" onclick="generatePDF()" class="w-full py-3.5 rounded-xl border border-[#d8a735]/40 bg-transparent text-sm font-semibold text-[#d8a735] hover:bg-[#d8a735]/5 flex items-center justify-center space-x-1.5 tap-target">
+            <span class="material-symbols-rounded text-lg">description</span>
+            <span>PDF</span>
+        </button>
         
-        <div class="flex items-center justify-end space-x-2 pt-2">
-            <a href="reports.php" class="btn-secondary text-xs px-4 py-2 flex items-center justify-center"><span class="material-symbols-rounded text-sm mr-1">restart_alt</span> Reset</a>
-            <button type="submit" class="btn-gold text-xs px-4 py-2 flex items-center justify-center"><span class="material-symbols-rounded text-sm mr-1">filter_list</span> Apply Filter</button>
-        </div>
-    </form>
-</div>
-
-<!-- Print & Share Actions -->
-<div class="grid grid-cols-2 gap-3 mb-6 no-print">
-    <button onclick="window.print()" class="btn-secondary text-xs py-3 flex items-center justify-center space-x-1.5 tap-target">
-        <span class="material-symbols-rounded text-base">print</span>
-        <span>Download PDF / Print</span>
-    </button>
-    <button onclick="shareReportText()" class="btn-gold text-xs py-3 flex items-center justify-center space-x-1.5 tap-target">
-        <span class="material-symbols-rounded text-base">share</span>
-        <span>Share WhatsApp</span>
-    </button>
-</div>
-
-<!-- Aggregated Metrics Grid -->
-<div class="grid grid-cols-2 gap-4 mb-6">
-    <div class="premium-card">
-        <span class="text-desc font-semibold uppercase text-[9px] block mb-1">Total Gold Jama</span>
-        <div class="text-lg font-bold text-emerald-400 font-mono"><?= number_format($totalJama, 3) ?> g</div>
+        <button type="button" onclick="generateCSV()" class="w-full py-3.5 rounded-xl border border-[#d8a735]/40 bg-transparent text-sm font-semibold text-[#d8a735] hover:bg-[#d8a735]/5 flex items-center justify-center space-x-1.5 tap-target">
+            <span class="material-symbols-rounded text-lg">grid_view</span>
+            <span>CSV</span>
+        </button>
     </div>
-    
-    <div class="premium-card">
-        <span class="text-desc font-semibold uppercase text-[9px] block mb-1">Total Gold Billed</span>
-        <div class="text-lg font-bold text-rose-400 font-mono">-<?= number_format($totalKajFine, 3) ?> g</div>
-    </div>
-    
-    <div class="premium-card">
-        <span class="text-desc font-semibold uppercase text-[9px] block mb-1">Total Profit Gold</span>
-        <div class="text-lg font-bold text-pink-400 font-mono"><?= number_format($totalProfitFine, 3) ?> g</div>
-    </div>
-    
-    <div class="premium-card">
-        <span class="text-desc font-semibold uppercase text-[9px] block mb-1">Total Cash Received</span>
-        <div class="text-lg font-bold text-blue-400 font-mono">₹<?= number_format($totalRec, 2) ?></div>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-    <!-- Fine Balance -->
-    <div class="premium-card">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Net Gold Balance</h3>
-        <div class="text-2xl font-bold font-mono <?= $fineBal >= 0 ? 'text-emerald-400' : 'text-rose-400' ?>">
-            <?= number_format($fineBal, 3) ?> g
-        </div>
-        
-        <!-- Premium Visual Progress Indicator -->
-        <div class="w-full bg-slate-900 rounded-full h-1.5 mt-4 overflow-hidden print:hidden">
-            <?php 
-            $maxGold = max(1, $totalJama + $totalKajFine);
-            $percentage = min(100, round(($totalJama / $maxGold) * 100));
-            ?>
-            <div class="bg-gradient-to-r from-amber-500 to-[#F4B400] h-1.5 rounded-full" style="width: <?= $percentage ?>%;"></div>
-        </div>
-        <p class="text-[9px] text-slate-500 mt-2">Active Gold flow ratio: <?= $percentage ?>% credited</p>
-    </div>
-    
-    <!-- Cash Balance -->
-    <div class="premium-card">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Net Cash Balance</h3>
-        <div class="text-2xl font-bold font-mono <?= $cashBal >= 0 ? 'text-blue-400' : 'text-rose-400' ?>">
-            ₹<?= number_format($cashBal, 2) ?>
-        </div>
-        
-        <!-- Premium Visual Progress Indicator -->
-        <div class="w-full bg-slate-900 rounded-full h-1.5 mt-4 overflow-hidden print:hidden">
-            <?php 
-            $maxCash = max(1, $totalRec + $totalBill);
-            $cashPercentage = min(100, round(($totalRec / $maxCash) * 100));
-            ?>
-            <div class="bg-gradient-to-r from-blue-500 to-[#6366F1] h-1.5 rounded-full" style="width: <?= $cashPercentage ?>%;"></div>
-        </div>
-        <p class="text-[9px] text-slate-500 mt-2">Active Cash collection ratio: <?= $cashPercentage ?>% settled</p>
-    </div>
-</div>
+</form>
 
 <script>
-    function shareReportText() {
-        let text = "*Dasgold Summary Business Report*\n";
-        text += "*Total Gold Jama:* <?= number_format($totalJama, 3) ?> g\n";
-        text += "*Total Gold Billed:* -<?= number_format($totalKajFine, 3) ?> g\n";
-        text += "*Total Profit Gold:* <?= number_format($totalProfitFine, 3) ?> g\n";
-        text += "*Net Cash Collected:* ₹<?= number_format($totalRec, 2) ?>\n\n";
-        text += "*Net Gold Balance:* <?= number_format($fineBal, 3) ?> g\n";
-        text += "*Net Cash Balance:* ₹<?= number_format($cashBal, 2) ?>\n";
+    function generatePDF() {
+        const bapariId = document.getElementById('bapariId').value;
+        if (!bapariId) {
+            alert('Please select a Bapari first!');
+            return;
+        }
+        const from = document.getElementById('fromDate').value;
+        const to = document.getElementById('toDate').value;
+        let url = `ledger.php?bapari_id=${bapariId}`;
+        if (from) url += `&from=${from}`;
+        if (to) url += `&to=${to}`;
+        url += `&print=1`;
         
-        const encodedText = encodeURIComponent(text);
-        window.open("https://api.whatsapp.com/send?text=" + encodedText, "_blank");
+        // Open PDF Print view
+        const w = window.open(url, '_blank');
+        w.focus();
+    }
+
+    function generateCSV() {
+        const bapariId = document.getElementById('bapariId').value;
+        if (!bapariId) {
+            alert('Please select a Bapari first!');
+            return;
+        }
+        const from = document.getElementById('fromDate').value;
+        const to = document.getElementById('toDate').value;
+        let url = `reports.php?export=csv&bapari_id=${bapariId}`;
+        if (from) url += `&from=${from}`;
+        if (to) url += `&to=${to}`;
+        
+        // Trigger file download
+        window.location.href = url;
     }
 </script>
 

@@ -7,7 +7,8 @@ const ASSETS_TO_CACHE = [
   './offline.php',
   './assets/images/karigor-icon.png',
   './assets/images/icon.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+  'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap',
+  'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200'
 ];
 
 // Install Service Worker and cache essential assets
