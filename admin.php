@@ -129,6 +129,28 @@ require_once 'header.php';
     <p class="text-slate-500 text-xs mt-1">All users overview</p>
 </div>
 
+<?php
+$appUrl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . (($_SERVER['HTTP_HOST'] ?? 'localhost') === 'localhost' || ($_SERVER['HTTP_HOST'] ?? 'localhost') === '127.0.0.1' ? '/kinder_php/' : '/');
+?>
+<!-- App Share & Download Link Card -->
+<div class="premium-card bg-[#d8a735]/10 border-[#d8a735]/20 p-4 mb-6 no-print">
+    <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block mb-1">Share App Link</span>
+    <p class="text-slate-400 text-[10px] mb-3">Copy or share the app install link with users or baparis.</p>
+    
+    <div class="flex items-center space-x-2">
+        <input type="text" id="appLinkInput" readonly value="<?= htmlspecialchars($appUrl) ?>" class="premium-input text-xs font-mono bg-slate-950 border-white/[0.04] text-slate-300 flex-1 py-2 px-3 select-all">
+        
+        <button onclick="copyAppLink()" class="px-3.5 py-2.5 rounded-xl bg-[#d8a735] hover:bg-[#d8a735]/90 text-slate-950 font-bold text-xs flex items-center space-x-1.5 shrink-0 transition-all tap-target">
+            <span class="material-symbols-rounded text-sm">content_copy</span>
+            <span id="copyBtnText">Copy</span>
+        </button>
+        
+        <button onclick="shareAppLinkWhatsApp()" class="w-10 h-10 rounded-xl bg-emerald-600/15 border border-emerald-500/25 hover:bg-emerald-600/25 text-emerald-400 flex items-center justify-center shrink-0 transition-all tap-target">
+            <span class="material-symbols-rounded text-lg">share</span>
+        </button>
+    </div>
+</div>
+
 <!-- Aggregates Dashboard Panel ACROSS ALL USERS -->
 <div class="mb-6">
     <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block mb-3">Across All <?= count($usersList) ?> Users</span>
@@ -280,6 +302,23 @@ require_once 'header.php';
                 card.style.display = 'none';
             }
         });
+    }
+
+    function copyAppLink() {
+        const copyText = document.getElementById("appLinkInput");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        
+        const btn = document.getElementById("copyBtnText");
+        btn.innerText = "Copied!";
+        setTimeout(() => { btn.innerText = "Copy"; }, 2000);
+    }
+
+    function shareAppLinkWhatsApp() {
+        const link = document.getElementById("appLinkInput").value;
+        const text = "*Dasgold Ledger App*\nClick the link below to download or access the app:\n" + link;
+        window.open("https://api.whatsapp.com/send?text=" + encodeURIComponent(text), "_blank");
     }
 </script>
 

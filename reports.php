@@ -102,16 +102,23 @@ require_once 'header.php';
     </div>
 
     <!-- Action Buttons Row (PDF and CSV) -->
-    <div class="grid grid-cols-2 gap-4 pt-2">
-        <button type="button" onclick="generatePDF()" class="w-full py-3.5 rounded-xl border border-[#d8a735]/40 bg-transparent text-sm font-semibold text-[#d8a735] hover:bg-[#d8a735]/5 flex items-center justify-center space-x-1.5 tap-target">
-            <span class="material-symbols-rounded text-lg">description</span>
-            <span>PDF</span>
+    <div class="space-y-3 pt-2">
+        <button type="submit" class="w-full py-4 rounded-xl bg-[#d8a735] hover:bg-[#d8a735]/90 text-sm font-bold text-slate-950 flex items-center justify-center space-x-1.5 shadow-lg shadow-[#d8a735]/10 tap-target">
+            <span class="material-symbols-rounded text-lg">visibility</span>
+            <span>View Ledger Statement</span>
         </button>
-        
-        <button type="button" onclick="generateCSV()" class="w-full py-3.5 rounded-xl border border-[#d8a735]/40 bg-transparent text-sm font-semibold text-[#d8a735] hover:bg-[#d8a735]/5 flex items-center justify-center space-x-1.5 tap-target">
-            <span class="material-symbols-rounded text-lg">grid_view</span>
-            <span>CSV</span>
-        </button>
+
+        <div class="grid grid-cols-2 gap-4">
+            <button type="button" onclick="generatePDF()" class="w-full py-3.5 rounded-xl border border-[#d8a735]/40 bg-transparent text-sm font-semibold text-[#d8a735] hover:bg-[#d8a735]/5 flex items-center justify-center space-x-1.5 tap-target">
+                <span class="material-symbols-rounded text-lg">description</span>
+                <span>PDF Print</span>
+            </button>
+            
+            <button type="button" onclick="generateCSV()" class="w-full py-3.5 rounded-xl border border-[#d8a735]/40 bg-transparent text-sm font-semibold text-[#d8a735] hover:bg-[#d8a735]/5 flex items-center justify-center space-x-1.5 tap-target">
+                <span class="material-symbols-rounded text-lg">grid_view</span>
+                <span>CSV Export</span>
+            </button>
+        </div>
     </div>
 </form>
 
