@@ -87,6 +87,22 @@ try {
     ");
 } catch (Exception $e) {}
 
+try {
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `company_name` VARCHAR(255) DEFAULT NULL");
+} catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `company_mobile` VARCHAR(100) DEFAULT NULL");
+} catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `company_address` TEXT DEFAULT NULL");
+} catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `company_gst` VARCHAR(100) DEFAULT NULL");
+} catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `company_logo` VARCHAR(255) DEFAULT NULL");
+} catch (Exception $e) {}
+
 // Auto-seed admin access and reset password to password123
 try {
     $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
@@ -129,11 +145,17 @@ if (!isset($_SESSION['user_id']) && !in_array($current_page, $public_pages)) {
 }
 
 $userId = $_SESSION['user_id'] ?? null;
+$currentUser = null;
 
 // Expose global Admin check flag
 $isAdmin = false;
 $isReadOnly = false;
 if ($userId) {
+    // Fetch active user details (including company profile parameters)
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+    $currentUser = $stmt->fetch();
+
     $checkId = $_SESSION['impersonator_id'] ?? $userId;
     $stmt = $pdo->prepare("SELECT is_admin FROM users WHERE id = ?");
     $stmt->execute([$checkId]);

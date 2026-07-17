@@ -26,18 +26,43 @@ if (isset($_GET['backup']) && $_GET['backup'] === 'json') {
     exit();
 }
 
-// Handle Save Company Profile Details (Mockup for GST/Company parameters)
+// Handle Save Company Profile Details
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_company'])) {
     $companyName = trim($_POST['company_name'] ?? '');
     $companyMobile = trim($_POST['company_mobile'] ?? '');
     $companyAddress = trim($_POST['company_address'] ?? '');
     $companyGst = trim($_POST['company_gst'] ?? '');
     
-    // Store in Session or user metadata (mockup settings persistence)
-    $_SESSION['company_name'] = $companyName;
-    $_SESSION['company_mobile'] = $companyMobile;
-    $_SESSION['company_address'] = $companyAddress;
-    $_SESSION['company_gst'] = $companyGst;
+    $logoPath = $currentUser['company_logo'] ?? NULL;
+    
+    // Handle Logo File Upload
+    if (isset($_FILES['company_logo']) && $_FILES['company_logo']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['company_logo']['tmp_name'];
+        $fileName = $_FILES['company_logo']['name'];
+        $fileType = $_FILES['company_logo']['type'];
+        
+        // Verify file is an image
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+        if (in_array($fileType, $allowedTypes)) {
+            $uploadDir = __DIR__ . '/assets/uploads/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $destPath = $uploadDir . 'logo_user_' . $userId . '.png';
+            if (move_uploaded_file($fileTmpPath, $destPath)) {
+                $logoPath = 'assets/uploads/logo_user_' . $userId . '.png';
+            }
+        }
+    }
+    
+    // Update details in DB
+    $stmt = $pdo->prepare("UPDATE users SET company_name = ?, company_mobile = ?, company_address = ?, company_gst = ?, company_logo = ? WHERE id = ?");
+    $stmt->execute([$companyName, $companyMobile, $companyAddress, $companyGst, $logoPath, $userId]);
+    
+    // Refresh $currentUser local variable
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+    $currentUser = $stmt->fetch();
     
     $success = 'Company details updated successfully!';
 }
@@ -183,32 +208,43 @@ require_once 'header.php';
 <div class="mb-6">
     <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block mb-3">Company Profile</span>
     <div class="premium-card bg-[#121212]/80">
-        <form method="POST" class="space-y-4">
+        <form method="POST" enctype="multipart/form-data" class="space-y-4">
             <div class="flex items-center space-x-4 mb-2">
-                <div class="w-14 h-14 rounded-xl border border-dashed border-slate-700 bg-slate-950 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:border-[#d8a735]/40 hover:text-slate-300 transition-colors">
-                    <span class="material-symbols-rounded text-lg">photo_camera</span>
-                    <span class="text-[8px] font-bold mt-1 uppercase">Logo</span>
+                <!-- Clickable Image Container -->
+                <div onclick="document.getElementById('logoFileInput').click()" class="w-14 h-14 rounded-xl border border-dashed border-slate-700 bg-slate-950 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:border-[#d8a735]/40 hover:text-slate-300 transition-colors overflow-hidden relative shrink-0">
+                    <?php if (!empty($currentUser['company_logo']) && file_exists(__DIR__ . '/' . $currentUser['company_logo'])): ?>
+                        <img id="logoPreviewImage" src="<?= htmlspecialchars($currentUser['company_logo']) ?>?v=<?= time() ?>" alt="Logo" class="w-full h-full object-cover">
+                    <?php else: ?>
+                        <span id="logoCameraIcon" class="material-symbols-rounded text-lg">photo_camera</span>
+                        <span id="logoTextLabel" class="text-[8px] font-bold mt-1 uppercase">Logo</span>
+                    <?php endif; ?>
+                    <!-- JS preview overlay -->
+                    <img id="logoJsPreview" class="absolute inset-0 w-full h-full object-cover hidden">
                 </div>
+                
+                <input type="file" name="company_logo" id="logoFileInput" accept="image/*" class="hidden" onchange="previewLogo(event)">
+                
                 <div class="text-[10px] text-slate-500">Upload your gold shop logo to display on statements.</div>
             </div>
             
             <div>
-                <input type="text" name="company_name" value="<?= htmlspecialchars($_SESSION['company_name'] ?? '') ?>" class="premium-input text-xs" placeholder="Company Name">
+                <input type="text" name="company_name" value="<?= htmlspecialchars($currentUser['company_name'] ?? '') ?>" class="premium-input text-xs" placeholder="Company Name">
             </div>
             <div>
-                <input type="text" name="company_mobile" value="<?= htmlspecialchars($_SESSION['company_mobile'] ?? '') ?>" class="premium-input text-xs" placeholder="Mobile">
+                <input type="text" name="company_mobile" value="<?= htmlspecialchars($currentUser['company_mobile'] ?? '') ?>" class="premium-input text-xs" placeholder="Mobile">
             </div>
             <div>
-                <input type="text" name="company_address" value="<?= htmlspecialchars($_SESSION['company_address'] ?? '') ?>" class="premium-input text-xs" placeholder="Address">
+                <input type="text" name="company_address" value="<?= htmlspecialchars($currentUser['company_address'] ?? '') ?>" class="premium-input text-xs" placeholder="Address">
             </div>
             <div>
-                <input type="text" name="company_gst" value="<?= htmlspecialchars($_SESSION['company_gst'] ?? '') ?>" class="premium-input text-xs" placeholder="GST Number">
+                <input type="text" name="company_gst" value="<?= htmlspecialchars($currentUser['company_gst'] ?? '') ?>" class="premium-input text-xs" placeholder="GST Number">
             </div>
             
             <button type="submit" name="save_company" class="w-full btn-gold text-xs font-bold py-3.5 tracking-wide mt-2">
                 Save Company
             </button>
         </form>
+    </div>
 </div>
 
 <!-- PRECIOUS METAL RATES CONFIG Section -->
@@ -346,6 +382,26 @@ require_once 'header.php';
     function selectMonthPill(monthVal) {
         document.getElementById('filterMonthInput').value = monthVal;
         document.getElementById('reportFilterForm').submit();
+    }
+
+    function previewLogo(event) {
+        if (event.target.files && event.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const preview = document.getElementById('logoJsPreview');
+                preview.src = reader.result;
+                preview.classList.remove('hidden');
+                
+                // Hide fallback elements
+                const cam = document.getElementById('logoCameraIcon');
+                const lbl = document.getElementById('logoTextLabel');
+                const img = document.getElementById('logoPreviewImage');
+                if (cam) cam.classList.add('hidden');
+                if (lbl) lbl.classList.add('hidden');
+                if (img) img.classList.add('hidden');
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        }
     }
 </script>
 

@@ -334,13 +334,46 @@ if ($isPrintMode) {
         </style>
     </head>
     <body onload="window.print()">
-        <div class="title-block">Account Detail</div>
-        <div class="header-info"><?= htmlspecialchars($bapari['name']) ?></div>
-        <?php if ($from || $to): ?>
-            <div style="font-size:11px; margin-bottom: 10px;">
-                Period: <strong><?= $from ? date('d/m/Y', strtotime($from)) : 'Start' ?></strong> to <strong><?= $to ? date('d/m/Y', strtotime($to)) : 'Today' ?></strong>
+        <!-- Company Header Block for Printed Statements -->
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 15px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <?php if (!empty($currentUser['company_logo']) && file_exists(__DIR__ . '/' . $currentUser['company_logo'])): ?>
+                    <img src="<?= htmlspecialchars($currentUser['company_logo']) ?>" style="max-height: 55px; max-width: 120px; object-fit: contain;">
+                <?php endif; ?>
+                <div>
+                    <div style="font-size: 16px; font-weight: bold; text-transform: uppercase;"><?= htmlspecialchars($currentUser['company_name'] ?: 'Dasgold') ?></div>
+                    <div style="font-size: 10px; color: #555; margin-top: 2px;">
+                        <?= htmlspecialchars($currentUser['company_address'] ?: '') ?>
+                    </div>
+                </div>
             </div>
-        <?php endif; ?>
+            <div style="text-align: right; font-size: 10px; color: #333; line-height: 1.4;">
+                <?php if (!empty($currentUser['company_mobile'])): ?>
+                    <div><strong>Mobile:</strong> <?= htmlspecialchars($currentUser['company_mobile']) ?></div>
+                <?php endif; ?>
+                <?php if (!empty($currentUser['company_gst'])): ?>
+                    <div><strong>GSTIN:</strong> <?= htmlspecialchars($currentUser['company_gst']) ?></div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
+            <div>
+                <div style="font-size: 10px; color: #555; text-transform: uppercase; font-weight: bold;">Statement For:</div>
+                <div style="font-size: 14px; font-weight: bold; color: #000;"><?= htmlspecialchars($bapari['name']) ?></div>
+                <?php if ($bapari['mobile']): ?>
+                    <div style="font-size: 10px; color: #555; margin-top: 1px;">Mobile: <?= htmlspecialchars($bapari['mobile']) ?></div>
+                <?php endif; ?>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 12px; font-weight: bold;">LEDGER STATEMENT</div>
+                <?php if ($from || $to): ?>
+                    <div style="font-size: 10px; color: #555; margin-top: 1px;">
+                        Period: <strong><?= $from ? date('d/m/Y', strtotime($from)) : 'Start' ?></strong> to <strong><?= $to ? date('d/m/Y', strtotime($to)) : 'Today' ?></strong>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
         
         <table>
             <thead>
