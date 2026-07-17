@@ -197,9 +197,9 @@
     <!-- Live Rate Top Bar (Replicated from screenshot) -->
     <div class="fixed top-0 left-0 right-0 z-50 bg-[#050505] border-b border-white/[0.05] h-10 px-3 flex items-center justify-between text-[10px] font-bold text-[#d8a735]" style="padding-top: env(safe-area-inset-top, 0px);">
         <div class="flex items-center space-x-3.5">
-            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">diamond</span> 24K ₹12,565 <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
-            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">diamond</span> 22K ₹11,510 <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
-            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">circle</span> AG ₹179 <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
+            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">diamond</span> 24K ₹<?= number_format($rate24k, 0) ?> <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
+            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">diamond</span> 22K ₹<?= number_format($rate22k, 0) ?> <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
+            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">circle</span> AG ₹<?= number_format($rateAg, 0) ?> <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
         </div>
         <button onclick="window.location.reload()" class="flex items-center justify-center text-slate-400 hover:text-[#d8a735] transition-colors">
             <span class="material-symbols-rounded text-sm">refresh</span>

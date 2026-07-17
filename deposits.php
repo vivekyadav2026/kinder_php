@@ -16,7 +16,9 @@ function isSettled($pdo, $bapariId, $userId, $date) {
 
 // Handle POST submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['add_deposit'])) {
+    if ($isReadOnly) {
+        $error = 'View-Only Mode: Administrators cannot modify user data.';
+    } elseif (isset($_POST['add_deposit'])) {
         $date = $_POST['date'] ?? date('Y-m-d');
         $bapariIdInput = intval($_POST['bapari_id']);
         $fineWeight = floatval($_POST['fine_weight']);
@@ -85,6 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Handle Delete Deposit
 if (isset($_GET['delete'])) {
+    if ($isReadOnly) {
+        die("Access Denied: View-Only Mode is active.");
+    }
+    
     $id = intval($_GET['delete']);
     
     // Fetch transaction to check date
@@ -145,6 +151,13 @@ require_once 'header.php';
     </div>
 <?php endif; ?>
 
+<?php if ($isReadOnly): ?>
+    <div class="mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-center space-x-2 no-print">
+        <span class="material-symbols-rounded text-lg">info</span>
+        <span><strong>View-Only Mode:</strong> Administrators cannot create or modify transactions on this account.</span>
+    </div>
+<?php endif; ?>
+
 <?php if ($action === 'new'): ?>
     <!-- Add Deposit Form -->
     <div class="max-w-xl mx-auto premium-card">
@@ -156,11 +169,11 @@ require_once 'header.php';
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
-                    <input type="date" name="date" value="<?= date('Y-m-d') ?>" required class="premium-input">
+                    <input type="date" name="date" value="<?= date('Y-m-d') ?>" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Select Customer *</label>
-                    <select name="bapari_id" required class="premium-input">
+                    <select name="bapari_id" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input">
                         <option value="">-- Choose --</option>
                         <?php foreach ($baparisList as $b): ?>
                             <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
@@ -172,11 +185,11 @@ require_once 'header.php';
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Gold Weight (g) *</label>
-                    <input type="number" step="0.001" name="fine_weight" id="fine_weight" required class="premium-input" placeholder="0.000" oninput="calcFine()">
+                    <input type="number" step="0.001" name="fine_weight" id="fine_weight" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input" placeholder="0.000" oninput="calcFine()">
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Purity / Mel (%)</label>
-                    <input type="number" step="0.01" name="purity" id="purity" value="100" class="premium-input" placeholder="100.00" oninput="calcFine()">
+                    <input type="number" step="0.01" name="purity" id="purity" value="100" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input" placeholder="100.00" oninput="calcFine()">
                 </div>
             </div>
 
@@ -187,18 +200,18 @@ require_once 'header.php';
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Cash Received (₹)</label>
-                    <input type="number" step="0.01" name="cash_received" class="premium-input" placeholder="0.00">
+                    <input type="number" step="0.01" name="cash_received" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input" placeholder="0.00">
                 </div>
             </div>
 
             <div>
                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Remark / Narration</label>
-                <input type="text" name="remark" class="premium-input" placeholder="Optional details...">
+                <input type="text" name="remark" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input" placeholder="Optional details...">
             </div>
             
             <div class="flex items-center justify-end space-x-3 pt-4">
                 <a href="deposits.php" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
-                <button type="submit" name="add_deposit" class="btn-gold text-sm px-5 py-2.5">Save Gold Jama</button>
+                <button type="submit" name="add_deposit" <?= $isReadOnly ? 'disabled' : '' ?> class="btn-gold text-sm px-5 py-2.5 <?= $isReadOnly ? 'opacity-50 cursor-not-allowed' : '' ?>">Save Gold Jama</button>
             </div>
         </form>
     </div>
@@ -226,9 +239,9 @@ require_once 'header.php';
     
     // Settlement Validation check for display warning/blocks
     $isTxnSettled = isSettled($pdo, $dep['bapari_id'], $userId, $dep['date']);
-    $blockForm = ($isTxnSettled && !$isAdmin);
+    $blockForm = ($isTxnSettled && !$isAdmin) || $isReadOnly;
     
-    if ($isTxnSettled) {
+    if ($isTxnSettled && !$isReadOnly) {
         if ($blockForm) {
             $error = 'Access Denied: This transaction is settled and cannot be edited by non-administrators.';
         } else {
@@ -324,9 +337,11 @@ require_once 'header.php';
                 <span class="material-symbols-rounded text-[#F4B400] mr-2 text-3xl">arrow_downward</span> Gold Jama Deposits
             </h1>
         </div>
-        <a href="deposits.php?action=new" class="btn-gold inline-flex items-center text-xs px-3.5 py-2 shadow-md">
-            <span class="material-symbols-rounded text-sm mr-1">add</span> Add Deposit
-        </a>
+        <?php if (!$isReadOnly): ?>
+            <a href="deposits.php?action=new" class="btn-gold inline-flex items-center text-xs px-3.5 py-2 shadow-md">
+                <span class="material-symbols-rounded text-sm mr-1">add</span> Add Deposit
+            </a>
+        <?php endif; ?>
     </div>
 
     <div class="space-y-4">

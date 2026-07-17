@@ -55,6 +55,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_profile'])) {
     }
 }
 
+// Handle Save Metal Rates Config
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_rates'])) {
+    $apiKeyInput = trim($_POST['gold_api_key'] ?? '');
+    $r24k = floatval($_POST['rate_24k']);
+    $r22k = floatval($_POST['rate_22k']);
+    $rAg = floatval($_POST['rate_ag']);
+    
+    $ratesData = [
+        'gold_api_key' => $apiKeyInput,
+        'rate_24k' => $r24k,
+        'rate_22k' => $r22k,
+        'rate_ag' => $rAg,
+        'last_updated' => time()
+    ];
+    
+    saveRates($ratesData);
+    
+    $rate24k = $r24k;
+    $rate22k = $r22k;
+    $rateAg = $rAg;
+    
+    $success = 'Precious metal rates saved successfully!';
+}
+
 // Get report filter parameters
 $filterMonth = $_GET['month'] ?? '';
 $filterYear = $_GET['year'] ?? '';
@@ -175,6 +199,38 @@ require_once 'header.php';
             
             <button type="submit" name="save_company" class="w-full btn-gold text-xs font-bold py-3.5 tracking-wide mt-2">
                 Save Company
+            </button>
+        </form>
+</div>
+
+<!-- PRECIOUS METAL RATES CONFIG Section -->
+<div class="mb-6">
+    <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block mb-3">Precious Metal Rates</span>
+    <div class="premium-card bg-[#121212]/80">
+        <form method="POST" class="space-y-4">
+            <div>
+                <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">GoldAPI.io Key (For Auto-Updates)</label>
+                <input type="text" name="gold_api_key" value="<?= htmlspecialchars($ratesConfig['gold_api_key'] ?? '') ?>" class="premium-input text-xs" placeholder="Optional: Enter Free GoldAPI Key">
+                <span class="text-[8px] text-slate-500 block mt-1.5 leading-normal">Register at <a href="https://www.goldapi.io/" target="_blank" class="text-[#d8a735] underline">goldapi.io</a> to get a key. Leave blank to manage rates manually.</span>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">24K Gold /g</label>
+                    <input type="number" step="0.01" name="rate_24k" value="<?= htmlspecialchars($rate24k) ?>" required class="premium-input text-xs font-mono">
+                </div>
+                <div>
+                    <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">22K Gold /g</label>
+                    <input type="number" step="0.01" name="rate_22k" value="<?= htmlspecialchars($rate22k) ?>" required class="premium-input text-xs font-mono">
+                </div>
+                <div>
+                    <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Silver /g</label>
+                    <input type="number" step="0.01" name="rate_ag" value="<?= htmlspecialchars($rateAg) ?>" required class="premium-input text-xs font-mono">
+                </div>
+            </div>
+            
+            <button type="submit" name="save_rates" class="w-full btn-gold text-xs font-bold py-3.5 tracking-wide mt-2">
+                Save Metal Rates
             </button>
         </form>
     </div>

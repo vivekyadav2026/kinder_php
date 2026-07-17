@@ -16,7 +16,9 @@ function isSettled($pdo, $bapariId, $userId, $date) {
 
 // Handle POST submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['add_kaj']) || isset($_POST['edit_kaj'])) {
+    if ($isReadOnly) {
+        $error = 'View-Only Mode: Administrators cannot modify user data.';
+    } elseif (isset($_POST['add_kaj']) || isset($_POST['edit_kaj'])) {
         $date = $_POST['date'] ?? date('Y-m-d');
         $bapariIdInput = intval($_POST['bapari_id']);
         $cashBill = floatval($_POST['cash_bill'] ?? 0.0);
@@ -116,6 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Handle Delete Kaj Entry
 if (isset($_GET['delete'])) {
+    if ($isReadOnly) {
+        die("Access Denied: View-Only Mode is active.");
+    }
+    
     $id = intval($_GET['delete']);
     
     $stmt = $pdo->prepare("SELECT bapari_id, date FROM kaj_entries WHERE id = ? AND user_id = ?");
@@ -180,9 +186,22 @@ require_once 'header.php';
     </div>
 <?php endif; ?>
 
+<?php if ($warning): ?>
+    <div class="mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-center space-x-2">
+        <span class="material-symbols-rounded text-lg">warning</span> <span><?= htmlspecialchars($warning) ?></span>
+    </div>
+<?php endif; ?>
+
 <?php if ($success): ?>
     <div class="mb-5 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center space-x-2">
         <span class="material-symbols-rounded text-lg">check_circle</span> <span><?= htmlspecialchars($success) ?></span>
+    </div>
+<?php endif; ?>
+
+<?php if ($isReadOnly): ?>
+    <div class="mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-center space-x-2 no-print">
+        <span class="material-symbols-rounded text-lg">info</span>
+        <span><strong>View-Only Mode:</strong> Administrators cannot create or modify transactions on this account.</span>
     </div>
 <?php endif; ?>
 
@@ -190,9 +209,9 @@ require_once 'header.php';
     $blockForm = false;
     if ($action === 'edit' && $editEntry) {
         $isTxnSettled = isSettled($pdo, $editEntry['bapari_id'], $userId, $editEntry['date']);
-        $blockForm = ($isTxnSettled && !$isAdmin);
+        $blockForm = ($isTxnSettled && !$isAdmin) || $isReadOnly;
         
-        if ($isTxnSettled) {
+        if ($isTxnSettled && !$isReadOnly) {
             if ($blockForm) {
                 $error = 'Access Denied: This transaction is settled and cannot be edited by non-administrators.';
             } else {
@@ -392,9 +411,11 @@ require_once 'header.php';
             </h1>
             <p class="text-slate-400 text-xs mt-1">Logs of jewelry manufacturing and metal wastage calculations.</p>
         </div>
-        <a href="kaj.php?action=new" class="btn-gold inline-flex items-center text-xs px-3.5 py-2 shadow-md">
-            <span class="material-symbols-rounded text-sm mr-1">add</span> Add Job
-        </a>
+        <?php if (!$isReadOnly): ?>
+            <a href="kaj.php?action=new" class="btn-gold inline-flex items-center text-xs px-3.5 py-2 shadow-md">
+                <span class="material-symbols-rounded text-sm mr-1">add</span> Add Job
+            </a>
+        <?php endif; ?>
     </div>
 
     <!-- Redesigned Jobs Mobile Cards Stack -->
@@ -437,14 +458,16 @@ require_once 'header.php';
                         </div>
                     <?php endif; ?>
 
-                    <div class="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-slate-800/40">
-                        <a href="kaj.php?action=edit&id=<?= $k['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300 transition-colors tap-target" title="Edit">
-                            <span class="material-symbols-rounded text-base">edit</span>
-                        </a>
-                        <a href="kaj.php?delete=<?= $k['id'] ?>" onclick="return confirm('Are you sure you want to delete this Kaarigari Job entry? This will also delete all of its items.')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete">
-                            <span class="material-symbols-rounded text-base">delete</span>
-                        </a>
-                    </div>
+                    <?php if (!$isReadOnly): ?>
+                        <div class="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-slate-800/40">
+                            <a href="kaj.php?action=edit&id=<?= $k['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300 transition-colors tap-target" title="Edit">
+                                <span class="material-symbols-rounded text-base">edit</span>
+                            </a>
+                            <a href="kaj.php?delete=<?= $k['id'] ?>" onclick="return confirm('Are you sure you want to delete this Kaarigari Job entry? This will also delete all of its items.')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete">
+                                <span class="material-symbols-rounded text-base">delete</span>
+                            </a>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>

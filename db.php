@@ -2,16 +2,17 @@
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
+require_once 'rates_helper.php';
+$ratesConfig = refreshRatesIfNeeded();
+$rate24k = $ratesConfig['rate_24k'];
+$rate22k = $ratesConfig['rate_22k'];
+$rateAg = $ratesConfig['rate_ag'];
 
-// $host = 'localhost';
-// $db   = 'kinder_db';
-// $user = 'root';
-// $pass = '';
-
-    $host = 'localhost';
-    $db   = 'u798623491_dasgolddb';
-    $user = 'u798623491_dasgold';
-    $pass = 'Dasgold2026@';
+$host = 'localhost';
+$db   = 'kinder_db';
+$user = 'root';
+$pass = '';
+    // $pass = 'Dasgold2026@';
 
 
 $charset = 'utf8mb4';
@@ -122,11 +123,13 @@ $userId = $_SESSION['user_id'] ?? null;
 
 // Expose global Admin check flag
 $isAdmin = false;
+$isReadOnly = false;
 if ($userId) {
     $checkId = $_SESSION['impersonator_id'] ?? $userId;
     $stmt = $pdo->prepare("SELECT is_admin FROM users WHERE id = ?");
     $stmt->execute([$checkId]);
     $uCheck = $stmt->fetch();
     $isAdmin = ($uCheck && intval($uCheck['is_admin']) === 1);
+    $isReadOnly = isset($_SESSION['impersonator_id']);
 }
 ?>

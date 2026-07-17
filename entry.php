@@ -12,7 +12,9 @@ $baparis = $stmt->fetchAll();
 
 // Handle Form Submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['submit_deposit'])) {
+    if ($isReadOnly) {
+        $error = 'View-Only Mode: Administrators cannot modify user data.';
+    } elseif (isset($_POST['submit_deposit'])) {
         $date = $_POST['date'] ?? date('Y-m-d');
         $bapariId = intval($_POST['bapari_id'] ?? 0);
         $fineWeight = floatval($_POST['fine_weight'] ?? 0);
@@ -140,17 +142,24 @@ require_once 'header.php';
     </div>
 <?php endif; ?>
 
+<?php if ($isReadOnly): ?>
+    <div class="mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-center space-x-2 no-print animate-scale-up">
+        <span class="material-symbols-rounded text-lg">info</span>
+        <span><strong>View-Only Mode:</strong> Administrators cannot create or modify transactions on this account.</span>
+    </div>
+<?php endif; ?>
+
 <!-- 1. Fine Deposit Content -->
 <div id="tabContentDeposit" class="<?= $activeTab == 'deposit' ? '' : 'hidden' ?>">
     <form method="POST" class="space-y-5">
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Date</label>
-            <input type="date" name="date" required value="<?= date('Y-m-d') ?>" class="premium-input text-sm">
+            <input type="date" name="date" required value="<?= date('Y-m-d') ?>" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm">
         </div>
         
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Select Bapari</label>
-            <select name="bapari_id" required class="premium-input text-sm">
+            <select name="bapari_id" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm">
                 <option value="">Select Bapari</option>
                 <?php foreach ($baparis as $b): ?>
                     <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
@@ -160,12 +169,12 @@ require_once 'header.php';
         
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Fine Weight (GM)</label>
-            <input type="number" step="0.001" id="fineWeight" name="fine_weight" oninput="calcDepositFine()" class="premium-input text-sm" placeholder="0.000">
+            <input type="number" step="0.001" id="fineWeight" name="fine_weight" <?= $isReadOnly ? 'disabled' : '' ?> oninput="calcDepositFine()" class="premium-input text-sm" placeholder="0.000">
         </div>
         
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Purity %</label>
-            <input type="number" step="0.01" id="purity" name="purity" value="100" oninput="calcDepositFine()" class="premium-input text-sm">
+            <input type="number" step="0.01" id="purity" name="purity" value="100" <?= $isReadOnly ? 'disabled' : '' ?> oninput="calcDepositFine()" class="premium-input text-sm">
         </div>
         
         <!-- Calculated Jama Fine Display Block (Matching Image 4) -->
@@ -176,15 +185,15 @@ require_once 'header.php';
         
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Cash Received (₹)</label>
-            <input type="number" step="0.01" name="cash_received" class="premium-input text-sm" placeholder="0">
+            <input type="number" step="0.01" name="cash_received" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="0">
         </div>
         
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Remark</label>
-            <input type="text" name="remark" class="premium-input text-sm" placeholder="Add optional remarks">
+            <input type="text" name="remark" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="Add optional remarks">
         </div>
         
-        <button type="submit" name="submit_deposit" class="w-full btn-gold tracking-wide mt-2">
+        <button type="submit" name="submit_deposit" <?= $isReadOnly ? 'disabled' : '' ?> class="w-full btn-gold tracking-wide mt-2 <?= $isReadOnly ? 'opacity-50 cursor-not-allowed' : '' ?>">
             ADD FINE ENTRY
         </button>
     </form>
@@ -195,12 +204,12 @@ require_once 'header.php';
     <form method="POST" class="space-y-5">
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Date</label>
-            <input type="date" name="date" required value="<?= date('Y-m-d') ?>" class="premium-input text-sm">
+            <input type="date" name="date" required value="<?= date('Y-m-d') ?>" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm">
         </div>
         
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Select Bapari</label>
-            <select name="bapari_id" required class="premium-input text-sm">
+            <select name="bapari_id" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm">
                 <option value="">Select Bapari</option>
                 <?php foreach ($baparis as $b): ?>
                     <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
@@ -214,36 +223,38 @@ require_once 'header.php';
             <div class="premium-card item-card border-slate-800" id="itemBlock_0">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
                     <span class="text-xs font-bold text-[#d8a735] item-header">#1 Item Name</span>
-                    <button type="button" onclick="removeItemBlock(0)" class="text-slate-500 hover:text-rose-400 text-xs flex items-center justify-center">
-                        <span class="material-symbols-rounded text-base">delete</span>
-                    </button>
+                    <?php if (!$isReadOnly): ?>
+                        <button type="button" onclick="removeItemBlock(0)" class="text-slate-500 hover:text-rose-400 text-xs flex items-center justify-center">
+                            <span class="material-symbols-rounded text-base">delete</span>
+                        </button>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="space-y-4">
                     <div>
                         <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Item Name</label>
-                        <input type="text" name="items[0][name]" required class="premium-input text-sm" placeholder="Enter item name">
+                        <input type="text" name="items[0][name]" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="Enter item name">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-3.5">
                         <div>
                             <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Gross</label>
-                            <input type="number" step="0.001" name="items[0][gross]" id="gross_0" oninput="calcKajItem(0)" class="premium-input text-sm gross-input" placeholder="0.000" required>
+                            <input type="number" step="0.001" name="items[0][gross]" id="gross_0" oninput="calcKajItem(0)" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm gross-input" placeholder="0.000" required>
                         </div>
                         <div>
                             <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Less</label>
-                            <input type="number" step="0.001" name="items[0][less]" id="less_0" value="0" oninput="calcKajItem(0)" class="premium-input text-sm less-input" placeholder="0">
+                            <input type="number" step="0.001" name="items[0][less]" id="less_0" value="0" oninput="calcKajItem(0)" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm less-input" placeholder="0">
                         </div>
                     </div>
                     
                     <div class="grid grid-cols-2 gap-3.5">
                         <div>
                             <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Milting %</label>
-                            <input type="number" step="0.01" name="items[0][milting]" id="milting_0" value="91.80" oninput="calcKajItem(0)" class="premium-input text-sm milting-input">
+                            <input type="number" step="0.01" name="items[0][milting]" id="milting_0" value="91.80" oninput="calcKajItem(0)" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm milting-input">
                         </div>
                         <div>
                             <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Wastage %</label>
-                            <input type="number" step="0.01" name="items[0][wastage]" id="wastage_0" value="3.50" oninput="calcKajItem(0)" class="premium-input text-sm wastage-input">
+                            <input type="number" step="0.01" name="items[0][wastage]" id="wastage_0" value="3.50" oninput="calcKajItem(0)" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm wastage-input">
                         </div>
                     </div>
                     
@@ -276,19 +287,21 @@ require_once 'header.php';
         </div>
         
         <!-- Add more button with yellow dashed border (Matching Image 5) -->
-        <button type="button" onclick="addItemBlock()" class="w-full py-3.5 rounded-xl border border-dashed border-[#d8a735]/50 text-xs font-bold text-[#d8a735] hover:bg-[#d8a735]/5 transition-colors flex items-center justify-center space-x-1.5 tap-target">
-            <span class="material-symbols-rounded text-base">add</span>
-            <span>ADD MORE ITEM</span>
-        </button>
+        <?php if (!$isReadOnly): ?>
+            <button type="button" onclick="addItemBlock()" class="w-full py-3.5 rounded-xl border border-dashed border-[#d8a735]/50 text-xs font-bold text-[#d8a735] hover:bg-[#d8a735]/5 transition-colors flex items-center justify-center space-x-1.5 tap-target">
+                <span class="material-symbols-rounded text-base">add</span>
+                <span>ADD MORE ITEM</span>
+            </button>
+        <?php endif; ?>
         
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Cash Bill (₹)</label>
-            <input type="number" step="0.01" name="cash_bill" class="premium-input text-sm" placeholder="0">
+            <input type="number" step="0.01" name="cash_bill" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="0">
         </div>
         
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Remark</label>
-            <input type="text" name="remark" class="premium-input text-sm" placeholder="Add optional remarks">
+            <input type="text" name="remark" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="Add optional remarks">
         </div>
         
         <!-- Total aggregate indicator footer boxes -->
@@ -304,13 +317,15 @@ require_once 'header.php';
             </div>
         </div>
         
-        <button type="submit" name="submit_kaj" class="w-full btn-gold tracking-wide mt-2">
+        <button type="submit" name="submit_kaj" <?= $isReadOnly ? 'disabled' : '' ?> class="w-full btn-gold tracking-wide mt-2 <?= $isReadOnly ? 'opacity-50 cursor-not-allowed' : '' ?>">
             ADD KAJ ENTRY
         </button>
     </form>
 </div>
 
 <script>
+    var isReadOnlyActive = <?= $isReadOnly ? 'true' : 'false' ?>;
+
     // Tab switching handler
     function switchTab(tab) {
         const btnDeposit = document.getElementById('tabBtnDeposit');
@@ -343,6 +358,7 @@ require_once 'header.php';
     let itemBlockCounter = 1;
 
     function addItemBlock() {
+        if (isReadOnlyActive) return;
         const container = document.getElementById('kajItemsContainer');
         const newIndex = itemBlockCounter++;
         
@@ -415,6 +431,7 @@ require_once 'header.php';
     }
 
     function removeItemBlock(index) {
+        if (isReadOnlyActive) return;
         const block = document.getElementById(`itemBlock_${index}`);
         if (block) {
             block.remove();
@@ -460,7 +477,8 @@ require_once 'header.php';
         cards.forEach(card => {
             const idxStr = card.id.split('_')[1];
             const gross = parseFloat(document.getElementById(`gross_${idxStr}`).value) || 0;
-            const less = parseFloat(document.getElementById(`less_${idxStr}`).value) || 0;
+            const lgVal = document.getElementById(`less_${idxStr}`);
+            const less = lgVal ? (parseFloat(lgVal.value) || 0) : 0;
             const net = Math.max(0, gross - less);
             
             const milting = parseFloat(document.getElementById(`milting_${idxStr}`).value) || 0;

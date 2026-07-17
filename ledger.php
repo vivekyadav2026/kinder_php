@@ -461,10 +461,12 @@ require_once 'header.php';
     <div class="flex items-center justify-between mb-3">
         <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block">Outstanding Balance</span>
         <!-- Settlement Button Trigger Modal -->
-        <button onclick="document.getElementById('settlementModal').classList.remove('hidden')" class="px-3 py-1.5 rounded-lg bg-[#d8a735]/15 border border-[#d8a735]/25 text-[10px] text-[#d8a735] font-bold tracking-wider hover:bg-[#d8a735]/20 tap-target no-print flex items-center space-x-1">
-            <span class="material-symbols-rounded text-xs">done_all</span>
-            <span>Settle Ledger</span>
-        </button>
+        <?php if (!$isReadOnly): ?>
+            <button onclick="document.getElementById('settlementModal').classList.remove('hidden')" class="px-3 py-1.5 rounded-lg bg-[#d8a735]/15 border border-[#d8a735]/25 text-[10px] text-[#d8a735] font-bold tracking-wider hover:bg-[#d8a735]/20 tap-target no-print flex items-center space-x-1">
+                <span class="material-symbols-rounded text-xs">done_all</span>
+                <span>Settle Ledger</span>
+            </button>
+        <?php endif; ?>
     </div>
     
     <div class="grid grid-cols-2 gap-4">
@@ -592,23 +594,25 @@ require_once 'header.php';
                     </div>
 
                     <!-- Edit/Delete Action Links -->
-                    <div class="flex items-center justify-end space-x-2.5 mt-3 pt-2.5 border-t border-white/[0.03] no-print">
-                        <?php if ($isDeposit): ?>
-                            <a href="deposits.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Entry">
-                                <span class="material-symbols-rounded text-base">edit</span>
-                            </a>
-                            <a href="ledger.php?bapari_id=<?= $bapariId ?>&delete_deposit=<?= $row['id'] ?>&from=<?= $from ?>&to=<?= $to ?>" onclick="return confirm('Are you sure you want to delete this deposit entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete Entry">
-                                <span class="material-symbols-rounded text-base">delete</span>
-                            </a>
-                        <?php else: ?>
-                            <a href="kaj.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Entry">
-                                <span class="material-symbols-rounded text-base">edit</span>
-                            </a>
-                            <a href="ledger.php?bapari_id=<?= $bapariId ?>&delete_kaj=<?= $row['id'] ?>&from=<?= $from ?>&to=<?= $to ?>" onclick="return confirm('Are you sure you want to delete this job entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete Entry">
-                                <span class="material-symbols-rounded text-base">delete</span>
-                            </a>
-                        <?php endif; ?>
-                    </div>
+                    <?php if (!$isReadOnly): ?>
+                        <div class="flex items-center justify-end space-x-2.5 mt-3 pt-2.5 border-t border-white/[0.03] no-print">
+                            <?php if ($isDeposit): ?>
+                                <a href="deposits.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Entry">
+                                    <span class="material-symbols-rounded text-base">edit</span>
+                                </a>
+                                <a href="ledger.php?bapari_id=<?= $bapariId ?>&delete_deposit=<?= $row['id'] ?>&from=<?= $from ?>&to=<?= $to ?>" onclick="return confirm('Are you sure you want to delete this deposit entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete Entry">
+                                    <span class="material-symbols-rounded text-base">delete</span>
+                                </a>
+                            <?php else: ?>
+                                <a href="kaj.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Entry">
+                                    <span class="material-symbols-rounded text-base">edit</span>
+                                </a>
+                                <a href="ledger.php?bapari_id=<?= $bapariId ?>&delete_kaj=<?= $row['id'] ?>&from=<?= $from ?>&to=<?= $to ?>" onclick="return confirm('Are you sure you want to delete this job entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete Entry">
+                                    <span class="material-symbols-rounded text-base">delete</span>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
