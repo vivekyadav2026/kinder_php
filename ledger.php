@@ -484,10 +484,32 @@ require_once 'header.php';
     <div class="flex items-center justify-between text-[9.5px] text-slate-500 mt-2.5 font-mono px-1">
         <span>Last Transaction Date: <span class="text-slate-400 font-bold"><?= $lastTransactionDate ?></span></span>
         <?php if ($latestSettle): ?>
-            <span>Last Settlement Date: <span class="text-[#d8a735] font-bold"><?= date('d-M-Y', strtotime($latestSettle['settlement_date'])) ?></span></span>
+            <span>Last Settlement Date: <span class="text-[#d8a735] font-bold"><?= date('d/m/Y', strtotime($latestSettle['settlement_date'])) ?></span></span>
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Date Filter Form (Requirement #3) -->
+<form method="GET" class="premium-card bg-[#121212]/80 p-4 mb-6 grid grid-cols-2 gap-3.5 no-print">
+    <input type="hidden" name="bapari_id" value="<?= $bapariId ?>">
+    <div>
+        <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">From Date</label>
+        <input type="date" name="from" value="<?= htmlspecialchars($from) ?>" class="premium-input text-xs">
+    </div>
+    <div>
+        <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">To Date</label>
+        <input type="date" name="to" value="<?= htmlspecialchars($to) ?>" class="premium-input text-xs">
+    </div>
+    <div class="col-span-2 flex items-center space-x-2 pt-1.5">
+        <button type="submit" class="flex-1 btn-gold text-xs py-3 font-bold tracking-wider flex items-center justify-center space-x-1.5">
+            <span class="material-symbols-rounded text-sm">filter_alt</span>
+            <span>Filter Ledger</span>
+        </button>
+        <a href="ledger.php?bapari_id=<?= $bapariId ?>" class="px-4 py-3 rounded-xl bg-slate-900 border border-white/[0.04] text-[10px] font-bold text-slate-400 hover:text-white flex items-center justify-center">
+            Reset
+        </a>
+    </div>
+</form>
 
 <!-- Print PDF Action row -->
 <div class="grid grid-cols-2 gap-3.5 mb-6 no-print">
@@ -523,7 +545,7 @@ require_once 'header.php';
                 <div class="premium-card bg-[#111111]/90">
                     <div class="flex items-start justify-between border-b border-white/[0.04] pb-2.5 mb-2.5">
                         <div>
-                            <span class="text-[9px] text-slate-500 font-mono"><?= date('d-M-Y', strtotime($row['date'])) ?></span>
+                            <span class="text-[9px] text-slate-500 font-mono"><?= date('d/m/Y', strtotime($row['date'])) ?></span>
                             <div class="mt-0.5">
                                 <?php if ($isDeposit): ?>
                                     <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 text-[8px] font-bold uppercase tracking-wider">Fine Deposit</span>
@@ -605,7 +627,7 @@ require_once 'header.php';
             <?php foreach ($settlementsHistory as $sh): ?>
                 <div class="premium-card bg-[#121212]/60 p-3.5 flex items-center justify-between text-xs">
                     <div>
-                        <span class="text-[9px] text-slate-500 font-mono"><?= date('d-M-Y', strtotime($sh['settlement_date'])) ?></span>
+                        <span class="text-[9px] text-slate-500 font-mono"><?= date('d/m/Y', strtotime($sh['settlement_date'])) ?></span>
                         <div class="font-bold text-white mt-0.5">Gold Checkpoint: <?= number_format($sh['closing_gold'], 3) ?> g</div>
                         <div class="text-[10px] text-slate-400">Cash Checkpoint: ₹<?= number_format($sh['closing_cash'], 0) ?></div>
                     </div>

@@ -62,13 +62,18 @@ $stmt->execute([$email]);
 $user = $stmt->fetch();
 
 if ($user) {
-    // User exists. Ensure Google OAuth link details are set
-    if ($user['oauth_provider'] !== 'google') {
-        $updateStmt = $pdo->prepare("UPDATE users SET oauth_provider = 'google', oauth_id = ? WHERE id = ?");
-        $updateStmt->execute([$oauthId, $user['id']]);
-    }
     $userId = $user['id'];
     $userName = $user['name'];
+    
+    // Dynamically sync and update the name if it is empty, or has changed on their Google profile
+    if (empty($user['name']) || $user['name'] !== $name) {
+        $updateStmt = $pdo->prepare("UPDATE users SET name = ?, oauth_provider = 'google', oauth_id = ? WHERE id = ?");
+        $updateStmt->execute([$name, $oauthId, $userId]);
+        $userName = $name;
+    } else if ($user['oauth_provider'] !== 'google') {
+        $updateStmt = $pdo->prepare("UPDATE users SET oauth_provider = 'google', oauth_id = ? WHERE id = ?");
+        $updateStmt->execute([$oauthId, $userId]);
+    }
 } else {
     // Register new user via Google
     $insertStmt = $pdo->prepare("INSERT INTO users (email, name, oauth_provider, oauth_id) VALUES (?, ?, 'google', ?)");

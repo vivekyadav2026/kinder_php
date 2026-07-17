@@ -39,34 +39,47 @@ self.addEventListener('activate', (event) => {
 
 // Fetch events: Network-first, fallback to cache, then fallback to offline.php
 self.addEventListener('fetch', (event) => {
+  const url = event.request.url;
+
   // Only handle HTTP/HTTPS (ignore browser extensions)
-  if (!event.request.url.startsWith(self.location.origin) && !event.request.url.startsWith('https://')) {
+  if (!url.startsWith(self.location.origin) && !url.startsWith('https://')) {
     return;
   }
 
+  // Intercept and cache external fonts or CDNs dynamically
+  const isGoogleFont = url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com');
+  
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Cache the newly retrieved resource if successful
-        if (response.status === 200 && event.request.method === 'GET') {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+    caches.match(event.request).then((cachedResponse) => {
+      // Return cached fonts or files immediately if offline or cached
+      if (cachedResponse) {
+        // Fetch new version in background to update cache (stale-while-revalidate)
+        if (event.request.method === 'GET' && !isGoogleFont) {
+          fetch(event.request).then((networkResponse) => {
+            if (networkResponse.status === 200) {
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
+            }
+          }).catch(() => {});
         }
-        return response;
-      })
-      .catch(() => {
-        // Fallback to cache
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
+        return cachedResponse;
+      }
+
+      return fetch(event.request)
+        .then((response) => {
+          if (response.status === 200 && event.request.method === 'GET') {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
           }
+          return response;
+        })
+        .catch(() => {
           // If a page/document request fails (HTML), show offline fallback
-          if (event.request.headers.get('accept').includes('text/html')) {
+          if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
             return caches.match('./offline.php');
           }
         });
-      })
+    })
   );
 });

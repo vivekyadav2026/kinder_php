@@ -42,6 +42,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_company'])) {
     $success = 'Company details updated successfully!';
 }
 
+// Handle Save Profile Name
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_profile'])) {
+    $newName = trim($_POST['profile_name'] ?? '');
+    if (!empty($newName)) {
+        $stmt = $pdo->prepare("UPDATE users SET name = ? WHERE id = ?");
+        $stmt->execute([$newName, $userId]);
+        $_SESSION['user_name'] = $newName;
+        $success = 'Profile name updated successfully!';
+    } else {
+        $error = 'Profile name cannot be empty!';
+    }
+}
+
 // Get report filter parameters
 $filterMonth = $_GET['month'] ?? '';
 $filterYear = $_GET['year'] ?? '';
@@ -102,21 +115,34 @@ require_once 'header.php';
 
 <!-- ACCOUNT Section -->
 <div class="mb-6">
-    <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block mb-3">Account</span>
-    <div class="premium-card bg-[#121212]/80 flex items-center justify-between p-4">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-full bg-[#d8a735]/15 border border-[#d8a735]/20 flex items-center justify-center font-bold text-[#d8a735]">
-                <?= strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)) ?>
+    <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block mb-3">Account Settings</span>
+    <div class="premium-card bg-[#121212]/80">
+        <form method="POST" class="space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-2">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-[#d8a735]/15 border border-[#d8a735]/20 flex items-center justify-center font-bold text-[#d8a735]">
+                        <?= strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)) ?>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold text-white leading-tight">Profile Details</h3>
+                        <p class="text-[10px] text-slate-500 mt-0.5"><?= htmlspecialchars($_SESSION['user_email'] ?? 'admin@demo.com') ?></p>
+                    </div>
+                </div>
+                <a href="logout.php" class="py-1.5 px-3.5 rounded-xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 text-[10px] font-bold text-rose-400 flex items-center space-x-1 transition-colors tap-target">
+                    <span class="material-symbols-rounded text-sm">logout</span>
+                    <span>Logout</span>
+                </a>
             </div>
+            
             <div>
-                <h3 class="text-sm font-bold text-white leading-tight"><?= htmlspecialchars($_SESSION['user_name'] ?? 'new') ?></h3>
-                <p class="text-[10px] text-slate-500 mt-0.5"><?= htmlspecialchars($_SESSION['user_email'] ?? 'admin@demo.com') ?></p>
+                <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Your Name</label>
+                <input type="text" name="profile_name" value="<?= htmlspecialchars($_SESSION['user_name'] ?? '') ?>" required class="premium-input text-xs" placeholder="Enter name">
             </div>
-        </div>
-        <a href="logout.php" class="py-1.5 px-3.5 rounded-xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 text-xs font-semibold text-rose-400 flex items-center space-x-1 transition-colors tap-target">
-            <span class="material-symbols-rounded text-sm">logout</span>
-            <span>Logout</span>
-        </a>
+            
+            <button type="submit" name="save_profile" class="w-full btn-gold text-xs font-bold py-3.5 tracking-wide mt-2">
+                Save Profile Name
+            </button>
+        </form>
     </div>
 </div>
 

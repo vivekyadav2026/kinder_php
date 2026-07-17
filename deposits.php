@@ -337,7 +337,7 @@ require_once 'header.php';
                 <div class="premium-card bg-[#111111]/85">
                     <div class="flex justify-between items-start border-b border-white/[0.04] pb-2.5 mb-2.5">
                         <div>
-                            <span class="text-[9px] text-slate-500 font-mono"><?= date('d-M-Y', strtotime($d['date'])) ?></span>
+                            <span class="text-[9px] text-slate-500 font-mono"><?= date('d/m/Y', strtotime($d['date'])) ?></span>
                             <h3 class="font-bold text-white text-sm mt-0.5"><?= htmlspecialchars($d['bapari_name']) ?></h3>
                         </div>
                         <div class="text-right">
