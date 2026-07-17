@@ -206,21 +206,21 @@
             <div class="flex items-center space-x-2 text-[10px] font-bold text-white shrink-0">
                 <!-- 24K Badge -->
                 <span class="flex items-center bg-white/[0.02] border border-white/[0.06] rounded-xl px-2.5 py-0.5 font-mono shadow-inner shadow-black/20">
-                    <span class="text-[#d8a735] font-sans font-extrabold mr-1">24K</span>
+                    <span class="text-[#d8a735] font-sans font-extrabold mr-1">Gold 24K:</span>
                     <span class="text-slate-200">₹<?= number_format($rate24k, 0) ?></span>
                     <span class="text-slate-500 font-sans font-normal text-[8px] ml-0.5">/g</span>
                 </span>
                 
                 <!-- 22K Badge -->
                 <span class="flex items-center bg-white/[0.02] border border-white/[0.06] rounded-xl px-2.5 py-0.5 font-mono shadow-inner shadow-black/20">
-                    <span class="text-[#c19224] font-sans font-extrabold mr-1">22K</span>
+                    <span class="text-[#c19224] font-sans font-extrabold mr-1">Gold 22K:</span>
                     <span class="text-slate-200">₹<?= number_format($rate22k, 0) ?></span>
                     <span class="text-slate-500 font-sans font-normal text-[8px] ml-0.5">/g</span>
                 </span>
                 
-                <!-- Silver (AG) Badge -->
+                <!-- Silver Badge -->
                 <span class="flex items-center bg-white/[0.02] border border-white/[0.06] rounded-xl px-2.5 py-0.5 font-mono shadow-inner shadow-black/20">
-                    <span class="text-slate-400 font-sans font-extrabold mr-1">AG</span>
+                    <span class="text-slate-300 font-sans font-extrabold mr-1">Silver:</span>
                     <span class="text-slate-200">₹<?= number_format($rateAg, 0) ?></span>
                     <span class="text-slate-500 font-sans font-normal text-[8px] ml-0.5">/g</span>
                 </span>
