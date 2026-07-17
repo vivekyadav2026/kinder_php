@@ -194,14 +194,40 @@
     </style>
 </head>
 <body class="animate-fade-in">
-    <!-- Live Rate Top Bar (Replicated from screenshot) -->
-    <div class="fixed top-0 left-0 right-0 z-50 bg-[#050505] border-b border-white/[0.05] h-10 px-3 flex items-center justify-between text-[10px] font-bold text-[#d8a735]" style="padding-top: env(safe-area-inset-top, 0px);">
-        <div class="flex items-center space-x-3.5">
-            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">diamond</span> 24K ₹<?= number_format($rate24k, 0) ?> <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
-            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">diamond</span> 22K ₹<?= number_format($rate22k, 0) ?> <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
-            <span class="flex items-center"><span class="material-symbols-rounded text-xs mr-1 text-[#d8a735]">circle</span> AG ₹<?= number_format($rateAg, 0) ?> <span class="text-slate-500 font-normal ml-0.5">/g</span></span>
+    <!-- Live Rate Top Bar (Replicated from screenshot but with rich premium design) -->
+    <div class="fixed top-0 left-0 right-0 z-50 bg-[#070708]/95 backdrop-blur-md border-b border-white/[0.04] h-10 px-3 flex items-center justify-between no-print" style="padding-top: env(safe-area-inset-top, 0px);">
+        <div class="flex items-center space-x-2.5 overflow-x-auto no-scrollbar scroll-smooth">
+            <!-- Pulse Dot indicator for active rates -->
+            <div class="flex items-center space-x-1 bg-[#d8a735]/10 border border-[#d8a735]/25 rounded-full px-2 py-0.5 shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-[8px] font-extrabold uppercase text-[#d8a735] tracking-wider">Live Rates</span>
+            </div>
+            
+            <div class="flex items-center space-x-2 text-[10px] font-bold text-white shrink-0">
+                <!-- 24K Badge -->
+                <span class="flex items-center bg-white/[0.02] border border-white/[0.06] rounded-xl px-2.5 py-0.5 font-mono shadow-inner shadow-black/20">
+                    <span class="text-[#d8a735] font-sans font-extrabold mr-1">24K</span>
+                    <span class="text-slate-200">₹<?= number_format($rate24k, 0) ?></span>
+                    <span class="text-slate-500 font-sans font-normal text-[8px] ml-0.5">/g</span>
+                </span>
+                
+                <!-- 22K Badge -->
+                <span class="flex items-center bg-white/[0.02] border border-white/[0.06] rounded-xl px-2.5 py-0.5 font-mono shadow-inner shadow-black/20">
+                    <span class="text-[#c19224] font-sans font-extrabold mr-1">22K</span>
+                    <span class="text-slate-200">₹<?= number_format($rate22k, 0) ?></span>
+                    <span class="text-slate-500 font-sans font-normal text-[8px] ml-0.5">/g</span>
+                </span>
+                
+                <!-- Silver (AG) Badge -->
+                <span class="flex items-center bg-white/[0.02] border border-white/[0.06] rounded-xl px-2.5 py-0.5 font-mono shadow-inner shadow-black/20">
+                    <span class="text-slate-400 font-sans font-extrabold mr-1">AG</span>
+                    <span class="text-slate-200">₹<?= number_format($rateAg, 0) ?></span>
+                    <span class="text-slate-500 font-sans font-normal text-[8px] ml-0.5">/g</span>
+                </span>
+            </div>
         </div>
-        <button onclick="window.location.reload()" class="flex items-center justify-center text-slate-400 hover:text-[#d8a735] transition-colors">
+        
+        <button onclick="window.location.reload()" class="w-7 h-7 rounded-lg hover:bg-white/[0.04] flex items-center justify-center text-slate-400 hover:text-[#d8a735] transition-all tap-target shrink-0 ml-2">
             <span class="material-symbols-rounded text-sm">refresh</span>
         </button>
     </div>
