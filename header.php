@@ -227,9 +227,15 @@
             </div>
         </div>
         
-        <button onclick="window.location.reload()" class="w-7 h-7 rounded-lg hover:bg-white/[0.04] flex items-center justify-center text-slate-400 hover:text-[#d8a735] transition-all tap-target shrink-0 ml-2">
-            <span class="material-symbols-rounded text-sm">refresh</span>
-        </button>
+        <div class="flex items-center space-x-2 shrink-0 no-print ml-2">
+            <span class="text-[9px] font-bold text-slate-400 flex items-center max-w-[90px] truncate" title="<?= htmlspecialchars($_SESSION['user_name'] ?? 'User') ?>">
+                <span class="material-symbols-rounded text-xs mr-0.5 text-slate-500">person</span>
+                <?= htmlspecialchars($_SESSION['user_name'] ?? 'User') ?>
+            </span>
+            <button onclick="window.location.reload()" class="w-7 h-7 rounded-lg hover:bg-white/[0.04] flex items-center justify-center text-slate-400 hover:text-[#d8a735] transition-all tap-target">
+                <span class="material-symbols-rounded text-sm">refresh</span>
+            </button>
+        </div>
     </div>
 
     <!-- Main Header Bar (Desktop Only - Hidden on Mobile Views to match screenshots) -->
