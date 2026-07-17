@@ -305,4 +305,4 @@
         </style>
     <?php endif; ?>
     
-    <div class="max-w-6xl mx-auto px-4 pt-4 animate-slide-up">
+    <div class="w-full px-4 pt-4 animate-slide-up">
