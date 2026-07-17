@@ -83,12 +83,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_rates'])) {
 $filterMonth = $_GET['month'] ?? '';
 $filterYear = $_GET['year'] ?? '';
 $filterItem = trim($_GET['item'] ?? '');
+$filterBapariId = intval($_GET['bapari_id'] ?? 0);
+
+// Fetch Baparis for filter dropdown
+$stmt = $pdo->prepare("SELECT id, name FROM baparis WHERE user_id = ? ORDER BY name ASC");
+$stmt->execute([$userId]);
+$filterBaparis = $stmt->fetchAll();
 
 // Base Queries for aggregates
 $depQuery = "SELECT * FROM fine_deposits WHERE user_id = ?";
 $depParams = [$userId];
 if ($filterYear) { $depQuery .= " AND YEAR(date) = ?"; $depParams[] = $filterYear; }
 if ($filterMonth) { $depQuery .= " AND MONTH(date) = ?"; $depParams[] = $filterMonth; }
+if ($filterBapariId > 0) { $depQuery .= " AND bapari_id = ?"; $depParams[] = $filterBapariId; }
 
 $stmt = $pdo->prepare($depQuery);
 $stmt->execute($depParams);
@@ -98,6 +105,7 @@ $kajQuery = "SELECT k.* FROM kaj_entries k WHERE k.user_id = ?";
 $kajParams = [$userId];
 if ($filterYear) { $kajQuery .= " AND YEAR(k.date) = ?"; $kajParams[] = $filterYear; }
 if ($filterMonth) { $kajQuery .= " AND MONTH(k.date) = ?"; $kajParams[] = $filterMonth; }
+if ($filterBapariId > 0) { $kajQuery .= " AND k.bapari_id = ?"; $kajParams[] = $filterBapariId; }
 if ($filterItem) {
     $kajQuery .= " AND EXISTS (SELECT 1 FROM kaj_items ki WHERE ki.kaj_entry_id = k.id AND ki.item LIKE ?)";
     $kajParams[] = '%' . $filterItem . '%';
@@ -243,7 +251,12 @@ require_once 'header.php';
     <div class="premium-card bg-[#121212]/80 space-y-4">
         <form method="GET" id="reportFilterForm">
             <div class="mb-3">
-                <span class="px-4 py-2 rounded-full text-xs font-bold bg-[#d8a735]/15 border border-[#d8a735]/25 text-[#d8a735] inline-block">All Baparis</span>
+                <select name="bapari_id" class="premium-input text-xs">
+                    <option value="">All Baparis (All Customers)</option>
+                    <?php foreach ($filterBaparis as $b): ?>
+                        <option value="<?= $b['id'] ?>" <?= $filterBapariId === intval($b['id']) ? 'selected' : '' ?>><?= htmlspecialchars($b['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             
             <div class="grid grid-cols-2 gap-3.5 mb-3">
