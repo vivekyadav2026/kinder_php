@@ -8,11 +8,20 @@ $rate24k = $ratesConfig['rate_24k'];
 $rate22k = $ratesConfig['rate_22k'];
 $rateAg = $ratesConfig['rate_ag'];
 
-$host = 'localhost';
-$db   = 'kinder_db';
-$user = 'root';
-$pass = '';
-    // $pass = 'Dasgold2026@';
+// Dynamic Environment DB Configuration
+$isLocal = ($_SERVER['HTTP_HOST'] ?? 'localhost') === 'localhost' || ($_SERVER['HTTP_HOST'] ?? '127.0.0.1') === '127.0.0.1';
+
+if ($isLocal) {
+    $host = 'localhost';
+    $db   = 'kinder_db';
+    $user = 'root';
+    $pass = '';
+} else {
+    $host = 'localhost';
+    $db   = 'u798623491_dasgolddb';
+    $user = 'u798623491_dasgold';
+    $pass = 'Dasgold2026@';
+}
 
 
 $charset = 'utf8mb4';
