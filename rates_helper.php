@@ -1,5 +1,5 @@
 <?php
-// Rates helper to cache and fetch precious metals prices dynamically
+// Rates helper to cache and fetch precious metals prices dynamically using gold-api.com
 
 function getRatesConfigPath() {
     return __DIR__ . '/settings_rates.json';
@@ -33,32 +33,36 @@ function saveRates($rates) {
 function refreshRatesIfNeeded() {
     $rates = loadRates();
     
-    // Check if key exists and if cached for more than 6 hours
-    if (empty($rates['gold_api_key']) || (time() - $rates['last_updated']) < 21600) {
+    // Check if cached for more than 6 hours
+    if ((time() - $rates['last_updated']) < 21600) {
         return $rates;
     }
 
     $apiKey = trim($rates['gold_api_key']);
     
-    // 1. Fetch 24K Gold Price in INR
-    $goldUrl = 'https://www.goldapi.io/api/XAU/INR';
+    // 1. Fetch Gold Price in INR (XAU/INR)
+    $goldUrl = 'https://api.gold-api.com/price/XAU/INR';
     $goldData = fetchGoldApiData($goldUrl, $apiKey);
     
-    // 2. Fetch Silver Price in INR
-    $silverUrl = 'https://www.goldapi.io/api/XAG/INR';
+    // 2. Fetch Silver Price in INR (XAG/INR)
+    $silverUrl = 'https://api.gold-api.com/price/XAG/INR';
     $silverData = fetchGoldApiData($silverUrl, $apiKey);
 
     $updated = false;
     
-    if ($goldData && isset($goldData['price_gram_24k'])) {
-        $rates['rate_24k'] = round($goldData['price_gram_24k']);
-        // Calculate 22K as 91.6% of 24K Gold price
+    // 1 Ounce = 31.1034768 Grams
+    $ouncesToGrams = 31.1034768;
+
+    if ($goldData && isset($goldData['price'])) {
+        $pricePerOunce = floatval($goldData['price']);
+        $rates['rate_24k'] = round($pricePerOunce / $ouncesToGrams);
         $rates['rate_22k'] = round($rates['rate_24k'] * 0.916);
         $updated = true;
     }
 
-    if ($silverData && isset($silverData['price_gram'])) {
-        $rates['rate_ag'] = round($silverData['price_gram']);
+    if ($silverData && isset($silverData['price'])) {
+        $pricePerOunce = floatval($silverData['price']);
+        $rates['rate_ag'] = round($pricePerOunce / $ouncesToGrams);
         $updated = true;
     }
 
@@ -72,14 +76,17 @@ function refreshRatesIfNeeded() {
 
 function fetchGoldApiData($url, $apiKey) {
     $ch = curl_init();
+    
+    $headers = ["Content-Type: application/json"];
+    if (!empty($apiKey)) {
+        $headers[] = "Authorization: Bearer " . $apiKey;
+    }
+    
     curl_setopt_array($ch, [
         CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 8,
-        CURLOPT_HTTPHEADER => [
-            "x-access-token: " . $apiKey,
-            "Content-Type: application/json"
-        ]
+        CURLOPT_HTTPHEADER => $headers
     ]);
     
     $response = curl_exec($ch);
