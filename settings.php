@@ -87,37 +87,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_profile'])) {
 // Handle Save Metal Rates Config
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_rates'])) {
     $apiKeyInput = trim($_POST['gold_api_key'] ?? '');
+    $r24k = floatval($_POST['rate_24k'] ?? 12565.0);
+    $r22k = floatval($_POST['rate_22k'] ?? 11510.0);
+    $rAg = floatval($_POST['rate_ag'] ?? 179.0);
     
-    if (!empty($apiKeyInput)) {
-        // If API key is provided, ignore input values and force fetch fresh rates from API
-        $ratesData = [
-            'gold_api_key' => $apiKeyInput,
-            'rate_24k' => 12565.0,
-            'rate_22k' => 11510.0,
-            'rate_ag' => 179.0,
-            'last_updated' => 0 // Set to 0 to force fetch
-        ];
-        saveRates($pdo, $userId, $ratesData);
-        
-        $ratesConfig = refreshRatesIfNeeded($pdo, $userId);
-        $r24k = $ratesConfig['rate_24k'];
-        $r22k = $ratesConfig['rate_22k'];
-        $rAg = $ratesConfig['rate_ag'];
-    } else {
-        // Manual rate entry: save inputs directly and set lockout
-        $r24k = floatval($_POST['rate_24k']);
-        $r22k = floatval($_POST['rate_22k']);
-        $rAg = floatval($_POST['rate_ag']);
-        
-        $ratesData = [
-            'gold_api_key' => '',
-            'rate_24k' => $r24k,
-            'rate_22k' => $r22k,
-            'rate_ag' => $rAg,
-            'last_updated' => time()
-        ];
-        saveRates($pdo, $userId, $ratesData);
-    }
+    // Save rates directly from input fields (manual override / initial values)
+    $ratesData = [
+        'gold_api_key' => $apiKeyInput,
+        'rate_24k' => $r24k,
+        'rate_22k' => $r22k,
+        'rate_ag' => $rAg,
+        'last_updated' => time() // Cache for 5 minutes so manual edits are preserved
+    ];
+    saveRates($pdo, $userId, $ratesData);
     
     $rate24k = $r24k;
     $rate22k = $r22k;
@@ -298,7 +280,7 @@ require_once 'header.php';
                             <span class="text-[7px] bg-[#d8a735]/15 text-[#d8a735] px-1 rounded uppercase font-bold tracking-wider">Auto</span>
                         <?php endif; ?>
                     </div>
-                    <input type="number" step="0.01" name="rate_24k" value="<?= htmlspecialchars($rate24k) ?>" required <?= !empty($ratesConfig['gold_api_key']) ? 'readonly class="premium-input text-xs font-mono bg-slate-900/40 text-slate-400 cursor-not-allowed"' : 'class="premium-input text-xs font-mono"' ?>>
+                    <input type="number" step="0.01" name="rate_24k" value="<?= htmlspecialchars($rate24k) ?>" required class="premium-input text-xs font-mono">
                 </div>
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
@@ -307,7 +289,7 @@ require_once 'header.php';
                             <span class="text-[7px] bg-[#d8a735]/15 text-[#d8a735] px-1 rounded uppercase font-bold tracking-wider">Auto</span>
                         <?php endif; ?>
                     </div>
-                    <input type="number" step="0.01" name="rate_22k" value="<?= htmlspecialchars($rate22k) ?>" required <?= !empty($ratesConfig['gold_api_key']) ? 'readonly class="premium-input text-xs font-mono bg-slate-900/40 text-slate-400 cursor-not-allowed"' : 'class="premium-input text-xs font-mono"' ?>>
+                    <input type="number" step="0.01" name="rate_22k" value="<?= htmlspecialchars($rate22k) ?>" required class="premium-input text-xs font-mono">
                 </div>
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
@@ -316,7 +298,7 @@ require_once 'header.php';
                             <span class="text-[7px] bg-[#d8a735]/15 text-[#d8a735] px-1 rounded uppercase font-bold tracking-wider">Auto</span>
                         <?php endif; ?>
                     </div>
-                    <input type="number" step="0.01" name="rate_ag" value="<?= htmlspecialchars($rateAg) ?>" required <?= !empty($ratesConfig['gold_api_key']) ? 'readonly class="premium-input text-xs font-mono bg-slate-900/40 text-slate-400 cursor-not-allowed"' : 'class="premium-input text-xs font-mono"' ?>>
+                    <input type="number" step="0.01" name="rate_ag" value="<?= htmlspecialchars($rateAg) ?>" required class="premium-input text-xs font-mono">
                 </div>
             </div>
             
