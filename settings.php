@@ -87,29 +87,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_profile'])) {
 // Handle Save Metal Rates Config
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_rates'])) {
     $apiKeyInput = trim($_POST['gold_api_key'] ?? '');
-    $r24k = floatval($_POST['rate_24k']);
-    $r22k = floatval($_POST['rate_22k']);
-    $rAg = floatval($_POST['rate_ag']);
     
-    $ratesData = [
-        'gold_api_key' => $apiKeyInput,
-        'rate_24k' => $r24k,
-        'rate_22k' => $r22k,
-        'rate_ag' => $rAg,
-        'last_updated' => time()
-    ];
-    
-    saveRates($pdo, $userId, $ratesData);
-    
-    // Force immediate rate fetch from gold-api.com if API key is provided
     if (!empty($apiKeyInput)) {
-        $ratesData['last_updated'] = 0; // Reset cache timestamp
+        // If API key is provided, ignore input values and force fetch fresh rates from API
+        $ratesData = [
+            'gold_api_key' => $apiKeyInput,
+            'rate_24k' => 12565.0,
+            'rate_22k' => 11510.0,
+            'rate_ag' => 179.0,
+            'last_updated' => 0 // Set to 0 to force fetch
+        ];
         saveRates($pdo, $userId, $ratesData);
         
         $ratesConfig = refreshRatesIfNeeded($pdo, $userId);
         $r24k = $ratesConfig['rate_24k'];
         $r22k = $ratesConfig['rate_22k'];
         $rAg = $ratesConfig['rate_ag'];
+    } else {
+        // Manual rate entry: save inputs directly and set lockout
+        $r24k = floatval($_POST['rate_24k']);
+        $r22k = floatval($_POST['rate_22k']);
+        $rAg = floatval($_POST['rate_ag']);
+        
+        $ratesData = [
+            'gold_api_key' => '',
+            'rate_24k' => $r24k,
+            'rate_22k' => $r22k,
+            'rate_ag' => $rAg,
+            'last_updated' => time()
+        ];
+        saveRates($pdo, $userId, $ratesData);
     }
     
     $rate24k = $r24k;
@@ -278,23 +285,38 @@ require_once 'header.php';
     <div class="premium-card bg-[#121212]/80">
         <form method="POST" class="space-y-4">
             <div>
-                <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">GoldAPI.io Key (For Auto-Updates)</label>
-                <input type="text" name="gold_api_key" value="<?= htmlspecialchars($ratesConfig['gold_api_key'] ?? '') ?>" class="premium-input text-xs" placeholder="Optional: Enter Free GoldAPI Key">
-                <span class="text-[8px] text-slate-500 block mt-1.5 leading-normal">Register at <a href="https://www.goldapi.io/" target="_blank" class="text-[#d8a735] underline">goldapi.io</a> to get a key. Leave blank to manage rates manually.</span>
+                <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Gold API Key (For Auto-Updates)</label>
+                <input type="text" name="gold_api_key" value="<?= htmlspecialchars($ratesConfig['gold_api_key'] ?? '') ?>" class="premium-input text-xs" placeholder="Optional: Enter gold-api.com key">
+                <span class="text-[8px] text-slate-500 block mt-1.5 leading-normal">Register at <a href="https://gold-api.com/" target="_blank" class="text-[#d8a735] underline">gold-api.com</a> to get a key. Leave blank to manage rates manually.</span>
             </div>
             
             <div class="grid grid-cols-3 gap-3">
                 <div>
-                    <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">24K Gold /g</label>
-                    <input type="number" step="0.01" name="rate_24k" value="<?= htmlspecialchars($rate24k) ?>" required class="premium-input text-xs font-mono">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500">24K Gold /g</label>
+                        <?php if (!empty($ratesConfig['gold_api_key'])): ?>
+                            <span class="text-[7px] bg-[#d8a735]/15 text-[#d8a735] px-1 rounded uppercase font-bold tracking-wider">Auto</span>
+                        <?php endif; ?>
+                    </div>
+                    <input type="number" step="0.01" name="rate_24k" value="<?= htmlspecialchars($rate24k) ?>" required <?= !empty($ratesConfig['gold_api_key']) ? 'readonly class="premium-input text-xs font-mono bg-slate-900/40 text-slate-400 cursor-not-allowed"' : 'class="premium-input text-xs font-mono"' ?>>
                 </div>
                 <div>
-                    <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">22K Gold /g</label>
-                    <input type="number" step="0.01" name="rate_22k" value="<?= htmlspecialchars($rate22k) ?>" required class="premium-input text-xs font-mono">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500">22K Gold /g</label>
+                        <?php if (!empty($ratesConfig['gold_api_key'])): ?>
+                            <span class="text-[7px] bg-[#d8a735]/15 text-[#d8a735] px-1 rounded uppercase font-bold tracking-wider">Auto</span>
+                        <?php endif; ?>
+                    </div>
+                    <input type="number" step="0.01" name="rate_22k" value="<?= htmlspecialchars($rate22k) ?>" required <?= !empty($ratesConfig['gold_api_key']) ? 'readonly class="premium-input text-xs font-mono bg-slate-900/40 text-slate-400 cursor-not-allowed"' : 'class="premium-input text-xs font-mono"' ?>>
                 </div>
                 <div>
-                    <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Silver /g</label>
-                    <input type="number" step="0.01" name="rate_ag" value="<?= htmlspecialchars($rateAg) ?>" required class="premium-input text-xs font-mono">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500">Silver /g</label>
+                        <?php if (!empty($ratesConfig['gold_api_key'])): ?>
+                            <span class="text-[7px] bg-[#d8a735]/15 text-[#d8a735] px-1 rounded uppercase font-bold tracking-wider">Auto</span>
+                        <?php endif; ?>
+                    </div>
+                    <input type="number" step="0.01" name="rate_ag" value="<?= htmlspecialchars($rateAg) ?>" required <?= !empty($ratesConfig['gold_api_key']) ? 'readonly class="premium-input text-xs font-mono bg-slate-900/40 text-slate-400 cursor-not-allowed"' : 'class="premium-input text-xs font-mono"' ?>>
                 </div>
             </div>
             
