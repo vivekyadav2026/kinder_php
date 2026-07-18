@@ -55,16 +55,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_company'])) {
         }
     }
     
-    // Update details in DB
-    $stmt = $pdo->prepare("UPDATE users SET company_name = ?, company_mobile = ?, company_address = ?, company_gst = ?, company_logo = ? WHERE id = ?");
-    $stmt->execute([$companyName, $companyMobile, $companyAddress, $companyGst, $logoPath, $userId]);
-    
-    // Refresh $currentUser local variable
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-    $stmt->execute([$userId]);
-    $currentUser = $stmt->fetch();
-    
-    $success = 'Company details updated successfully!';
+    try {
+        // Update details in DB
+        $stmt = $pdo->prepare("UPDATE users SET company_name = ?, company_mobile = ?, company_address = ?, company_gst = ?, company_logo = ? WHERE id = ?");
+        $stmt->execute([$companyName, $companyMobile, $companyAddress, $companyGst, $logoPath, $userId]);
+        
+        // Refresh $currentUser local variable
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $currentUser = $stmt->fetch();
+        
+        $success = 'Company details updated successfully!';
+    } catch (Exception $e) {
+        $error = 'Failed to save company details: ' . $e->getMessage();
+    }
 }
 
 // Handle Save Profile Name
@@ -155,6 +159,16 @@ foreach ($kajEntries as $k) {
     $totalKajFine += floatval($k['total_kaj_fine']);
     $totalProfitFine += floatval($k['total_profit_fine']);
     $totalBill += floatval($k['cash_bill']);
+}
+
+// Calculate Total Net weight of Kaj jobs
+$totalNetKaj = 0.0;
+if (!empty($kajEntries)) {
+    $kajEntryIds = array_column($kajEntries, 'id');
+    $inClause = implode(',', array_fill(0, count($kajEntryIds), '?'));
+    $stmtItems = $pdo->prepare("SELECT SUM(net) as total_net FROM kaj_items WHERE kaj_entry_id IN ($inClause)");
+    $stmtItems->execute($kajEntryIds);
+    $totalNetKaj = floatval($stmtItems->fetch()['total_net'] ?? 0.0);
 }
 
 $netFineBalance = round($totalJama - $totalKajFine, 3);
@@ -332,6 +346,10 @@ require_once 'header.php';
             <div class="bg-slate-950/60 p-3 rounded-xl border border-white/[0.03] flex justify-between items-center text-xs">
                 <span class="text-slate-500 font-semibold uppercase text-[9px]">Total Kaj Fine</span>
                 <span class="font-bold font-mono"><?= number_format($totalKajFine, 3) ?> g</span>
+            </div>
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-white/[0.03] flex justify-between items-center text-xs">
+                <span class="text-slate-500 font-semibold uppercase text-[9px]">Total Net Kaj</span>
+                <span class="font-bold font-mono"><?= number_format($totalNetKaj, 3) ?> g</span>
             </div>
             <div class="bg-transparent p-3 rounded-xl border border-[#d8a735]/25 flex justify-between items-center text-xs">
                 <span class="text-[#d8a735] font-semibold uppercase text-[9px]">Profit Fine</span>
