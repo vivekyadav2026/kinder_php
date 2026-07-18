@@ -75,29 +75,59 @@ function refreshRatesIfNeeded() {
 }
 
 function fetchGoldApiData($url, $apiKey) {
-    $ch = curl_init();
-    
     $headers = ["Content-Type: application/json"];
     if (!empty($apiKey)) {
         $headers[] = "Authorization: Bearer " . $apiKey;
     }
-    
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 8,
-        CURLOPT_HTTPHEADER => $headers,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => false
-    ]);
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
 
-    if ($httpCode === 200 && $response) {
-        return json_decode($response, true);
+    // 1. Try cURL first
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 8,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false
+        ]);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200 && $response) {
+            $decoded = json_decode($response, true);
+            if ($decoded && isset($decoded['price'])) {
+                return $decoded;
+            }
+        }
     }
+    
+    // 2. Fallback: Try file_get_contents with stream context
+    if (ini_get('allow_url_fopen')) {
+        $opts = [
+            'http' => [
+                'method' => 'GET',
+                'header' => implode("\r\n", $headers) . "\r\n",
+                'timeout' => 8,
+                'ignore_errors' => true
+            ],
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false
+            ]
+        ];
+        $context = stream_context_create($opts);
+        $responseFallback = @file_get_contents($url, false, $context);
+        if ($responseFallback) {
+            $decoded = json_decode($responseFallback, true);
+            if ($decoded && isset($decoded['price'])) {
+                return $decoded;
+            }
+        }
+    }
+    
     return null;
 }
 ?>
