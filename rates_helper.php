@@ -1,12 +1,7 @@
 <?php
-// Rates helper to cache and fetch precious metals prices dynamically using gold-api.com
+// Rates helper to cache and fetch precious metals prices dynamically from the database users record
 
-function getRatesConfigPath() {
-    return __DIR__ . '/settings_rates.json';
-}
-
-function loadRates() {
-    $path = getRatesConfigPath();
+function loadRates($pdo, $userId) {
     $defaultRates = [
         'gold_api_key' => '',
         'rate_24k' => 12565.0,
@@ -15,23 +10,50 @@ function loadRates() {
         'last_updated' => 0
     ];
 
-    if (!file_exists($path)) {
+    if (!$userId) {
         return $defaultRates;
     }
 
-    $json = @file_get_contents($path);
-    $data = json_decode($json, true);
+    try {
+        $stmt = $pdo->prepare("SELECT gold_api_key, rate_24k, rate_22k, rate_ag, rates_last_updated FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch();
+        
+        if (!$row) {
+            return $defaultRates;
+        }
 
-    return is_array($data) ? array_merge($defaultRates, $data) : $defaultRates;
+        return [
+            'gold_api_key' => $row['gold_api_key'] ?? '',
+            'rate_24k' => floatval($row['rate_24k'] ?: 12565.0),
+            'rate_22k' => floatval($row['rate_22k'] ?: 11510.0),
+            'rate_ag' => floatval($row['rate_ag'] ?: 179.0),
+            'last_updated' => intval($row['rates_last_updated'] ?: 0)
+        ];
+    } catch (Exception $e) {
+        return $defaultRates;
+    }
 }
 
-function saveRates($rates) {
-    $path = getRatesConfigPath();
-    @file_put_contents($path, json_encode($rates, JSON_PRETTY_PRINT));
+function saveRates($pdo, $userId, $rates) {
+    if (!$userId) return;
+    try {
+        $stmt = $pdo->prepare("UPDATE users SET gold_api_key = ?, rate_24k = ?, rate_22k = ?, rate_ag = ?, rates_last_updated = ? WHERE id = ?");
+        $stmt->execute([
+            $rates['gold_api_key'],
+            $rates['rate_24k'],
+            $rates['rate_22k'],
+            $rates['rate_ag'],
+            $rates['last_updated'],
+            $userId
+        ]);
+    } catch (Exception $e) {
+        // Fail silently
+    }
 }
 
-function refreshRatesIfNeeded() {
-    $rates = loadRates();
+function refreshRatesIfNeeded($pdo, $userId) {
+    $rates = loadRates($pdo, $userId);
     
     // Check if cached for more than 6 hours
     if ((time() - $rates['last_updated']) < 21600) {
@@ -68,7 +90,7 @@ function refreshRatesIfNeeded() {
 
     if ($updated) {
         $rates['last_updated'] = time();
-        saveRates($rates);
+        saveRates($pdo, $userId, $rates);
     }
 
     return $rates;

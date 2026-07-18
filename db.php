@@ -3,14 +3,9 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 require_once 'rates_helper.php';
-$ratesConfig = refreshRatesIfNeeded();
-$rate24k = $ratesConfig['rate_24k'];
-$rate22k = $ratesConfig['rate_22k'];
-$rateAg = $ratesConfig['rate_ag'];
 
 // Dynamic Environment DB Configuration
 $isLocal = ($_SERVER['HTTP_HOST'] ?? 'localhost') === 'localhost' || ($_SERVER['HTTP_HOST'] ?? '127.0.0.1') === '127.0.0.1';
-
 if ($isLocal) {
     $host = 'localhost';
     $db   = 'kinder_db';
@@ -102,6 +97,21 @@ try {
 try {
     $pdo->exec("ALTER TABLE `users` ADD COLUMN `company_logo` VARCHAR(255) DEFAULT NULL");
 } catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `gold_api_key` VARCHAR(255) DEFAULT NULL");
+} catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `rate_24k` DECIMAL(12, 2) DEFAULT 12565.00");
+} catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `rate_22k` DECIMAL(12, 2) DEFAULT 11510.00");
+} catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `rate_ag` DECIMAL(12, 2) DEFAULT 179.00");
+} catch (Exception $e) {}
+try {
+    $pdo->exec("ALTER TABLE `users` ADD COLUMN `rates_last_updated` INT DEFAULT 0");
+} catch (Exception $e) {}
 
 // Auto-seed admin access and reset password to password123
 try {
@@ -147,6 +157,10 @@ if (!isset($_SESSION['user_id']) && !in_array($current_page, $public_pages)) {
 $userId = $_SESSION['user_id'] ?? null;
 $currentUser = null;
 
+$rate24k = 12565.0;
+$rate22k = 11510.0;
+$rateAg = 179.0;
+
 // Expose global Admin check flag
 $isAdmin = false;
 $isReadOnly = false;
@@ -155,6 +169,11 @@ if ($userId) {
     $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
     $stmt->execute([$userId]);
     $currentUser = $stmt->fetch();
+
+    $ratesConfig = refreshRatesIfNeeded($pdo, $userId);
+    $rate24k = $ratesConfig['rate_24k'];
+    $rate22k = $ratesConfig['rate_22k'];
+    $rateAg = $ratesConfig['rate_ag'];
 
     $checkId = $_SESSION['impersonator_id'] ?? $userId;
     $stmt = $pdo->prepare("SELECT is_admin FROM users WHERE id = ?");
