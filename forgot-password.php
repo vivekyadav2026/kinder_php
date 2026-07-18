@@ -25,19 +25,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $updateStmt = $pdo->prepare("UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?");
             $updateStmt->execute([$token, $expires, $user['id']]);
 
-            $success = 'Password reset instructions have been generated!';
-            
-            // Construct local debug reset link for easy testing
+            // Construct reset link
             $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
             $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
             $isLocal = ($host === 'localhost' || $host === '127.0.0.1');
             $path = $isLocal ? '/kinder_php/reset-password.php' : '/reset-password.php';
-            $debugLink = "{$proto}://{$host}{$path}?token={$token}";
+            $resetUrl = "{$proto}://{$host}{$path}?token={$token}";
+
+            if ($isLocal) {
+                $success = 'Password reset instructions have been generated!';
+                $debugLink = $resetUrl;
+            } else {
+                // Send real email on production using PHP mail()
+                $subject = "Password Reset Link - Dasgold";
+                $message = "Hello,\n\nYou have requested a password reset for your Dasgold account.\nClick the link below to reset your password:\n\n" . $resetUrl . "\n\nThis link will expire in 1 hour.\n\nIf you did not request this, please ignore this email.";
+                $headers = "From: no-reply@dasgold.in\r\n" .
+                           "Reply-To: no-reply@dasgold.in\r\n" .
+                           "X-Mailer: PHP/" . phpversion();
+                
+                if (@mail($email, $subject, $message, $headers)) {
+                    $success = 'We have sent a password reset link to your email address!';
+                } else {
+                    $error = 'Unable to send email. Please contact support or try again later.';
+                }
+            }
         } else {
             $error = 'Email address not found!';
         }
     }
 }
+
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$isLocal = ($host === 'localhost' || $host === '127.0.0.1');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -134,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <!-- Debug link block for local test environment -->
-        <?php if ($debugLink): ?>
+        <?php if ($isLocal && $debugLink): ?>
             <div class="mt-6 p-4 rounded-xl bg-[#F4B400]/10 border border-[#F4B400]/20 text-xs">
                 <span class="font-bold text-[#F4B400] block mb-1">Local Testing Link:</span>
                 <p class="text-slate-300 mb-2">Since local servers don't mail reset links, click below to update your password:</p>
