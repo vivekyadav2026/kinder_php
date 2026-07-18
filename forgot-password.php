@@ -27,10 +27,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $success = 'Password reset instructions have been generated!';
             
-            // Construct local debug reset link for easy local testing
-            $host = $_SERVER['HTTP_HOST'];
-            $proto = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-            $debugLink = "{$proto}://{$host}/kinder_php/reset-password.php?token={$token}";
+            // Construct local debug reset link for easy testing
+            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+            $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $isLocal = ($host === 'localhost' || $host === '127.0.0.1');
+            $path = $isLocal ? '/kinder_php/reset-password.php' : '/reset-password.php';
+            $debugLink = "{$proto}://{$host}{$path}?token={$token}";
         } else {
             $error = 'Email address not found!';
         }
