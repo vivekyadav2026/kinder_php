@@ -101,6 +101,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_rates'])) {
     
     saveRates($ratesData);
     
+    // Force immediate rate fetch from gold-api.com if API key is provided
+    if (!empty($apiKeyInput)) {
+        $ratesData['last_updated'] = 0; // Reset cache timestamp
+        saveRates($ratesData);
+        
+        $ratesConfig = refreshRatesIfNeeded();
+        $r24k = $ratesConfig['rate_24k'];
+        $r22k = $ratesConfig['rate_22k'];
+        $rAg = $ratesConfig['rate_ag'];
+    }
+    
     $rate24k = $r24k;
     $rate22k = $r22k;
     $rateAg = $rAg;
