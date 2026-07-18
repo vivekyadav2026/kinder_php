@@ -43,7 +43,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 
         foreach ($entries as $e) {
             fputcsv($output, [
-                $e['date'],
+                date('d/m/Y', strtotime($e['date'])),
                 $e['type'],
                 $e['fine_weight'] > 0 ? $e['fine_weight'] : '--',
                 $e['purity'] > 0 ? $e['purity'] . '%' : '--',

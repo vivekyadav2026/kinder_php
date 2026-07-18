@@ -726,7 +726,7 @@ require_once 'header.php';
         $shareCount = 0;
         foreach (array_reverse($activeRows) as $row) {
             if ($shareCount >= 5) break; 
-            $dateStr = date('d-M-Y', strtotime($row['date']));
+            $dateStr = date('d/m/Y', strtotime($row['date']));
             $sign = $row['fine'] >= 0 ? '+' : '-';
             $fineVal = number_format(abs($row['fine']), 3);
             $cashStr = $row['cash'] != 0 ? " (Cash: " . ($row['cash'] >= 0 ? '+' : '-') . "₹" . number_format(abs($row['cash']), 0) . ")" : "";
