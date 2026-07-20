@@ -68,48 +68,42 @@ $openingGold = 0.0;
 $openingCash = 0.0;
 $startCalculationFromDate = '';
 
-// Find the most recent settlement dated *before* the filtered From Date
-$settleStmt = $pdo->prepare("SELECT * FROM ledger_settlements WHERE bapari_id = ? AND user_id = ? AND settlement_date < ? ORDER BY settlement_date DESC LIMIT 1");
-$settleStmt->execute([$bapariId, $userId, $from ?: '9999-12-31']);
-$prevSettle = $settleStmt->fetch();
-
-if ($prevSettle) {
-    $openingGold = floatval($prevSettle['closing_gold']);
-    $openingCash = floatval($prevSettle['closing_cash']);
-    $startCalculationFromDate = $prevSettle['settlement_date'];
-}
-
-// Calculate intermediate transactions between the last settlement and the $from Date
-$depParamsBefore = [$userId, $bapariId];
-$depQueryBefore = "SELECT SUM(jama_fine) as g, SUM(cash_received) as c FROM fine_deposits WHERE user_id = ? AND bapari_id = ?";
-if (!empty($startCalculationFromDate)) {
-    $depQueryBefore .= " AND date > ?";
-    $depParamsBefore[] = $startCalculationFromDate;
-}
 if (!empty($from)) {
-    $depQueryBefore .= " AND date < ?";
-    $depParamsBefore[] = $from;
-}
-$stmt = $pdo->prepare($depQueryBefore);
-$stmt->execute($depParamsBefore);
-$depBefore = $stmt->fetch();
+    // Find the most recent settlement dated *before* the filtered From Date
+    $settleStmt = $pdo->prepare("SELECT * FROM ledger_settlements WHERE bapari_id = ? AND user_id = ? AND settlement_date < ? ORDER BY settlement_date DESC LIMIT 1");
+    $settleStmt->execute([$bapariId, $userId, $from]);
+    $prevSettle = $settleStmt->fetch();
 
-$kajParamsBefore = [$userId, $bapariId];
-$kajQueryBefore = "SELECT SUM(total_kaj_fine) as g, SUM(cash_bill) as c FROM kaj_entries WHERE user_id = ? AND bapari_id = ?";
-if (!empty($startCalculationFromDate)) {
-    $kajQueryBefore .= " AND date > ?";
-    $kajParamsBefore[] = $startCalculationFromDate;
-}
-if (!empty($from)) {
-    $kajQueryBefore .= " AND date < ?";
-    $kajParamsBefore[] = $from;
-}
-$stmt = $pdo->prepare($kajQueryBefore);
-$stmt->execute($kajParamsBefore);
-$kajBefore = $stmt->fetch();
+    if ($prevSettle) {
+        $openingGold = floatval($prevSettle['closing_gold']);
+        $openingCash = floatval($prevSettle['closing_cash']);
+        $startCalculationFromDate = $prevSettle['settlement_date'];
+    }
 
-$openingGold += floatval($depBefore['g'] ?? 0) - floatval($kajBefore['g'] ?? 0);
-$openingCash += floatval($depBefore['c'] ?? 0) - floatval($kajBefore['c'] ?? 0);
+    // Calculate intermediate transactions between the last settlement (or beginning) and the $from Date
+    $depParamsBefore = [$userId, $bapariId, $from];
+    $depQueryBefore = "SELECT SUM(jama_fine) as g, SUM(cash_received) as c FROM fine_deposits WHERE user_id = ? AND bapari_id = ? AND date < ?";
+    if (!empty($startCalculationFromDate)) {
+        $depQueryBefore .= " AND date > ?";
+        $depParamsBefore[] = $startCalculationFromDate;
+    }
+    $stmt = $pdo->prepare($depQueryBefore);
+    $stmt->execute($depParamsBefore);
+    $depBefore = $stmt->fetch();
+
+    $kajParamsBefore = [$userId, $bapariId, $from];
+    $kajQueryBefore = "SELECT SUM(total_kaj_fine) as g, SUM(cash_bill) as c FROM kaj_entries WHERE user_id = ? AND bapari_id = ? AND date < ?";
+    if (!empty($startCalculationFromDate)) {
+        $kajQueryBefore .= " AND date > ?";
+        $kajParamsBefore[] = $startCalculationFromDate;
+    }
+    $stmt = $pdo->prepare($kajQueryBefore);
+    $stmt->execute($kajParamsBefore);
+    $kajBefore = $stmt->fetch();
+
+    $openingGold += floatval($depBefore['g'] ?? 0) - floatval($kajBefore['g'] ?? 0);
+    $openingCash += floatval($depBefore['c'] ?? 0) - floatval($kajBefore['c'] ?? 0);
+}
 
 // 5. Fetch Deposits within Date Range
 $depQuery = "SELECT id, date, 'deposit' as type, fine_weight, purity, jama_fine, cash_received, remark, created_at FROM fine_deposits WHERE user_id = ? AND bapari_id = ?";
@@ -152,21 +146,23 @@ unset($e);
 // 7. Flat map transactions into individual Ledger rows (Tally layout)
 $ledgerRows = [];
 
-// Insert Opening Balance Row first
-$ledgerRows[] = [
-    'date' => $from ?: (!empty($entries) ? $entries[0]['date'] : date('Y-m-d')),
-    'no' => '',
-    'name' => 'Opening Balance',
-    'gross' => 0.0,
-    'less' => 0.0,
-    'net' => 0.0,
-    'tch' => 0.0,
-    'wst' => 0.0,
-    'fine' => $openingGold,
-    'cash' => $openingCash,
-    'remark' => 'Opening Balance',
-    'is_opening' => true
-];
+// Insert Opening Balance Row if a date filter is set OR if non-zero opening balance exists
+if (!empty($from) || $openingGold != 0 || $openingCash != 0) {
+    $ledgerRows[] = [
+        'date' => $from ?: (!empty($entries) ? $entries[0]['date'] : date('Y-m-d')),
+        'no' => '',
+        'name' => 'Opening Balance',
+        'gross' => 0.0,
+        'less' => 0.0,
+        'net' => 0.0,
+        'tch' => 0.0,
+        'wst' => 0.0,
+        'fine' => $openingGold,
+        'cash' => $openingCash,
+        'remark' => 'Opening Balance',
+        'is_opening' => true
+    ];
+}
 
 foreach ($entries as $e) {
     if ($e['type'] === 'deposit') {
