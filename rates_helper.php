@@ -234,9 +234,23 @@ class RatesManager {
         }
 
         if (empty($apiKey)) {
+            // Fallback to system/admin API key if user hasn't configured one
+            $adminStmt = $this->pdo->query("SELECT gold_api_key FROM users WHERE is_admin = 1 AND gold_api_key IS NOT NULL AND gold_api_key != '' LIMIT 1");
+            $adminRow = $adminStmt->fetch(PDO::FETCH_ASSOC);
+            if ($adminRow && !empty(trim($adminRow['gold_api_key'] ?? ''))) {
+                $apiKey = trim($adminRow['gold_api_key']);
+            }
+        }
+
+        if (empty($apiKey)) {
             $errorMsg = "Missing API key in settings. Please configure a valid gold-api.com API key.";
             $this->logDebug($errorMsg);
             error_log("[RatesManager Error] User {$userId}: " . $errorMsg);
+            
+            // Backoff on failure so we don't spam checks on every page load
+            $rates['last_updated'] = time();
+            $this->saveRates($userId, $rates);
+            
             // Return cached rates instead of crashing, but raise a warning
             throw new Exception($errorMsg);
         }
@@ -277,6 +291,10 @@ class RatesManager {
             $this->logDebug($errorMsg);
             error_log("[RatesManager Exception] User {$userId}: " . $errorMsg);
             
+            // Backoff on failure so we don't block page loads with slow cURL timeouts
+            $rates['last_updated'] = time();
+            $this->saveRates($userId, $rates);
+            
             // Return existing database values (last successful rates) instead of hardcoded defaults
             $this->logDebug("Using fallback last successful rates from database.");
             return $rates;
@@ -287,21 +305,21 @@ class RatesManager {
 // Backward compatibility helper functions to support existing code structure
 function loadRates($pdo, $userId) {
     $manager = new RatesManager($pdo, new GoldApiProvider(), new IndianJewelleryRateCalculator());
-    return $manager->loadCachedRates($userId);
+    return $manager->loadCachedRates((int)$userId);
 }
 
 function saveRates($pdo, $userId, $rates) {
     $manager = new RatesManager($pdo, new GoldApiProvider(), new IndianJewelleryRateCalculator());
-    $manager->saveRates($userId, $rates);
+    $manager->saveRates((int)$userId, $rates);
 }
 
 function refreshRatesIfNeeded($pdo, $userId, bool $debugMode = false): array {
     $manager = new RatesManager($pdo, new GoldApiProvider(), new IndianJewelleryRateCalculator(), 300, $debugMode);
     try {
-        return $manager->refreshRates($userId);
+        return $manager->refreshRates((int)$userId);
     } catch (Exception $e) {
         // Return cached rates as fallback to avoid crashing existing pages
-        return $manager->loadCachedRates($userId);
+        return $manager->loadCachedRates((int)$userId);
     }
 }
 ?>

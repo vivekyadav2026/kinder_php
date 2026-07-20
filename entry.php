@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ");
                 
                 foreach ($items as $it) {
-                    $item = trim($it['name'] ?? 'Ornament');
+                    $item = trim($it['item'] ?? 'Ornament');
                     $gross = floatval($it['gross'] ?? 0);
                     $less = floatval($it['less'] ?? 0);
                     $net = max(0, $gross - $less);
@@ -108,6 +108,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Fetch last 5 Fine Deposits
+$stmtDep = $pdo->prepare("SELECT fd.*, b.name as bapari_name FROM fine_deposits fd JOIN baparis b ON fd.bapari_id = b.id WHERE fd.user_id = ? ORDER BY fd.date DESC, fd.id DESC LIMIT 5");
+$stmtDep->execute([$userId]);
+$recentDeposits = $stmtDep->fetchAll();
+
+// Fetch last 5 Kaj Entries
+$stmtKaj = $pdo->prepare("SELECT k.*, b.name as bapari_name FROM kaj_entries k JOIN baparis b ON k.bapari_id = b.id WHERE k.user_id = ? ORDER BY k.date DESC, k.id DESC LIMIT 5");
+$stmtKaj->execute([$userId]);
+$recentKaj = $stmtKaj->fetchAll();
 
 require_once 'header.php';
 ?>
@@ -222,18 +232,13 @@ require_once 'header.php';
             <!-- Item Card Block Template (Matching Image 5 Layout) -->
             <div class="premium-card item-card border-slate-800" id="itemBlock_0">
                 <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
-                    <span class="text-xs font-bold text-[#d8a735] item-header">#1 Item Name</span>
-                    <?php if (!$isReadOnly): ?>
-                        <button type="button" onclick="removeItemBlock(0)" class="text-slate-500 hover:text-rose-400 text-xs flex items-center justify-center">
-                            <span class="material-symbols-rounded text-base">delete</span>
-                        </button>
-                    <?php endif; ?>
+                    <span class="text-xs font-bold text-[#d8a735] item-header">Item Details</span>
                 </div>
                 
                 <div class="space-y-4">
                     <div>
                         <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Item Name</label>
-                        <input type="text" name="items[0][name]" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="Enter item name">
+                        <input type="text" name="items[0][item]" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="Enter item name">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-3.5">
@@ -286,14 +291,7 @@ require_once 'header.php';
             </div>
         </div>
         
-        <!-- Add more button with yellow dashed border (Matching Image 5) -->
-        <?php if (!$isReadOnly): ?>
-            <button type="button" onclick="addItemBlock()" class="w-full py-3.5 rounded-xl border border-dashed border-[#d8a735]/50 text-xs font-bold text-[#d8a735] hover:bg-[#d8a735]/5 transition-colors flex items-center justify-center space-x-1.5 tap-target">
-                <span class="material-symbols-rounded text-base">add</span>
-                <span>ADD MORE ITEM</span>
-            </button>
-        <?php endif; ?>
-        
+        <!-- Add more button removed to restrict to single item -->
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Cash Bill (₹)</label>
             <input type="number" step="0.01" name="cash_bill" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="0">
@@ -323,6 +321,60 @@ require_once 'header.php';
     </form>
 </div>
 
+<!-- Recent Entries Section -->
+<div class="mt-8 mb-6">
+    <h2 class="text-lg font-extrabold tracking-tight text-white mb-4">Recent Entries</h2>
+    
+    <!-- Recent Deposits -->
+    <div id="recentDepositList" class="<?= $activeTab == 'deposit' ? '' : 'hidden' ?> space-y-3">
+        <?php if (empty($recentDeposits)): ?>
+            <div class="text-center p-6 text-slate-500 text-xs bg-[#121212]/80 rounded-2xl">No recent deposits found.</div>
+        <?php else: ?>
+            <?php foreach ($recentDeposits as $r): ?>
+                <div class="premium-card bg-[#121212]/80 flex justify-between items-center p-3">
+                    <div>
+                        <span class="text-xs font-bold text-white block"><?= htmlspecialchars($r['bapari_name']) ?></span>
+                        <span class="text-[10px] text-slate-500 block"><?= date('d M Y', strtotime($r['date'])) ?></span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm font-bold text-[#d8a735] font-mono block">+<?= number_format($r['jama_fine'], 3) ?> g</span>
+                        <?php if($r['cash_received'] > 0): ?>
+                            <span class="text-[10px] text-emerald-400 font-mono block">₹<?= number_format($r['cash_received'], 2) ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            <div class="text-center mt-3">
+                <a href="deposits.php" class="text-[10px] text-[#d8a735] font-bold uppercase tracking-wider hover:underline">View All Deposits &rarr;</a>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Recent Kaj Entries -->
+    <div id="recentKajList" class="<?= $activeTab == 'kaj' ? '' : 'hidden' ?> space-y-3">
+        <?php if (empty($recentKaj)): ?>
+            <div class="text-center p-6 text-slate-500 text-xs bg-[#121212]/80 rounded-2xl">No recent kaj entries found.</div>
+        <?php else: ?>
+            <?php foreach ($recentKaj as $r): ?>
+                <div class="premium-card bg-[#121212]/80 flex justify-between items-center p-3">
+                    <div>
+                        <span class="text-xs font-bold text-white block"><?= htmlspecialchars($r['bapari_name']) ?></span>
+                        <span class="text-[10px] text-slate-500 block"><?= date('d M Y', strtotime($r['date'])) ?></span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm font-bold text-rose-400 font-mono block">-<?= number_format($r['total_kaj_fine'], 3) ?> g</span>
+                        <span class="text-[10px] text-[#d8a735] font-mono block">Profit: <?= number_format($r['total_profit_fine'], 3) ?> g</span>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            <div class="text-center mt-3">
+                <a href="kaj.php" class="text-[10px] text-[#d8a735] font-bold uppercase tracking-wider hover:underline">View All Kaj Entries &rarr;</a>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+
 <script>
     var isReadOnlyActive = <?= $isReadOnly ? 'true' : 'false' ?>;
 
@@ -338,11 +390,22 @@ require_once 'header.php';
             btnKaj.className = "flex-1 py-3 text-center text-sm font-bold rounded-xl transition-all tap-target text-slate-400";
             contentDeposit.classList.remove('hidden');
             contentKaj.classList.add('hidden');
+            
+            const rd = document.getElementById('recentDepositList');
+            if(rd) rd.classList.remove('hidden');
+            const rk = document.getElementById('recentKajList');
+            if(rk) rk.classList.add('hidden');
+            
         } else {
             btnKaj.className = "flex-1 py-3 text-center text-sm font-bold rounded-xl transition-all tap-target bg-[#d8a735] text-slate-950 shadow-md";
             btnDeposit.className = "flex-1 py-3 text-center text-sm font-bold rounded-xl transition-all tap-target text-slate-400";
             contentKaj.classList.remove('hidden');
             contentDeposit.classList.add('hidden');
+            
+            const rk = document.getElementById('recentKajList');
+            if(rk) rk.classList.remove('hidden');
+            const rd = document.getElementById('recentDepositList');
+            if(rd) rd.classList.add('hidden');
         }
     }
 
@@ -354,98 +417,7 @@ require_once 'header.php';
         document.getElementById('jamaFineLabel').textContent = fine + " g";
     }
 
-    // Dynamic multi-item blocks counter for Kaj Job
-    let itemBlockCounter = 1;
-
-    function addItemBlock() {
-        if (isReadOnlyActive) return;
-        const container = document.getElementById('kajItemsContainer');
-        const newIndex = itemBlockCounter++;
-        
-        const div = document.createElement('div');
-        div.className = "premium-card item-card border-slate-800 animate-scale-up";
-        div.id = `itemBlock_${newIndex}`;
-        div.innerHTML = `
-            <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
-                <span class="text-xs font-bold text-[#d8a735] item-header">#${newIndex + 1} Item Name</span>
-                <button type="button" onclick="removeItemBlock(${newIndex})" class="text-slate-500 hover:text-rose-400 text-xs flex items-center justify-center">
-                    <span class="material-symbols-rounded text-base">delete</span>
-                </button>
-            </div>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Item Name</label>
-                    <input type="text" name="items[${newIndex}][name]" required class="premium-input text-sm" placeholder="Enter item name">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-3.5">
-                    <div>
-                        <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Gross</label>
-                        <input type="number" step="0.001" name="items[${newIndex}][gross]" id="gross_${newIndex}" oninput="calcKajItem(${newIndex})" class="premium-input text-sm gross-input" placeholder="0.000" required>
-                    </div>
-                    <div>
-                        <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Less</label>
-                        <input type="number" step="0.001" name="items[${newIndex}][less]" id="less_${newIndex}" value="0" oninput="calcKajItem(${newIndex})" class="premium-input text-sm less-input" placeholder="0">
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-3.5">
-                    <div>
-                        <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Milting %</label>
-                        <input type="number" step="0.01" name="items[${newIndex}][milting]" id="milting_${newIndex}" value="91.80" oninput="calcKajItem(${newIndex})" class="premium-input text-sm milting-input">
-                    </div>
-                    <div>
-                        <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Wastage %</label>
-                        <input type="number" step="0.01" name="items[${newIndex}][wastage]" id="wastage_${newIndex}" value="3.50" oninput="calcKajItem(${newIndex})" class="premium-input text-sm wastage-input">
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-3 mt-3">
-                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-white/[0.03]">
-                        <span class="text-slate-500 text-[8px] uppercase font-bold block">Net</span>
-                        <div class="text-sm font-bold text-white font-mono mt-0.5" id="netLabel_${newIndex}">0.000 g</div>
-                    </div>
-                    
-                    <div class="bg-slate-950/60 p-2.5 rounded-xl border border-white/[0.03]">
-                        <span class="text-slate-500 text-[8px] uppercase font-bold block">Hisab %</span>
-                        <div class="text-sm font-bold text-white font-mono mt-0.5" id="hisabLabel_${newIndex}">95.30%</div>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="premium-card bg-transparent border-[#d8a735]/20 p-2.5">
-                        <span class="text-[#d8a735] text-[8px] uppercase font-bold block">Kaj Fine</span>
-                        <div class="text-base font-bold text-[#d8a735] font-mono mt-0.5" id="kajFineLabel_${newIndex}">0.000 g</div>
-                    </div>
-                    
-                    <div class="premium-card bg-transparent border-[#d8a735]/20 p-2.5">
-                        <span class="text-[#d8a735] text-[8px] uppercase font-bold block">Profit Fine</span>
-                        <div class="text-base font-bold text-[#d8a735] font-mono mt-0.5" id="profitLabel_${newIndex}">0.000 g</div>
-                    </div>
-                </div>
-            </div>
-        `;
-        container.appendChild(div);
-        reindexHeaders();
-    }
-
-    function removeItemBlock(index) {
-        if (isReadOnlyActive) return;
-        const block = document.getElementById(`itemBlock_${index}`);
-        if (block) {
-            block.remove();
-            reindexHeaders();
-            calcTotals();
-        }
-    }
-
-    function reindexHeaders() {
-        const blocks = document.querySelectorAll('#kajItemsContainer .item-card');
-        blocks.forEach((b, idx) => {
-            b.querySelector('.item-header').textContent = `#${idx + 1} Item Name`;
-        });
-    }
+    // Dynamic multi-item logic removed to enforce single-item entry
 
     // Dynamic calculators for individual items
     function calcKajItem(idx) {

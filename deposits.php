@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cashReceived = floatval($_POST['cash_received'] ?? 0.0);
         $remark = trim($_POST['remark'] ?? '');
 
-        if ($bapariIdInput <= 0 || $fineWeight < 0) {
+        if ($bapariIdInput <= 0 || ($fineWeight <= 0 && $cashReceived <= 0)) {
             $error = 'Invalid Customer or Gold Weight!';
         } else {
             // Check if adding to a settled period

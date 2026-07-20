@@ -170,6 +170,19 @@ require_once 'header.php';
     <p class="text-slate-500 text-xs mt-1">All users overview</p>
 </div>
 
+<?php if (isset($_SESSION['impersonator_id'])): ?>
+    <div class="mb-5 p-4 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center justify-between shadow-lg">
+        <div class="flex items-center space-x-2">
+            <span class="material-symbols-rounded text-lg text-amber-400">warning</span>
+            <span>You are currently viewing as: <strong class="text-white"><?= htmlspecialchars($_SESSION['user_name']) ?></strong></span>
+        </div>
+        <a href="admin.php?stop_impersonating=1" class="btn-gold text-xs px-4 py-2 flex items-center space-x-1 shrink-0">
+            <span class="material-symbols-rounded text-sm">logout</span>
+            <span>Return to Admin</span>
+        </a>
+    </div>
+<?php endif; ?>
+
 <!-- Alert banners -->
 <?php if (!empty($adminSuccessMsg)): ?>
     <div class="mb-5 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center">

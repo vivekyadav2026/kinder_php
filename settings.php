@@ -266,11 +266,18 @@ require_once 'header.php';
     <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block mb-3">Precious Metal Rates</span>
     <div class="premium-card bg-[#121212]/80">
         <form method="POST" class="space-y-4">
-            <div>
-                <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Gold API Key (For Auto-Updates)</label>
-                <input type="text" name="gold_api_key" value="<?= htmlspecialchars($ratesConfig['gold_api_key'] ?? '') ?>" class="premium-input text-xs" placeholder="Optional: Enter gold-api.com key">
-                <span class="text-[8px] text-slate-500 block mt-1.5 leading-normal">Register at <a href="https://gold-api.com/" target="_blank" class="text-[#d8a735] underline">gold-api.com</a> to get a key. Leave blank to manage rates manually.</span>
-            </div>
+            <?php if ($isAdmin): ?>
+                <div>
+                    <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Gold API Key (System Master Key)</label>
+                    <input type="text" name="gold_api_key" value="<?= htmlspecialchars($ratesConfig['gold_api_key'] ?? '') ?>" class="premium-input text-xs" placeholder="Enter master gold-api.com key">
+                    <span class="text-[8px] text-slate-500 block mt-1.5 leading-normal">As Admin, your API key will automatically provide live updates for all users in the system.</span>
+                </div>
+            <?php else: ?>
+                <div class="p-3 bg-[#18181b] rounded-xl border border-white/[0.04] mb-2 text-[10px] text-slate-400 flex items-center space-x-2">
+                    <span class="material-symbols-rounded text-[#d8a735] text-base">verified</span>
+                    <span>Live metal rates are automatically synced using the System Admin Master Key.</span>
+                </div>
+            <?php endif; ?>
             
             <div class="grid grid-cols-3 gap-3">
                 <div>

@@ -294,7 +294,7 @@
     </header>
 
     <?php if (isset($_SESSION['impersonator_id'])): ?>
-        <div class="fixed top-10 left-0 right-0 z-30 bg-amber-500 text-slate-950 px-4 py-2 text-center text-xs font-bold flex items-center justify-center space-x-2 shadow-md" style="padding-top: env(safe-area-inset-top, 0px);">
+        <div class="fixed top-10 md:top-[104px] left-0 right-0 z-50 bg-amber-500 text-slate-950 px-4 py-2 text-center text-xs font-bold flex items-center justify-center space-x-2 shadow-md" style="padding-top: env(safe-area-inset-top, 0px);">
             <span>⚠️ Viewing: <strong><?= htmlspecialchars($_SESSION['user_name']) ?></strong></span>
             <a href="admin.php?stop_impersonating=1" class="underline hover:text-slate-800 ml-2 font-extrabold flex items-center"><span class="material-symbols-rounded text-xs mr-0.5">logout</span> Return to Admin</a>
         </div>

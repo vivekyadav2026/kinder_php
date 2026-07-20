@@ -1,6 +1,7 @@
 <?php
 require_once 'db.php';
 
+/* --- Demo Data loading commented out ---
 // Handle Demo Data loading
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['load_demo_data'])) {
     try {
@@ -35,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['load_demo_data'])) {
         die("Failed loading demo data: " . $e->getMessage());
     }
 }
+--- End Demo Data loading --- */
 
 // Fetch stats
 $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM baparis WHERE user_id = ?");
@@ -54,8 +56,45 @@ $totalKajFine = $kajStats['total_kaj'] ?? 0.0;
 $totalProfitFine = $kajStats['total_profit'] ?? 0.0;
 $totalCashBill = $kajStats['total_bill'] ?? 0.0;
 
-$netFineBalance = round($totalJamaFine - $totalKajFine, 3);
-$netCashBalance = round($totalCashRec - $totalCashBill, 2);
+$stmt = $pdo->prepare("SELECT id FROM baparis WHERE user_id = ?");
+$stmt->execute([$userId]);
+$bapariIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+$netFineBalance = 0.0;
+$netCashBalance = 0.0;
+
+foreach ($bapariIds as $bid) {
+    $settleStmt = $pdo->prepare("SELECT * FROM ledger_settlements WHERE bapari_id = ? AND user_id = ? ORDER BY settlement_date DESC LIMIT 1");
+    $settleStmt->execute([$bid, $userId]);
+    $settlement = $settleStmt->fetch();
+    
+    $from = '1970-01-01';
+    $gold = 0.0;
+    $cash = 0.0;
+    
+    if ($settlement) {
+        $gold = floatval($settlement['closing_gold']);
+        $cash = floatval($settlement['closing_cash']);
+        $from = date('Y-m-d', strtotime($settlement['settlement_date'] . ' +1 day'));
+    }
+    
+    $depStmt = $pdo->prepare("SELECT SUM(jama_fine) as g, SUM(cash_received) as c FROM fine_deposits WHERE bapari_id = ? AND user_id = ? AND date >= ?");
+    $depStmt->execute([$bid, $userId, $from]);
+    $dep = $depStmt->fetch();
+    
+    $kajStmt = $pdo->prepare("SELECT SUM(total_kaj_fine) as g, SUM(cash_bill) as c FROM kaj_entries WHERE bapari_id = ? AND user_id = ? AND date >= ?");
+    $kajStmt->execute([$bid, $userId, $from]);
+    $kaj = $kajStmt->fetch();
+    
+    $gold += floatval($dep['g'] ?? 0) - floatval($kaj['g'] ?? 0);
+    $cash += floatval($dep['c'] ?? 0) - floatval($kaj['c'] ?? 0);
+    
+    $netFineBalance += $gold;
+    $netCashBalance += $cash;
+}
+
+$netFineBalance = round($netFineBalance, 3);
+$netCashBalance = round($netCashBalance, 2);
 
 require_once 'header.php';
 ?>
@@ -157,7 +196,7 @@ require_once 'header.php';
     </div>
 </div>
 
-<!-- Load Demo Data Button (Replicated from screenshot) -->
+<!-- Load Demo Data Button - COMMENTED OUT
 <div class="mb-6">
     <form method="POST">
         <button type="submit" name="load_demo_data" class="w-full py-3.5 rounded-3xl text-sm font-bold text-slate-950 bg-[#d8a735] hover:opacity-90 transition-all flex items-center justify-center space-x-1.5 shadow-lg shadow-[#d8a735]/10">
@@ -166,6 +205,7 @@ require_once 'header.php';
         </button>
     </form>
 </div>
+-->
 
 <?php
 require_once 'footer.php';

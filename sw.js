@@ -1,4 +1,4 @@
-const CACHE_NAME = 'karigor-cache-v1';
+const CACHE_NAME = 'karigor-cache-v2';
 const ASSETS_TO_CACHE = [
   './index.php',
   './db.php',
@@ -37,7 +37,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch events: Network-first, fallback to cache, then fallback to offline.php
+// Fetch events: Network-first for dynamic content, Cache-first for static assets
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
 
@@ -46,40 +46,49 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Intercept and cache external fonts or CDNs dynamically
-  const isGoogleFont = url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com');
+  // Static assets (fonts, images) can use Cache-First
+  const isStaticAsset = url.includes('fonts.googleapis.com') || 
+                        url.includes('fonts.gstatic.com') || 
+                        url.match(/\.(png|jpg|jpeg|svg|css|js)$/i);
   
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      // Return cached fonts or files immediately if offline or cached
-      if (cachedResponse) {
-        // Fetch new version in background to update cache (stale-while-revalidate)
-        if (event.request.method === 'GET' && !isGoogleFont) {
-          fetch(event.request).then((networkResponse) => {
-            if (networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
-            }
-          }).catch(() => {});
-        }
-        return cachedResponse;
-      }
-
-      return fetch(event.request)
-        .then((response) => {
-          if (response.status === 200 && event.request.method === 'GET') {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
+  if (isStaticAsset) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+        return fetch(event.request).then((networkResponse) => {
+          if (networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
-          return response;
-        })
-        .catch(() => {
-          // If a page/document request fails (HTML), show offline fallback
+          return networkResponse;
+        });
+      })
+    );
+    return;
+  }
+
+  // For dynamic PHP pages (HTML content), ALWAYS use Network-First
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        // If network succeeds, cache it and return
+        if (networkResponse.status === 200 && event.request.method === 'GET') {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        // If network fails (offline), try to return from cache
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // If not in cache and it's a page request, show offline fallback
           if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
             return caches.match('./offline.php');
           }
         });
-    })
+      })
   );
 });

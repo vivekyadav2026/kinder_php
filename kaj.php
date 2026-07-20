@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (empty($item)) continue;
                     
                     // Calculations
-                    $net = round($gross - $less, 3);
+                    $net = max(0, round($gross - $less, 3));
                     $hisab = round($milting + $wastage, 2);
                     $kajFine = round(($net * $hisab) / 100.0, 3);
                     $profitFine = round(($wastage * $net) / 100.0, 3);
@@ -268,12 +268,7 @@ require_once 'header.php';
             <!-- Items Area -->
             <div class="mt-4">
                 <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Items List</h3>
-                    <?php if (!$blockForm): ?>
-                        <button type="button" onclick="addItemRow()" class="px-3 py-1.5 rounded-lg bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all text-[11px] font-bold flex items-center space-x-1">
-                            <span class="material-symbols-rounded text-sm">add</span> <span>Add Item</span>
-                        </button>
-                    <?php endif; ?>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Item Details</h3>
                 </div>
                 
                 <div id="itemRows" class="space-y-4">
@@ -310,12 +305,11 @@ require_once 'header.php';
             div.id = 'row_' + rowCount;
             div.className = 'premium-card bg-slate-900/50 p-4 border border-slate-850 space-y-3';
             
-            var deleteBtn = formBlocked ? '' : `<button type="button" onclick="removeRow(\${rowCount})" class="text-rose-400 hover:text-rose-500 tap-target flex items-center justify-center"><span class="material-symbols-rounded text-lg">delete</span></button>`;
+            var deleteBtn = '';
             
             div.innerHTML = `
                 <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase">Item #\${rowCount + 1}</span>
-                    \${deleteBtn}
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Item Details</span>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="col-span-2">

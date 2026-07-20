@@ -54,6 +54,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
+                // Register normal sw.js
                 navigator.serviceWorker.register('sw.js')
                     .then((reg) => console.log('PWA Service Worker: Registered', reg.scope))
                     .catch((err) => console.error('PWA Service Worker: Registration failed', err));
