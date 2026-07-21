@@ -166,7 +166,10 @@ if (!empty($from) || $openingGold != 0 || $openingCash != 0) {
 
 foreach ($entries as $e) {
     if ($e['type'] === 'deposit') {
-        if (floatval($e['fine_weight']) > 0) {
+        $hasMetal = floatval($e['fine_weight']) > 0 || floatval($e['jama_fine']) > 0;
+        $hasCash = floatval($e['cash_received']) > 0;
+
+        if ($hasMetal) {
             $ledgerRows[] = [
                 'date' => $e['date'],
                 'no' => 'Inward No : ' . $e['id'],
@@ -177,14 +180,13 @@ foreach ($entries as $e) {
                 'tch' => floatval($e['purity']),
                 'wst' => 0.0,
                 'fine' => floatval($e['jama_fine']),
-                'cash' => 0.0,
+                'cash' => $hasCash ? floatval($e['cash_received']) : 0.0,
                 'remark' => $e['remark'],
                 'is_opening' => false,
                 'type' => 'deposit',
                 'id' => $e['id']
             ];
-        }
-        if (floatval($e['cash_received']) > 0) {
+        } elseif ($hasCash) {
             $ledgerRows[] = [
                 'date' => $e['date'],
                 'no' => 'Inward No : ' . $e['id'],
@@ -203,25 +205,32 @@ foreach ($entries as $e) {
             ];
         }
     } else {
-        foreach ($e['items'] as $it) {
-            $ledgerRows[] = [
-                'date' => $e['date'],
-                'no' => 'Outward No : ' . $e['id'],
-                'name' => $it['item'],
-                'gross' => floatval($it['gross']),
-                'less' => floatval($it['less']),
-                'net' => floatval($it['net']),
-                'tch' => floatval($it['milting']),
-                'wst' => floatval($it['wastage']),
-                'fine' => -floatval($it['kaj_fine']),
-                'cash' => 0.0,
-                'remark' => $e['remark'],
-                'is_opening' => false,
-                'type' => 'kaj',
-                'id' => $e['id']
-            ];
-        }
-        if (floatval($e['cash_bill']) > 0) {
+        $items = $e['items'] ?? [];
+        $hasItems = !empty($items);
+        $cashVal = floatval($e['cash_bill']);
+
+        if ($hasItems) {
+            $first = true;
+            foreach ($items as $it) {
+                $ledgerRows[] = [
+                    'date' => $e['date'],
+                    'no' => 'Outward No : ' . $e['id'],
+                    'name' => $it['item'],
+                    'gross' => floatval($it['gross']),
+                    'less' => floatval($it['less']),
+                    'net' => floatval($it['net']),
+                    'tch' => floatval($it['milting']),
+                    'wst' => floatval($it['wastage']),
+                    'fine' => -floatval($it['kaj_fine']),
+                    'cash' => $first ? -$cashVal : 0.0,
+                    'remark' => $e['remark'],
+                    'is_opening' => false,
+                    'type' => 'kaj',
+                    'id' => $e['id']
+                ];
+                $first = false;
+            }
+        } elseif ($cashVal > 0) {
             $ledgerRows[] = [
                 'date' => $e['date'],
                 'no' => 'Outward No : ' . $e['id'],
@@ -232,7 +241,7 @@ foreach ($entries as $e) {
                 'tch' => 0.0,
                 'wst' => 0.0,
                 'fine' => 0.0,
-                'cash' => -floatval($e['cash_bill']),
+                'cash' => -$cashVal,
                 'remark' => $e['remark'],
                 'is_opening' => false,
                 'type' => 'kaj',
@@ -374,14 +383,15 @@ if ($isPrintMode) {
         <table>
             <thead>
                 <tr>
-                    <th style="width: 80px;">Rec Dt.</th>
-                    <th style="width: 90px;">No</th>
+                    <th style="width: 75px;">Rec Dt.</th>
+                    <th style="width: 85px;">No</th>
                     <th>Name</th>
-                    <th style="width: 70px;">Gross<br><span style="font-size:9px; font-weight:normal;">Less</span></th>
-                    <th style="width: 70px;">Net</th>
-                    <th style="width: 60px;">Tch<br><span style="font-size:9px; font-weight:normal;">Wst</span></th>
-                    <th style="width: 90px;">Fine</th>
-                    <th style="width: 85px;">Amt Pcs</th>
+                    <th style="width: 65px;">Gross<br><span style="font-size:9px; font-weight:normal;">Less</span></th>
+                    <th style="width: 65px;">Net</th>
+                    <th style="width: 55px;">Tch<br><span style="font-size:9px; font-weight:normal;">Wst</span></th>
+                    <th style="width: 80px;">Fine</th>
+                    <th style="width: 60px;">Amt Pcs</th>
+                    <th style="width: 75px;">Cash</th>
                     <th>Narration</th>
                 </tr>
             </thead>
@@ -421,6 +431,9 @@ if ($isPrintMode) {
                             ?>
                         </td>
                         <td class="text-right font-mono">
+                            0
+                        </td>
+                        <td class="text-right font-mono">
                             <?php 
                             if ($r['cash'] != 0) {
                                 $isCredit = $r['cash'] >= 0;
@@ -451,6 +464,7 @@ if ($isPrintMode) {
                         echo "<span class='{$colorClass}'>" . number_format(abs($currentOutstandingGold), 3) . ($isCr ? ' Cr' : ' Db') . "</span>";
                         ?>
                     </td>
+                    <td class="text-right font-mono">0</td>
                     <td class="text-right font-mono">
                         <?php 
                         $isCr = $currentOutstandingCash >= 0;
