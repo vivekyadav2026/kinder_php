@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Email Address</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500"><span class="material-symbols-rounded text-lg">mail</span></span>
-                    <input type="email" name="email" required class="premium-input pl-11" placeholder="admin@admin.com">
+                    <input type="email" name="email" required class="premium-input pl-11" placeholder="admin@example.com">
                 </div>
             </div>
 
