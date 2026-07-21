@@ -224,7 +224,12 @@ $appUrl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 
     <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block mb-1">Change Admin Password</span>
     <p class="text-slate-400 text-[10px] mb-3">Update your own administrator account password.</p>
     <form method="POST" class="flex items-center space-x-2">
-        <input type="password" name="new_admin_password" required minlength="6" placeholder="Enter new admin password" class="premium-input text-xs flex-1 py-2 px-3">
+        <div class="relative flex-1">
+            <input type="password" id="adminNewPass" name="new_admin_password" required minlength="6" placeholder="Enter new admin password" class="premium-input text-xs py-2 px-3 pr-9">
+            <button type="button" onclick="togglePasswordVisibility('adminNewPass', 'adminPassIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition-colors focus:outline-none" tabindex="-1" title="Toggle password visibility">
+                <span id="adminPassIcon" class="material-symbols-rounded text-base">visibility</span>
+            </button>
+        </div>
         <button type="submit" name="change_admin_password" class="px-3.5 py-2.5 rounded-xl bg-[#d8a735] hover:bg-[#d8a735]/90 text-slate-950 font-bold text-xs flex items-center space-x-1.5 shrink-0 transition-all tap-target">
             <span class="material-symbols-rounded text-sm">key</span>
             <span>Update Password</span>
@@ -353,8 +358,11 @@ $appUrl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 
                 <div id="passwordForm_<?= $u['id'] ?>" class="hidden mt-3.5 pt-3.5 border-t border-white/[0.04] w-full">
                     <form method="POST" class="flex items-center space-x-3 w-full">
                         <input type="hidden" name="target_user_id" value="<?= $u['id'] ?>">
-                        <div class="flex-1">
-                            <input type="password" name="new_password" required minlength="6" placeholder="Enter new password" class="premium-input text-xs py-2 px-3">
+                        <div class="relative flex-1">
+                            <input type="password" id="userPass_<?= $u['id'] ?>" name="new_password" required minlength="6" placeholder="Enter new password" class="premium-input text-xs py-2 px-3 pr-9">
+                            <button type="button" onclick="togglePasswordVisibility('userPass_<?= $u['id'] ?>', 'userPassIcon_<?= $u['id'] ?>')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition-colors focus:outline-none" tabindex="-1" title="Toggle password visibility">
+                                <span id="userPassIcon_<?= $u['id'] ?>" class="material-symbols-rounded text-base">visibility</span>
+                            </button>
                         </div>
                         <button type="submit" name="change_password" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-500/90 text-slate-950 font-bold text-[10px] tracking-wide flex items-center space-x-1.5 transition-all tap-target shrink-0">
                             <span class="material-symbols-rounded text-sm">key</span>
@@ -368,6 +376,19 @@ $appUrl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 
 </div>
 
 <script>
+    function togglePasswordVisibility(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (!input || !icon) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = 'visibility_off';
+        } else {
+            input.type = 'password';
+            icon.textContent = 'visibility';
+        }
+    }
+
     var currentStatusFilter = 'all';
 
     function setStatusFilter(status) {

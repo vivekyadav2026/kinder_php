@@ -135,7 +135,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500"><span class="material-symbols-rounded text-lg">lock</span></span>
-                    <input type="password" name="password" required class="premium-input pl-11" placeholder="••••••••">
+                    <input type="password" id="loginPassword" name="password" required class="premium-input pl-11 pr-11" placeholder="••••••••">
+                    <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-white transition-colors focus:outline-none" tabindex="-1" title="Toggle password visibility">
+                        <span id="loginEyeIcon" class="material-symbols-rounded text-lg">visibility</span>
+                    </button>
                 </div>
             </div>
 
@@ -159,6 +162,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span>Continue with Google</span>
             </a>
         </form>
+
+        <script>
+            function togglePasswordVisibility(inputId, iconId) {
+                const input = document.getElementById(inputId);
+                const icon = document.getElementById(iconId);
+                if (!input || !icon) return;
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.textContent = 'visibility_off';
+                } else {
+                    input.type = 'password';
+                    icon.textContent = 'visibility';
+                }
+            }
+        </script>
 
         <p class="text-center text-xs text-slate-400 mt-6">
             Don't have an account? <a href="register.php" class="text-[#F4B400] font-semibold hover:underline">Register</a>

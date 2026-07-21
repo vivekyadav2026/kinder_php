@@ -124,18 +124,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isValid && $user) {
             <form method="POST" class="space-y-5">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">New Password</label>
-                    <input type="password" name="password" required class="premium-input" placeholder="••••••••">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500"><span class="material-symbols-rounded text-lg">lock</span></span>
+                        <input type="password" id="resetPass" name="password" required class="premium-input pl-11 pr-11" placeholder="••••••••">
+                        <button type="button" onclick="togglePasswordVisibility('resetPass', 'resetPassIcon')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-white transition-colors focus:outline-none" tabindex="-1" title="Toggle password visibility">
+                            <span id="resetPassIcon" class="material-symbols-rounded text-lg">visibility</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Confirm Password</label>
-                    <input type="password" name="confirm_password" required class="premium-input" placeholder="••••••••">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500"><span class="material-symbols-rounded text-lg">lock</span></span>
+                        <input type="password" id="confirmPass" name="confirm_password" required class="premium-input pl-11 pr-11" placeholder="••••••••">
+                        <button type="button" onclick="togglePasswordVisibility('confirmPass', 'confirmPassIcon')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-white transition-colors focus:outline-none" tabindex="-1" title="Toggle password visibility">
+                            <span id="confirmPassIcon" class="material-symbols-rounded text-lg">visibility</span>
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="w-full btn-gold text-center">
                     Reset Password
                 </button>
             </form>
+
+            <script>
+                function togglePasswordVisibility(inputId, iconId) {
+                    const input = document.getElementById(inputId);
+                    const icon = document.getElementById(iconId);
+                    if (!input || !icon) return;
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.textContent = 'visibility_off';
+                    } else {
+                        input.type = 'password';
+                        icon.textContent = 'visibility';
+                    }
+                }
+            </script>
         <?php else: ?>
             <div class="text-center mt-6">
                 <a href="login.php" class="btn-gold inline-block w-full text-center">
