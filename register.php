@@ -39,7 +39,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Register - Dasgold Ledger Pro</title>
+    <title>Create Account - Dasgold Ledger Pro | Gold Ledger Management</title>
+    
+    <!-- Primary SEO Meta Tags -->
+    <meta name="description" content="Register for Dasgold Ledger Pro to manage goldsmith ledger accounts, fine gold weight calculation, Bapari transactions, and daily billing.">
+    <meta name="keywords" content="dasgold register, create gold ledger account, goldsmith app, jeweller software signup">
+    <meta name="robots" content="index, follow">
+    <meta name="google-site-verification" content="google31a347d586efda5d">
+    <link rel="canonical" href="<?= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ($_SERVER['REQUEST_URI'] ?? '') ?>">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="Create Account - Dasgold Ledger Pro">
+    <meta property="og:description" content="Start managing your goldsmith accounts, fine gold weights, and Bapari statements today.">
+    <meta property="og:image" content="assets/images/karigor-icon.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">

@@ -56,7 +56,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Login - Dasgold Ledger Pro</title>
+    <title>Login - Dasgold Ledger Pro | Gold Ledger Management</title>
+    
+    <!-- Primary SEO Meta Tags -->
+    <meta name="description" content="Login to Dasgold Ledger Pro to manage your gold ledger, Bapari deposits, Kaarigari jobs, and cash balance statements seamlessly.">
+    <meta name="keywords" content="dasgold login, gold ledger login, goldsmith app, jeweller ledger app">
+    <meta name="robots" content="index, follow">
+    <meta name="google-site-verification" content="google31a347d586efda5d">
+    <link rel="canonical" href="<?= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ($_SERVER['REQUEST_URI'] ?? '') ?>">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="Login - Dasgold Ledger Pro">
+    <meta property="og:description" content="Access your gold ledger account, manage fine gold weights, and customer statements.">
+    <meta property="og:image" content="assets/images/karigor-icon.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">

@@ -1,0 +1,19 @@
+# Robots.txt for Dasgold Ledger Pro
+User-agent: *
+Allow: /
+Allow: /index.php
+Allow: /login.php
+Allow: /register.php
+Allow: /forgot-password.php
+Allow: /sitemap.xml
+Allow: /sitemap.php
+
+# Block indexing of sensitive configuration files or admin endpoints if required
+Disallow: /config.php
+Disallow: /db.php
+Disallow: /schema.sql
+Disallow: /debug_api.php
+
+# XML Sitemap Link for Google & Search Crawlers
+Sitemap: http://localhost/kinder_php/sitemap.xml
+Sitemap: http://localhost/kinder_php/sitemap.php

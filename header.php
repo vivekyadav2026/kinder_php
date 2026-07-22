@@ -3,7 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dasgold Ledger Pro</title>
+    <title>Dasgold Ledger Pro - Gold Ledger & Goldsmith Management System</title>
+    
+    <!-- Primary SEO Meta Tags -->
+    <meta name="description" content="Dasgold Ledger Pro is a premier gold ledger management app for goldsmiths and jewellers. Effortlessly track gold fine weight, Bapari deposits, Kaarigari job entries, and cash balances.">
+    <meta name="keywords" content="gold ledger, goldsmith app, jeweller ledger, fine gold calculator, kaarigari job, bapari statement, gold account manager, dasgold, jeweller software">
+    <meta name="author" content="Dasgold">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="<?= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ($_SERVER['REQUEST_URI'] ?? '') ?>">
+
+    <!-- Google Search Console Site Verification -->
+    <meta name="google-site-verification" content="google31a347d586efda5d">
+
+    <!-- Open Graph / Facebook / WhatsApp Preview -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Dasgold Ledger Pro">
+    <meta property="og:title" content="Dasgold Ledger Pro - Gold Ledger & Goldsmith Management">
+    <meta property="og:description" content="Manage gold fine weight, Bapari customer accounts, Kaarigari jobs, and daily cash transactions with ease.">
+    <meta property="og:image" content="assets/images/karigor-icon.png">
+    <meta property="og:url" content="<?= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') ?>">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Dasgold Ledger Pro - Gold Ledger Management">
+    <meta name="twitter:description" content="Track gold fine weight, Bapari deposits, Kaarigari jobs, and cash statements seamlessly.">
+    <meta name="twitter:image" content="assets/images/karigor-icon.png">
+
+    <!-- Schema.org JSON-LD Structured Data for Google Rich Snippets -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Dasgold Ledger Pro",
+      "applicationCategory": "FinancialApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "description": "Gold Ledger & Goldsmith Management System for tracking fine weight, Bapari deposits, Kaarigari jobs, and cash balances.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR"
+      }
+    }
+    </script>
+
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
