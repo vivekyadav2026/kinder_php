@@ -109,6 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_rates'])) {
 }
 
 // Get report filter parameters
+$fromDate = $_GET['from_date'] ?? '';
+$toDate = $_GET['to_date'] ?? '';
 $filterMonth = $_GET['month'] ?? '';
 $filterYear = $_GET['year'] ?? '';
 $filterItem = trim($_GET['item'] ?? '');
@@ -122,6 +124,8 @@ $filterBaparis = $stmt->fetchAll();
 // Base Queries for aggregates
 $depQuery = "SELECT * FROM fine_deposits WHERE user_id = ?";
 $depParams = [$userId];
+if ($fromDate) { $depQuery .= " AND date >= ?"; $depParams[] = $fromDate; }
+if ($toDate) { $depQuery .= " AND date <= ?"; $depParams[] = $toDate; }
 if ($filterYear) { $depQuery .= " AND YEAR(date) = ?"; $depParams[] = $filterYear; }
 if ($filterMonth) { $depQuery .= " AND MONTH(date) = ?"; $depParams[] = $filterMonth; }
 if ($filterBapariId > 0) { $depQuery .= " AND bapari_id = ?"; $depParams[] = $filterBapariId; }
@@ -132,6 +136,8 @@ $deposits = $stmt->fetchAll();
 
 $kajQuery = "SELECT k.* FROM kaj_entries k WHERE k.user_id = ?";
 $kajParams = [$userId];
+if ($fromDate) { $kajQuery .= " AND k.date >= ?"; $kajParams[] = $fromDate; }
+if ($toDate) { $kajQuery .= " AND k.date <= ?"; $kajParams[] = $toDate; }
 if ($filterYear) { $kajQuery .= " AND YEAR(k.date) = ?"; $kajParams[] = $filterYear; }
 if ($filterMonth) { $kajQuery .= " AND MONTH(k.date) = ?"; $kajParams[] = $filterMonth; }
 if ($filterBapariId > 0) { $kajQuery .= " AND k.bapari_id = ?"; $kajParams[] = $filterBapariId; }
@@ -332,8 +338,19 @@ require_once 'header.php';
             </div>
             
             <div class="grid grid-cols-2 gap-3.5 mb-3">
+                <div>
+                    <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">From Date</label>
+                    <input type="date" name="from_date" value="<?= htmlspecialchars($fromDate) ?>" class="premium-input text-xs">
+                </div>
+                <div>
+                    <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">To Date</label>
+                    <input type="date" name="to_date" value="<?= htmlspecialchars($toDate) ?>" class="premium-input text-xs">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3.5 mb-3">
                 <input type="number" name="month" id="filterMonthInput" value="<?= $filterMonth ?>" class="premium-input text-xs" placeholder="Month (MM)">
-                <input type="number" name="year" value="<?= $filterYear ?: date('Y') ?>" class="premium-input text-xs" placeholder="Year (YYYY)">
+                <input type="number" name="year" value="<?= $filterYear ?>" class="premium-input text-xs" placeholder="Year (YYYY)">
             </div>
             
             <!-- Horizontal month selector bar (Matching Image 2) -->

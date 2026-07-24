@@ -61,9 +61,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $milting = floatval($it['milting'] ?? 0);
                     $wastage = floatval($it['wastage'] ?? 0);
                     
-                    $hisab = $milting + $wastage;
-                    $kajFine = round($net * ($hisab / 100), 3);
-                    $profitFine = round($net * ($wastage / 100), 3);
+                    $netPart1 = floatval($it['net_part1'] ?? 0);
+                    $netPart2 = floatval($it['net_part2'] ?? 0);
+                    $wst1Raw = floatval($it['wastage1'] ?? 0);
+                    $wst2Raw = floatval($it['wastage2'] ?? 0);
+                    $extraPure = floatval($it['extra_pure'] ?? 0);
+                    
+                    if ($netPart1 > 0 || $netPart2 > 0) {
+                        $hisab1 = ($wst1Raw > 50) ? $wst1Raw : (($wst1Raw > 0) ? ($milting + $wst1Raw) : ($milting + $wastage));
+                        $wstVal1 = ($wst1Raw > 50) ? max(0, $wst1Raw - $milting) : (($wst1Raw > 0) ? $wst1Raw : $wastage);
+                        
+                        $hisab2 = ($wst2Raw > 50) ? $wst2Raw : (($wst2Raw > 0) ? ($milting + $wst2Raw) : ($milting + $wastage));
+                        $wstVal2 = ($wst2Raw > 50) ? max(0, $wst2Raw - $milting) : (($wst2Raw > 0) ? $wst2Raw : $wastage);
+
+                        $kajFine = round(($netPart1 * ($hisab1 / 100)) + ($netPart2 * ($hisab2 / 100)) + $extraPure, 3);
+                        $profitFine = round(($netPart1 * ($wstVal1 / 100)) + ($netPart2 * ($wstVal2 / 100)), 3);
+                    } else {
+                        $hisab = $milting + $wastage;
+                        $kajFine = round(($net * ($hisab / 100)) + $extraPure, 3);
+                        $profitFine = round($net * ($wastage / 100), 3);
+                    }
                     
                     $totalKajFine += $kajFine;
                     $totalProfitFine += $profitFine;
@@ -91,9 +108,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $milting = floatval($it['milting'] ?? 0);
                     $wastage = floatval($it['wastage'] ?? 0);
                     
-                    $hisab = $milting + $wastage;
-                    $kajFine = round($net * ($hisab / 100), 3);
-                    $profitFine = round($net * ($wastage / 100), 3);
+                    $netPart1 = floatval($it['net_part1'] ?? 0);
+                    $netPart2 = floatval($it['net_part2'] ?? 0);
+                    $wst1Raw = floatval($it['wastage1'] ?? 0);
+                    $wst2Raw = floatval($it['wastage2'] ?? 0);
+                    $extraPure = floatval($it['extra_pure'] ?? 0);
+                    
+                    if ($netPart1 > 0 || $netPart2 > 0) {
+                        $hisab1 = ($wst1Raw > 50) ? $wst1Raw : (($wst1Raw > 0) ? ($milting + $wst1Raw) : ($milting + $wastage));
+                        $wstVal1 = ($wst1Raw > 50) ? max(0, $wst1Raw - $milting) : (($wst1Raw > 0) ? $wst1Raw : $wastage);
+                        
+                        $hisab2 = ($wst2Raw > 50) ? $wst2Raw : (($wst2Raw > 0) ? ($milting + $wst2Raw) : ($milting + $wastage));
+                        $wstVal2 = ($wst2Raw > 50) ? max(0, $wst2Raw - $milting) : (($wst2Raw > 0) ? $wst2Raw : $wastage);
+
+                        $hisab = $hisab1;
+                        $kajFine = round(($netPart1 * ($hisab1 / 100)) + ($netPart2 * ($hisab2 / 100)) + $extraPure, 3);
+                        $profitFine = round(($netPart1 * ($wstVal1 / 100)) + ($netPart2 * ($wstVal2 / 100)), 3);
+                    } else {
+                        $hisab = $milting + $wastage;
+                        $kajFine = round(($net * ($hisab / 100)) + $extraPure, 3);
+                        $profitFine = round($net * ($wastage / 100), 3);
+                    }
                     
                     $stmtItem->execute([$kajEntryId, $item, $gross, $less, $net, $milting, $wastage, $hisab, $kajFine, $profitFine]);
                 }
@@ -265,9 +300,14 @@ require_once 'header.php';
                     
                     <!-- Dynamic Output Result Boxes Grid (Matching Image 5) -->
                     <div class="grid grid-cols-2 gap-3 mt-3">
-                        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-white/[0.03]">
-                            <span class="text-slate-500 text-[8px] uppercase font-bold block">Net</span>
-                            <div class="text-sm font-bold text-white font-mono mt-0.5" id="netLabel_0">0.000 g</div>
+                        <div class="bg-slate-950/60 p-2.5 rounded-xl border border-white/[0.03] flex items-center justify-between">
+                            <div>
+                                <span class="text-slate-500 text-[8px] uppercase font-bold block">Net</span>
+                                <div class="text-sm font-bold text-white font-mono mt-0.5" id="netLabel_0">0.000 g</div>
+                            </div>
+                            <button type="button" onclick="toggleNetSplit(0)" class="w-7 h-7 rounded-lg bg-[#d8a735]/15 border border-[#d8a735]/30 text-[#d8a735] hover:bg-[#d8a735]/25 flex items-center justify-center font-bold text-xs tap-target" title="Split Net into 2 parts">
+                                <span id="netSplitIcon_0" class="material-symbols-rounded text-sm">add</span>
+                            </button>
                         </div>
                         
                         <div class="bg-slate-950/60 p-2.5 rounded-xl border border-white/[0.03]">
@@ -275,10 +315,40 @@ require_once 'header.php';
                             <div class="text-sm font-bold text-white font-mono mt-0.5" id="hisabLabel_0">95.30%</div>
                         </div>
                     </div>
+
+                    <!-- Split Net Container (Hidden by default, toggled via + button) -->
+                    <div id="netSplitSection_0" class="hidden p-3 rounded-xl bg-slate-950/40 border border-[#d8a735]/20 space-y-3">
+                        <div class="text-[9px] font-bold uppercase tracking-wider text-[#d8a735]">Split Net Calculation</div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Net (g)</label>
+                                <input type="number" step="0.001" id="netPart1_0" name="items[0][net_part1]" oninput="calcKajItem(0)" class="premium-input text-xs font-mono" placeholder="0.000">
+                            </div>
+                            <div>
+                                <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Hisab / Wastage (%)</label>
+                                <input type="number" step="0.01" id="wastage1_0" name="items[0][wastage1]" oninput="calcKajItem(0)" class="premium-input text-xs font-mono" placeholder="Default Mel+Wst">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Net (g)</label>
+                                <input type="number" step="0.001" id="netPart2_0" name="items[0][net_part2]" oninput="calcKajItem(0)" class="premium-input text-xs font-mono" placeholder="0.000">
+                            </div>
+                            <div>
+                                <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Hisab / Wastage (%)</label>
+                                <input type="number" step="0.01" id="wastage2_0" name="items[0][wastage2]" oninput="calcKajItem(0)" class="premium-input text-xs font-mono" placeholder="e.g. 3.50 or 95.30">
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="grid grid-cols-2 gap-3">
-                        <div class="premium-card bg-transparent border-[#d8a735]/20 p-2.5">
-                            <span class="text-[#d8a735] text-[8px] uppercase font-bold block">Kaj Fine</span>
+                        <div class="premium-card bg-transparent border-[#d8a735]/20 p-2.5 relative">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[#d8a735] text-[8px] uppercase font-bold block">Kaj Fine</span>
+                                <button type="button" onclick="toggleExtraPure(0)" class="w-6 h-6 rounded-md bg-[#d8a735]/15 border border-[#d8a735]/30 text-[#d8a735] hover:bg-[#d8a735]/25 flex items-center justify-center font-bold text-xs tap-target" title="Add Extra Pure Gold">
+                                    <span id="extraPureIcon_0" class="material-symbols-rounded text-xs">add</span>
+                                </button>
+                            </div>
                             <div class="text-base font-bold text-[#d8a735] font-mono mt-0.5" id="kajFineLabel_0">0.000 g</div>
                         </div>
                         
@@ -286,6 +356,12 @@ require_once 'header.php';
                             <span class="text-[#d8a735] text-[8px] uppercase font-bold block">Profit Fine</span>
                             <div class="text-base font-bold text-[#d8a735] font-mono mt-0.5" id="profitLabel_0">0.000 g</div>
                         </div>
+                    </div>
+
+                    <!-- Extra Pure Gold Input Section (Hidden by default, toggled via + button) -->
+                    <div id="extraPureSection_0" class="hidden p-3 rounded-xl bg-slate-950/40 border border-[#d8a735]/20">
+                        <label class="block text-[8px] font-bold uppercase text-[#d8a735] mb-1">Extra Pure Gold (g)</label>
+                        <input type="number" step="0.001" id="extraPure_0" name="items[0][extra_pure]" oninput="calcKajItem(0)" class="premium-input text-xs font-mono" placeholder="0.000">
                     </div>
                 </div>
             </div>
@@ -332,14 +408,31 @@ require_once 'header.php';
         <?php else: ?>
             <?php foreach ($recentDeposits as $r): ?>
                 <div class="premium-card bg-[#121212]/80 flex justify-between items-center p-3">
-                    <div>
-                        <span class="text-xs font-bold text-white block"><?= htmlspecialchars($r['bapari_name']) ?></span>
+                    <div class="min-w-0 flex-1 pr-2">
+                        <span class="text-xs font-bold text-white block truncate"><?= htmlspecialchars($r['bapari_name']) ?></span>
                         <span class="text-[10px] text-slate-500 block"><?= date('d M Y', strtotime($r['date'])) ?></span>
                     </div>
-                    <div class="text-right">
-                        <span class="text-sm font-bold text-[#d8a735] font-mono block">+<?= number_format($r['jama_fine'], 3) ?> g</span>
-                        <?php if($r['cash_received'] > 0): ?>
-                            <span class="text-[10px] text-emerald-400 font-mono block">₹<?= number_format($r['cash_received'], 2) ?></span>
+                    <div class="flex items-center space-x-3 shrink-0">
+                        <div class="text-right font-mono">
+                            <?php if ($r['jama_fine'] > 0): ?>
+                                <span class="text-sm font-bold text-[#d8a735] block">+<?= number_format($r['jama_fine'], 3) ?> g</span>
+                            <?php endif; ?>
+                            <?php if ($r['cash_received'] > 0): ?>
+                                <span class="text-xs font-bold text-emerald-400 block">+₹<?= number_format($r['cash_received'], 2) ?></span>
+                            <?php endif; ?>
+                            <?php if ($r['jama_fine'] <= 0 && $r['cash_received'] <= 0): ?>
+                                <span class="text-xs text-slate-500 block">0.000 g</span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (!$isReadOnly): ?>
+                            <div class="flex items-center space-x-1 border-l border-white/[0.06] pl-2.5 ml-1">
+                                <a href="deposits.php?action=edit&id=<?= $r['id'] ?>" class="w-7 h-7 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target" title="Edit Entry">
+                                    <span class="material-symbols-rounded text-sm">edit</span>
+                                </a>
+                                <a href="ledger.php?bapari_id=<?= $r['bapari_id'] ?>&delete_deposit=<?= $r['id'] ?>" onclick="return confirm('Are you sure you want to delete this deposit entry?')" class="w-7 h-7 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete Entry">
+                                    <span class="material-symbols-rounded text-sm">delete</span>
+                                </a>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -357,13 +450,32 @@ require_once 'header.php';
         <?php else: ?>
             <?php foreach ($recentKaj as $r): ?>
                 <div class="premium-card bg-[#121212]/80 flex justify-between items-center p-3">
-                    <div>
-                        <span class="text-xs font-bold text-white block"><?= htmlspecialchars($r['bapari_name']) ?></span>
+                    <div class="min-w-0 flex-1 pr-2">
+                        <span class="text-xs font-bold text-white block truncate"><?= htmlspecialchars($r['bapari_name']) ?></span>
                         <span class="text-[10px] text-slate-500 block"><?= date('d M Y', strtotime($r['date'])) ?></span>
                     </div>
-                    <div class="text-right">
-                        <span class="text-sm font-bold text-rose-400 font-mono block">-<?= number_format($r['total_kaj_fine'], 3) ?> g</span>
-                        <span class="text-[10px] text-[#d8a735] font-mono block">Profit: <?= number_format($r['total_profit_fine'], 3) ?> g</span>
+                    <div class="flex items-center space-x-3 shrink-0">
+                        <div class="text-right font-mono">
+                            <?php if ($r['total_kaj_fine'] > 0): ?>
+                                <span class="text-sm font-bold text-rose-400 block">-<?= number_format($r['total_kaj_fine'], 3) ?> g</span>
+                            <?php endif; ?>
+                            <?php if ($r['cash_bill'] > 0): ?>
+                                <span class="text-xs font-bold text-rose-400 block">-₹<?= number_format($r['cash_bill'], 2) ?></span>
+                            <?php endif; ?>
+                            <?php if ($r['total_profit_fine'] > 0): ?>
+                                <span class="text-[10px] text-[#d8a735] block">Profit: <?= number_format($r['total_profit_fine'], 3) ?> g</span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (!$isReadOnly): ?>
+                            <div class="flex items-center space-x-1 border-l border-white/[0.06] pl-2.5 ml-1">
+                                <a href="kaj.php?action=edit&id=<?= $r['id'] ?>" class="w-7 h-7 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target" title="Edit Entry">
+                                    <span class="material-symbols-rounded text-sm">edit</span>
+                                </a>
+                                <a href="ledger.php?bapari_id=<?= $r['bapari_id'] ?>&delete_kaj=<?= $r['id'] ?>" onclick="return confirm('Are you sure you want to delete this job entry?')" class="w-7 h-7 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete Entry">
+                                    <span class="material-symbols-rounded text-sm">delete</span>
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -419,6 +531,40 @@ require_once 'header.php';
 
     // Dynamic multi-item logic removed to enforce single-item entry
 
+    function toggleNetSplit(idx) {
+        const sec = document.getElementById(`netSplitSection_${idx}`);
+        const icon = document.getElementById(`netSplitIcon_${idx}`);
+        if (!sec) return;
+        if (sec.classList.contains('hidden')) {
+            sec.classList.remove('hidden');
+            if (icon) icon.textContent = 'remove';
+            // Auto populate Part 1 with current Net if empty
+            const gross = parseFloat(document.getElementById(`gross_${idx}`).value) || 0;
+            const less = parseFloat(document.getElementById(`less_${idx}`).value) || 0;
+            const net = Math.max(0, gross - less);
+            const p1 = document.getElementById(`netPart1_${idx}`);
+            if (p1 && !p1.value) p1.value = net.toFixed(3);
+        } else {
+            sec.classList.add('hidden');
+            if (icon) icon.textContent = 'add';
+        }
+        calcKajItem(idx);
+    }
+
+    function toggleExtraPure(idx) {
+        const sec = document.getElementById(`extraPureSection_${idx}`);
+        const icon = document.getElementById(`extraPureIcon_${idx}`);
+        if (!sec) return;
+        if (sec.classList.contains('hidden')) {
+            sec.classList.remove('hidden');
+            if (icon) icon.textContent = 'remove';
+        } else {
+            sec.classList.add('hidden');
+            if (icon) icon.textContent = 'add';
+        }
+        calcKajItem(idx);
+    }
+
     // Dynamic calculators for individual items
     function calcKajItem(idx) {
         const gross = parseFloat(document.getElementById(`gross_${idx}`).value) || 0;
@@ -429,8 +575,64 @@ require_once 'header.php';
         const wastage = parseFloat(document.getElementById(`wastage_${idx}`).value) || 0;
         
         const hisab = milting + wastage;
-        const kajFine = net * (hisab / 100);
-        const profitFine = net * (wastage / 100);
+        
+        // Net Split Calculation Check
+        const netSplitSec = document.getElementById(`netSplitSection_${idx}`);
+        const isSplitActive = netSplitSec && !netSplitSec.classList.contains('hidden');
+        
+        let kajFine = 0;
+        let profitFine = 0;
+        
+        if (isSplitActive) {
+            const part1Net = parseFloat(document.getElementById(`netPart1_${idx}`).value) || 0;
+            const part2Net = parseFloat(document.getElementById(`netPart2_${idx}`).value) || 0;
+            
+            const rawWst1 = parseFloat(document.getElementById(`wastage1_${idx}`)?.value);
+            const rawWst2 = parseFloat(document.getElementById(`wastage2_${idx}`)?.value);
+            
+            // Determine Hisab 1 (%): if > 50 treat as total Hisab %, else add to milting
+            let hisab1 = milting + wastage;
+            let wstVal1 = wastage;
+            if (!isNaN(rawWst1) && rawWst1 > 0) {
+                if (rawWst1 > 50) {
+                    hisab1 = rawWst1;
+                    wstVal1 = Math.max(0, rawWst1 - milting);
+                } else {
+                    wstVal1 = rawWst1;
+                    hisab1 = milting + rawWst1;
+                }
+            }
+            
+            // Determine Hisab 2 (%): if > 50 treat as total Hisab %, else add to milting
+            let hisab2 = milting + wastage;
+            let wstVal2 = wastage;
+            if (!isNaN(rawWst2) && rawWst2 > 0) {
+                if (rawWst2 > 50) {
+                    hisab2 = rawWst2;
+                    wstVal2 = Math.max(0, rawWst2 - milting);
+                } else {
+                    wstVal2 = rawWst2;
+                    hisab2 = milting + rawWst2;
+                }
+            }
+            
+            const fine1 = part1Net * (hisab1 / 100);
+            const fine2 = part2Net * (hisab2 / 100);
+            
+            kajFine = fine1 + fine2;
+            profitFine = (part1Net * (wstVal1 / 100)) + (part2Net * (wstVal2 / 100));
+        } else {
+            kajFine = net * (hisab / 100);
+            profitFine = net * (wastage / 100);
+        }
+        
+        // Extra Pure Gold Check
+        const extraPureSec = document.getElementById(`extraPureSection_${idx}`);
+        const isExtraPureActive = extraPureSec && !extraPureSec.classList.contains('hidden');
+        if (isExtraPureActive) {
+            const extraPure = parseFloat(document.getElementById(`extraPure_${idx}`).value) || 0;
+            kajFine += extraPure;
+        }
         
         document.getElementById(`netLabel_${idx}`).textContent = net.toFixed(3) + " g";
         document.getElementById(`hisabLabel_${idx}`).textContent = hisab.toFixed(2) + "%";
@@ -448,27 +650,16 @@ require_once 'header.php';
         const cards = document.querySelectorAll('#kajItemsContainer .item-card');
         cards.forEach(card => {
             const idxStr = card.id.split('_')[1];
-            const gross = parseFloat(document.getElementById(`gross_${idxStr}`).value) || 0;
-            const lgVal = document.getElementById(`less_${idxStr}`);
-            const less = lgVal ? (parseFloat(lgVal.value) || 0) : 0;
-            const net = Math.max(0, gross - less);
+            const kajFineLabelText = document.getElementById(`kajFineLabel_${idxStr}`)?.textContent || '0';
+            const profitLabelText = document.getElementById(`profitLabel_${idxStr}`)?.textContent || '0';
             
-            const milting = parseFloat(document.getElementById(`milting_${idxStr}`).value) || 0;
-            const wastage = parseFloat(document.getElementById(`wastage_${idxStr}`).value) || 0;
-            
-            const hisab = milting + wastage;
-            const kajFine = net * (hisab / 100);
-            const profitFine = net * (wastage / 100);
-            
-            grandKajFine += kajFine;
-            grandProfitFine += profitFine;
+            grandKajFine += parseFloat(kajFineLabelText) || 0;
+            grandProfitFine += parseFloat(profitLabelText) || 0;
         });
         
         document.getElementById('totalKajFineLabel').textContent = grandKajFine.toFixed(3) + " g";
         document.getElementById('totalProfitLabel').textContent = grandProfitFine.toFixed(3) + " g";
     }
-</script>
-
-<?php
+</script><?php
 require_once 'footer.php';
 ?>

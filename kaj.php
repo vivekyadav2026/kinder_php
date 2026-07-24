@@ -313,29 +313,29 @@ require_once 'header.php';
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="col-span-2">
-                        <input type="text" name="items[\${rowCount}][item]" value="\${item}" required \${formBlocked ? 'disabled' : ''} class="premium-input" placeholder="Ornament Name (e.g. Chain)">
+                        <input type="text" name="items[${rowCount}][item]" value="${item}" required ${formBlocked ? 'disabled' : ''} class="premium-input" placeholder="Ornament Name (e.g. Chain)">
                     </div>
                     <div>
                         <label class="block text-[9px] uppercase text-slate-500 mb-1">Gross (g)</label>
-                        <input type="number" step="0.001" name="items[\${rowCount}][gross]" id="gross_\${rowCount}" value="\${gross}" required \${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.000" oninput="calculateRow(\${rowCount})">
+                        <input type="number" step="0.001" name="items[${rowCount}][gross]" id="gross_${rowCount}" value="${gross}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.000" oninput="calculateRow(${rowCount})">
                     </div>
                     <div>
                         <label class="block text-[9px] uppercase text-slate-500 mb-1">Less (g)</label>
-                        <input type="number" step="0.001" name="items[\${rowCount}][less]" id="less_\${rowCount}" value="\${less}" \${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" oninput="calculateRow(\${rowCount})">
+                        <input type="number" step="0.001" name="items[${rowCount}][less]" id="less_${rowCount}" value="${less}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" oninput="calculateRow(${rowCount})">
                     </div>
                     <div>
                         <label class="block text-[9px] uppercase text-slate-500 mb-1">Mel / Purity (%)</label>
-                        <input type="number" step="0.01" name="items[\${rowCount}][milting]" id="milting_\${rowCount}" value="\${milting}" required \${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.00" oninput="calculateRow(\${rowCount})">
+                        <input type="number" step="0.01" name="items[${rowCount}][milting]" id="milting_${rowCount}" value="${milting}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.00" oninput="calculateRow(${rowCount})">
                     </div>
                     <div>
                         <label class="block text-[9px] uppercase text-slate-500 mb-1">Chhij / Wastage (%)</label>
-                        <input type="number" step="0.01" name="items[\${rowCount}][wastage]" id="wastage_\${rowCount}" value="\${wastage}" \${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" oninput="calculateRow(\${rowCount})">
+                        <input type="number" step="0.01" name="items[${rowCount}][wastage]" id="wastage_${rowCount}" value="${wastage}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" oninput="calculateRow(${rowCount})">
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3 pt-2 text-[11px] font-mono border-t border-slate-800/40 text-slate-400">
-                    <div>Gold Billed: <span id="kajfine_\${rowCount}" class="font-bold text-white">0.000</span>g</div>
-                    <div>Profit Gold: <span id="profit_\${rowCount}" class="font-bold text-white">0.000</span>g</div>
+                    <div>Gold Billed: <span id="kajfine_${rowCount}" class="font-bold text-white">0.000</span>g</div>
+                    <div>Profit Gold: <span id="profit_${rowCount}" class="font-bold text-white">0.000</span>g</div>
                 </div>
             `;
             container.appendChild(div);
