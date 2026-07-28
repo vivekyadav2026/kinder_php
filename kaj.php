@@ -332,7 +332,7 @@ require_once 'header.php';
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold text-slate-500 uppercase">Item Details</span>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="col-span-2">
                         <input type="text" name="items[${rowCount}][item]" value="${item}" required ${formBlocked ? 'disabled' : ''} class="premium-input" placeholder="Ornament Name (e.g. Chain)">
                     </div>
@@ -355,7 +355,7 @@ require_once 'header.php';
                 </div>
                 
                 <!-- Net Split controls inside dynamic card -->
-                <div class="grid grid-cols-2 gap-3 mt-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                     <div class="bg-slate-950/60 p-2 rounded-xl border border-white/[0.03] flex items-center justify-between">
                         <div>
                             <span class="text-slate-500 text-[8px] uppercase font-bold block">Net</span>
@@ -375,7 +375,7 @@ require_once 'header.php';
                 <!-- Split Net Container -->
                 <div id="netSplitSection_${rowCount}" class="${isSplitActive ? '' : 'hidden'} p-3 rounded-xl bg-slate-950/40 border border-[#d8a735]/20 space-y-3">
                     <div class="text-[9px] font-bold uppercase tracking-wider text-[#d8a735]">Split Net Calculation</div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Net (g)</label>
                             <input type="number" step="0.001" id="netPart1_${rowCount}" name="items[${rowCount}][net_part1]" value="${netPart1}" oninput="onPart1Input(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
@@ -385,7 +385,7 @@ require_once 'header.php';
                             <input type="number" step="0.01" id="wastage1_${rowCount}" name="items[${rowCount}][wastage1]" value="${wastage1}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="Default Mel+Wst">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Net (g)</label>
                             <input type="number" step="0.001" id="netPart2_${rowCount}" name="items[${rowCount}][net_part2]" value="${netPart2}" oninput="onPart2Input(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
@@ -397,7 +397,7 @@ require_once 'header.php';
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-3 pt-2 text-[11px] font-mono border-t border-slate-800/40 text-slate-400">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-[11px] font-mono border-t border-slate-800/40 text-slate-400">
                     <div class="relative">
                         <div class="flex items-center justify-between">
                             <span>Gold Billed:</span>
@@ -658,7 +658,7 @@ require_once 'header.php';
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <span class="text-[10px] text-slate-500 uppercase block font-semibold">Gold Billed</span>
                             <span class="font-mono font-bold text-rose-400 text-base">-<?= number_format($k['total_kaj_fine'], 3) ?> g</span>
@@ -695,3 +695,4 @@ require_once 'header.php';
 <?php
 require_once 'footer.php';
 ?>
+

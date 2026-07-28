@@ -389,7 +389,7 @@ require_once 'header.php';
         <?php endif; ?>
     </div>
     
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="premium-card bg-[#121212]/70 border-white/[0.03]">
             <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Gold Balance</span>
             <div class="text-lg font-bold font-mono <?= $currentOutstandingGold >= 0 ? 'text-emerald-400' : 'text-rose-400' ?>">
@@ -406,7 +406,7 @@ require_once 'header.php';
 </div>
 
 <!-- Date Filter Form -->
-<form method="GET" class="premium-card bg-[#121212]/80 p-4 mb-6 grid grid-cols-2 gap-3.5 no-print">
+<form method="GET" class="premium-card bg-[#121212]/80 p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3.5 no-print">
     <input type="hidden" name="karigor_id" value="<?= $karigorId ?>">
     <div>
         <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">From Date</label>
@@ -473,7 +473,7 @@ require_once 'header.php';
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3 text-xs my-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs my-2">
                         <div>
                             <span class="text-[8px] text-slate-500 uppercase block">Gold Fine</span>
                             <span class="font-mono font-bold text-sm <?= $row['fine'] >= 0 ? 'text-emerald-400' : 'text-rose-400' ?>">
@@ -625,3 +625,4 @@ require_once 'header.php';
 <?php
 require_once 'footer.php';
 ?>
+

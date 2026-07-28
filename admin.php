@@ -240,7 +240,7 @@ $appUrl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 
 <!-- Aggregates Dashboard Panel ACROSS ALL USERS -->
 <div class="mb-6">
     <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block mb-3">Across All <?= count($usersList) ?> Users</span>
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="premium-card bg-[#121212]/50">
             <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Total Fine Deposit</span>
             <div class="text-base font-bold text-white font-mono"><?= number_format($sysTotalJama, 3) ?> g</div>
@@ -457,3 +457,4 @@ $appUrl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 
 <?php
 require_once 'footer.php';
 ?>
+

@@ -167,7 +167,7 @@ require_once 'header.php';
         </h2>
         
         <form method="POST" class="space-y-5">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
                     <input type="date" name="date" value="<?= date('Y-m-d') ?>" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input">
@@ -183,7 +183,7 @@ require_once 'header.php';
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Gold Weight (g) *</label>
                     <input type="number" step="0.001" name="fine_weight" id="fine_weight" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input" placeholder="0.000" oninput="calcFine()">
@@ -194,7 +194,7 @@ require_once 'header.php';
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Calculated Gold Jama (g)</label>
                     <input type="text" id="calculated_jama" disabled class="premium-input bg-slate-900 border-none font-mono text-emerald-400" placeholder="0.000">
@@ -270,7 +270,7 @@ require_once 'header.php';
 
         <form method="POST" class="space-y-5">
             <input type="hidden" name="id" value="<?= $dep['id'] ?>">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
                     <input type="date" name="date" value="<?= $dep['date'] ?>" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input">
@@ -285,7 +285,7 @@ require_once 'header.php';
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Gold Weight (g) *</label>
                     <input type="number" step="0.001" name="fine_weight" id="fine_weight" value="<?= $dep['fine_weight'] ?>" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input" oninput="calcFine()">
@@ -296,7 +296,7 @@ require_once 'header.php';
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Calculated Gold Jama (g)</label>
                     <input type="text" id="calculated_jama" disabled value="<?= $dep['jama_fine'] ?> g" class="premium-input bg-slate-900 border-none font-mono text-emerald-400">
@@ -375,3 +375,4 @@ require_once 'header.php';
 <?php
 require_once 'footer.php';
 ?>
+

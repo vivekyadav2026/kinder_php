@@ -316,7 +316,7 @@ require_once 'header.php';
                 </div>
             <?php endif; ?>
             
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
                         <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500">24K Gold /g</label>
@@ -368,7 +368,7 @@ require_once 'header.php';
                 </select>
             </div>
             
-            <div class="grid grid-cols-2 gap-3.5 mb-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-3">
                 <div>
                     <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">From Date</label>
                     <input type="date" name="from_date" value="<?= htmlspecialchars($fromDate) ?>" class="premium-input text-xs">
@@ -379,7 +379,7 @@ require_once 'header.php';
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3.5 mb-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-3">
                 <input type="number" name="month" id="filterMonthInput" value="<?= $filterMonth ?>" class="premium-input text-xs" placeholder="Month (MM)">
                 <input type="number" name="year" value="<?= $filterYear ?>" class="premium-input text-xs" placeholder="Year (YYYY)">
             </div>
@@ -401,7 +401,7 @@ require_once 'header.php';
                 <input type="text" name="item" value="<?= htmlspecialchars($filterItem) ?>" class="premium-input text-xs" placeholder="Item filter">
             </div>
             
-            <div class="grid grid-cols-2 gap-3.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <button type="submit" class="btn-gold text-xs py-3">Apply</button>
                 <a href="settings.php" class="btn-secondary text-xs py-3 flex items-center justify-center">Clear</a>
             </div>
@@ -501,3 +501,4 @@ require_once 'header.php';
 <?php
 require_once 'footer.php';
 ?>
+

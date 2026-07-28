@@ -241,7 +241,7 @@ require_once 'header.php';
                 <input type="hidden" name="id" value="<?= $editEntry['id'] ?>">
             <?php endif; ?>
             
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
                     <input type="date" name="date" value="<?= $action === 'edit' ? $editEntry['date'] : date('Y-m-d') ?>" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input">
@@ -274,7 +274,7 @@ require_once 'header.php';
             </div>
 
             <!-- Summary Totals -->
-            <div class="p-4 rounded-2xl bg-slate-950/60 border border-white/[0.04] grid grid-cols-2 gap-4 my-4 font-mono text-xs">
+            <div class="p-4 rounded-2xl bg-slate-950/60 border border-white/[0.04] grid grid-cols-1 sm:grid-cols-2 gap-4 my-4 font-mono text-xs">
                 <div>
                     <span class="text-slate-500 text-[9px] uppercase block">Total Receive Fine (g)</span>
                     <span id="grandTotalReceiveFine" class="text-emerald-400 font-bold text-base">0.000 g</span>
@@ -286,7 +286,7 @@ require_once 'header.php';
             </div>
 
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Cash Paid / Labor Charge (₹)</label>
                     <input type="number" step="0.01" name="cash_paid" value="<?= $action === 'edit' ? $editEntry['cash_paid'] : '' ?>" <?= $blockForm ? 'disabled' : '' ?> class="premium-input" placeholder="0.00">
@@ -392,7 +392,7 @@ require_once 'header.php';
                     ` : ''}
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[9px] uppercase text-slate-500 mb-1">Item Name *</label>
                         <input type="text" name="items[${rowCount}][item]" value="${item}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-xs" placeholder="e.g. Gold Necklace">
@@ -403,7 +403,7 @@ require_once 'header.php';
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                         <label class="block text-[9px] uppercase text-slate-500 mb-1">Less (g)</label>
                         <input type="number" step="0.001" name="items[${rowCount}][less]" id="less_${rowCount}" value="${less}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.000" oninput="calculateRow(${rowCount}, 'main')">
@@ -438,7 +438,7 @@ require_once 'header.php';
                 <!-- Split Net Container -->
                 <div id="netSplitSection_${rowCount}" class="${isSplitActive ? '' : 'hidden'} p-3 rounded-xl bg-slate-950/40 border border-[#d8a735]/20 space-y-3">
                     <div class="text-[9px] font-bold uppercase tracking-wider text-[#d8a735]">Split Net Calculation</div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Net (g)</label>
                             <input type="number" step="0.001" id="netPart1_${rowCount}" name="items[${rowCount}][net_part1]" value="${netPart1}" oninput="onPart1Input(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
@@ -448,7 +448,7 @@ require_once 'header.php';
                             <input type="number" step="0.01" id="wastage1_${rowCount}" name="items[${rowCount}][wastage1]" value="${wastage1}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="Default">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Net (g)</label>
                             <input type="number" step="0.001" id="netPart2_${rowCount}" name="items[${rowCount}][net_part2]" value="${netPart2}" oninput="onPart2Input(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
@@ -632,3 +632,4 @@ require_once 'header.php';
 <?php
 require_once 'footer.php';
 ?>
+

@@ -4,6 +4,7 @@ require_once 'db.php';
 // Handle CSV export request
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     $bapariId = intval($_GET['bapari_id'] ?? 0);
+    $karigorId = intval($_GET['karigor_id'] ?? 0);
     $from = $_GET['from'] ?? '';
     $to = $_GET['to'] ?? '';
 
@@ -39,6 +40,53 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
         $kajs = $stmt->fetchAll();
 
         $entries = array_merge($deposits, $kajs);
+        usort($entries, function($a, $b) { return strcmp($a['date'], $b['date']); });
+
+        foreach ($entries as $e) {
+            fputcsv($output, [
+                date('d/m/Y', strtotime($e['date'])),
+                $e['type'],
+                $e['fine_weight'] > 0 ? $e['fine_weight'] : '--',
+                $e['purity'] > 0 ? $e['purity'] . '%' : '--',
+                $e['fine'],
+                $e['cash'] > 0 ? $e['cash'] : '--',
+                $e['remark']
+            ]);
+        }
+        fclose($output);
+        exit();
+    } elseif ($karigorId > 0) {
+        // Fetch Karigor
+        $stmt = $pdo->prepare("SELECT name FROM karigors WHERE id = ? AND user_id = ?");
+        $stmt->execute([$karigorId, $userId]);
+        $karigor = $stmt->fetch();
+        $filename = ($karigor ? str_replace(' ', '_', $karigor['name']) : 'Karigor') . "_Statement_" . date('Ymd') . ".csv";
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['Date', 'Type', 'Gold Weight (g)', 'Purity (%)', 'Issue/Receive Fine (g)', 'Cash Amount (Rs)', 'Remark']);
+
+        // Fetch Issues
+        $issueQuery = "SELECT date, 'Material Issue (OUT)' as type, fine_weight, purity, issue_fine as fine, cash_paid as cash, remark FROM karigor_material_issues WHERE karigor_id = ? AND user_id = ?";
+        $params = [$karigorId, $userId];
+        if ($from) { $issueQuery .= " AND date >= ?"; $params[] = $from; }
+        if ($to) { $issueQuery .= " AND date <= ?"; $params[] = $to; }
+        $stmt = $pdo->prepare($issueQuery);
+        $stmt->execute($params);
+        $issues = $stmt->fetchAll();
+
+        // Fetch Receives
+        $recQuery = "SELECT date, 'Kaj Receive (IN)' as type, 0.0 as fine_weight, 0.0 as purity, total_receive_fine as fine, cash_paid as cash, remark FROM karigor_kaj_receives WHERE karigor_id = ? AND user_id = ?";
+        $paramsK = [$karigorId, $userId];
+        if ($from) { $recQuery .= " AND date >= ?"; $paramsK[] = $from; }
+        if ($to) { $recQuery .= " AND date <= ?"; $paramsK[] = $to; }
+        $stmt = $pdo->prepare($recQuery);
+        $stmt->execute($paramsK);
+        $receives = $stmt->fetchAll();
+
+        $entries = array_merge($issues, $receives);
         usort($entries, function($a, $b) { return strcmp($a['date'], $b['date']); });
 
         foreach ($entries as $e) {
@@ -122,7 +170,7 @@ require_once 'header.php';
 
 
     <!-- From and To Date Pickers Side by Side -->
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">From</label>
             <input type="date" name="from" id="fromDate" class="premium-input text-sm">
@@ -140,7 +188,7 @@ require_once 'header.php';
             <span>View Ledger Statement</span>
         </button>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button type="button" onclick="generatePDF()" class="w-full py-3.5 rounded-xl border border-[#d8a735]/40 bg-transparent text-sm font-semibold text-[#d8a735] hover:bg-[#d8a735]/5 flex items-center justify-center space-x-1.5 tap-target">
                 <span class="material-symbols-rounded text-lg">description</span>
                 <span>PDF Print</span>
@@ -212,22 +260,35 @@ require_once 'header.php';
     }
 
     function generateCSV() {
-        const bapariId = document.getElementById('bapariId').value;
-        if (!bapariId) {
-            alert('Please select a Bapari first!');
-            return;
-        }
         const from = document.getElementById('fromDate').value;
         const to = document.getElementById('toDate').value;
-        let url = `reports.php?export=csv&bapari_id=${bapariId}`;
-        if (from) url += `&from=${from}`;
-        if (to) url += `&to=${to}`;
         
-        window.location.href = url;
+        if (currentLedgerType === 'bapari') {
+            const bapariId = document.getElementById('bapariId').value;
+            if (!bapariId) {
+                alert('Please select a Bapari first!');
+                return;
+            }
+            let url = `reports.php?export=csv&bapari_id=${bapariId}`;
+            if (from) url += `&from=${from}`;
+            if (to) url += `&to=${to}`;
+            window.location.href = url;
+        } else {
+            const karigorId = document.getElementById('karigorId').value;
+            if (!karigorId) {
+                alert('Please select a Karigor first!');
+                return;
+            }
+            let url = `reports.php?export=csv&karigor_id=${karigorId}`;
+            if (from) url += `&from=${from}`;
+            if (to) url += `&to=${to}`;
+            window.location.href = url;
+        }
     }
 </script>
 
 <?php
 require_once 'footer.php';
 ?>
+
 

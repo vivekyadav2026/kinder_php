@@ -179,7 +179,7 @@ require_once 'header.php';
 <div class="mb-8">
     <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block mb-4">Reports & Profits</span>
     
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="premium-card bg-[#121212]/50 gold-border">
             <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Bapari Profit Fine</span>
             <div class="text-base font-bold text-[#d8a735] font-mono"><?= number_format($totalProfitFine, 3) ?> g</div>
@@ -217,3 +217,4 @@ require_once 'header.php';
 <?php
 require_once 'footer.php';
 ?>
+

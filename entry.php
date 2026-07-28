@@ -334,7 +334,7 @@ require_once 'header.php';
                         <input type="text" name="items[0][item]" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="Enter item name">
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-3.5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
                             <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Gross</label>
                             <input type="number" step="0.001" name="items[0][gross]" id="gross_0" oninput="calcKajItem(0, 'main')" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm gross-input" placeholder="0.000" required>
@@ -345,7 +345,7 @@ require_once 'header.php';
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-3.5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
                             <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Milting %</label>
                             <input type="number" step="0.01" name="items[0][milting]" id="milting_0" value="91.80" oninput="calcKajItem(0)" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm milting-input">
@@ -357,7 +357,7 @@ require_once 'header.php';
                     </div>
                     
                     <!-- Dynamic Output Result Boxes Grid (Matching Image 5) -->
-                    <div class="grid grid-cols-2 gap-3 mt-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                         <div class="bg-slate-950/60 p-2.5 rounded-xl border border-white/[0.03] flex items-center justify-between">
                             <div>
                                 <span class="text-slate-500 text-[8px] uppercase font-bold block">Net</span>
@@ -377,7 +377,7 @@ require_once 'header.php';
                     <!-- Split Net Container (Hidden by default, toggled via + button) -->
                     <div id="netSplitSection_0" class="hidden p-3 rounded-xl bg-slate-950/40 border border-[#d8a735]/20 space-y-3">
                         <div class="text-[9px] font-bold uppercase tracking-wider text-[#d8a735]">Split Net Calculation</div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Net (g)</label>
                                 <input type="number" step="0.001" id="netPart1_0" name="items[0][net_part1]" oninput="onPart1Input(0)" class="premium-input text-xs font-mono" placeholder="0.000">
@@ -387,7 +387,7 @@ require_once 'header.php';
                                 <input type="number" step="0.01" id="wastage1_0" name="items[0][wastage1]" oninput="calcKajItem(0)" class="premium-input text-xs font-mono" placeholder="Default Mel+Wst">
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Net (g)</label>
                                 <input type="number" step="0.001" id="netPart2_0" name="items[0][net_part2]" oninput="onPart2Input(0)" class="premium-input text-xs font-mono" placeholder="0.000">
@@ -399,7 +399,7 @@ require_once 'header.php';
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div class="premium-card bg-transparent border-[#d8a735]/20 p-2.5 relative">
                             <div class="flex items-center justify-between">
                                 <span class="text-[#d8a735] text-[8px] uppercase font-bold block">Kaj Fine</span>
@@ -437,7 +437,7 @@ require_once 'header.php';
         </div>
         
         <!-- Total aggregate indicator footer boxes -->
-        <div class="grid grid-cols-2 gap-3.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div class="premium-card bg-transparent border-[#d8a735]/30">
                 <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Σ Kaj Fine</span>
                 <div class="text-lg font-bold text-[#d8a735] font-mono leading-none" id="totalKajFineLabel">0.000 g</div>
@@ -780,3 +780,4 @@ require_once 'header.php';
 </script><?php
 require_once 'footer.php';
 ?>
+
