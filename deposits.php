@@ -113,16 +113,17 @@ if (isset($_GET['delete'])) {
     exit();
 }
 
-// Fetch all deposits joined with Baparis
+// Fetch all deposits joined with Baparis (Ordered by recent entry creation)
 $stmt = $pdo->prepare("
     SELECT fd.*, b.name as bapari_name 
     FROM fine_deposits fd 
     JOIN baparis b ON fd.bapari_id = b.id 
     WHERE fd.user_id = ? 
-    ORDER BY fd.date DESC, fd.id DESC
+    ORDER BY fd.id DESC
 ");
 $stmt->execute([$userId]);
 $deposits = $stmt->fetchAll();
+
 
 // Fetch baparis for selectors
 $stmt = $pdo->prepare("SELECT id, name FROM baparis WHERE user_id = ? ORDER BY name ASC");

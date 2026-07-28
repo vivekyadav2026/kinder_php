@@ -20,11 +20,29 @@ if (isset($_GET['backup']) && $_GET['backup'] === 'json') {
     $stmt->execute([$userId]);
     $backupData['kaj_entries'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Fetch Karigors & Karigor Transactions
+    $stmt = $pdo->prepare("SELECT * FROM karigors WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $backupData['karigors'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $stmt = $pdo->prepare("SELECT * FROM karigor_material_issues WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $backupData['karigor_material_issues'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $stmt = $pdo->prepare("SELECT * FROM karigor_kaj_receives WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $backupData['karigor_kaj_receives'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $stmt = $pdo->prepare("SELECT * FROM karigor_ledger_settlements WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $backupData['karigor_ledger_settlements'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     header('Content-Type: application/json');
     header('Content-Disposition: attachment; filename="Dasgold_Backup_' . date('Ymd_His') . '.json"');
     echo json_encode($backupData, JSON_PRETTY_PRINT);
     exit();
 }
+
 
 // Handle Save Company Profile Details
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_company'])) {
@@ -180,8 +198,21 @@ if (!empty($kajEntries)) {
 $netFineBalance = round($totalJama - $totalKajFine, 3);
 $netCashBalance = round($totalRec - $totalBill, 2);
 
+// Fetch Karigor aggregates
+$stmtKarigorRec = $pdo->prepare("SELECT SUM(total_receive_fine) as tot_rec, SUM(total_profit_less) as tot_profit_less, SUM(cash_paid) as tot_cash FROM karigor_kaj_receives WHERE user_id = ?");
+$stmtKarigorRec->execute([$userId]);
+$karigorRecStats = $stmtKarigorRec->fetch();
+
+$totalKarigorReceiveFine = floatval($karigorRecStats['tot_rec'] ?? 0.0);
+$totalKarigorProfitLess = floatval($karigorRecStats['tot_profit_less'] ?? 0.0);
+
+$stmtKarigorIssue = $pdo->prepare("SELECT SUM(issue_fine) as tot_issue FROM karigor_material_issues WHERE user_id = ?");
+$stmtKarigorIssue->execute([$userId]);
+$totalKarigorIssueFine = floatval($stmtKarigorIssue->fetch()['tot_issue'] ?? 0.0);
+
 require_once 'header.php';
 ?>
+
 
 <!-- Title (Matching Image 2) -->
 <div class="mb-5 mt-2">
@@ -391,9 +422,14 @@ require_once 'header.php';
                 <span class="font-bold font-mono"><?= number_format($totalNetKaj, 3) ?> g</span>
             </div>
             <div class="bg-transparent p-3 rounded-xl border border-[#d8a735]/25 flex justify-between items-center text-xs">
-                <span class="text-[#d8a735] font-semibold uppercase text-[9px]">Profit Fine</span>
+                <span class="text-[#d8a735] font-semibold uppercase text-[9px]">Bapari Profit Fine</span>
                 <span class="font-bold font-mono text-[#d8a735]"><?= number_format($totalProfitFine, 3) ?> g</span>
             </div>
+            <div class="bg-transparent p-3 rounded-xl border border-emerald-500/25 flex justify-between items-center text-xs">
+                <span class="text-emerald-400 font-semibold uppercase text-[9px]">Karigor Profit Less</span>
+                <span class="font-bold font-mono text-emerald-400"><?= number_format($totalKarigorProfitLess, 3) ?> g</span>
+            </div>
+
             <div class="bg-slate-950/60 p-3 rounded-xl border border-white/[0.03] flex justify-between items-center text-xs">
                 <span class="text-slate-500 font-semibold uppercase text-[9px]">Cash Received</span>
                 <span class="font-bold font-mono">₹<?= number_format($totalRec, 0) ?></span>

@@ -503,9 +503,9 @@ require_once 'header.php';
 <div class="mb-6">
     <div class="flex items-center justify-between mb-3">
         <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block">Outstanding Balance</span>
-        <!-- Settlement Button Trigger Modal -->
+        <!-- Settlement Button Trigger Scroll -->
         <?php if (!$isReadOnly): ?>
-            <button onclick="document.getElementById('settlementModal').classList.remove('hidden')" class="px-3 py-1.5 rounded-lg bg-[#d8a735]/15 border border-[#d8a735]/25 text-[10px] text-[#d8a735] font-bold tracking-wider hover:bg-[#d8a735]/20 tap-target no-print flex items-center space-x-1">
+            <button onclick="document.getElementById('settlementSection').scrollIntoView({ behavior: 'smooth' })" class="px-3 py-1.5 rounded-lg bg-[#d8a735]/15 border border-[#d8a735]/25 text-[10px] text-[#d8a735] font-bold tracking-wider hover:bg-[#d8a735]/20 tap-target no-print flex items-center space-x-1">
                 <span class="material-symbols-rounded text-xs">done_all</span>
                 <span>Settle Ledger</span>
             </button>
@@ -689,111 +689,108 @@ require_once 'header.php';
     <?php endif; ?>
 </div>
 
-<!-- MODAL OVERLAY FOR SETTLE LEDGER -->
-<div id="settlementModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 no-print">
-    <div class="w-full max-w-md premium-card border-[#d8a735]/35 shadow-2xl shadow-[#d8a735]/5 animate-scale-up">
-        <h2 class="text-lg font-bold text-[#d8a735] mb-4 flex items-center">
-            <span class="material-symbols-rounded text-xl mr-1.5">done_all</span> Settle Ledger Account
-        </h2>
+<!-- INLINE SETTLE LEDGER FORM AT THE BOTTOM -->
+<div id="settlementSection" class="premium-card border-[#d8a735]/20 bg-[#121212]/80 mt-6 no-print">
+    <h2 class="text-sm font-bold text-[#d8a735] mb-3 flex items-center">
+        <span class="material-symbols-rounded text-lg mr-1.5">done_all</span> Settle Ledger Account
+    </h2>
+    
+    <p class="text-[11px] text-slate-400 mb-4 leading-relaxed">
+        Settling this ledger registers the current outstanding gold and cash balances as a fixed checkpoint. Future statements will start with these values as their opening balances.
+    </p>
+    
+    <form method="POST" class="space-y-4" onsubmit="prepareSettleSubmit()">
+        <input type="hidden" name="settle_ledger" value="1">
+        <div>
+            <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Settlement Date</label>
+            <input type="date" name="settlement_date" value="<?= date('Y-m-d') ?>" required class="premium-input text-xs">
+        </div>
         
-        <p class="text-xs text-slate-400 mb-4 leading-relaxed">
-            Settling this ledger registers the current outstanding gold and cash balances as a fixed checkpoint. Future statements will start with these values as their opening balances.
-        </p>
+        <div>
+            <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Closing Gold Balance (gm) *</label>
+            <div class="flex space-x-2 mb-2">
+                <button type="button" id="goldTypeJama" onclick="setGoldType('jama')" class="flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border">
+                    Jama / Credit (Customer ka hamare paas)
+                </button>
+                <button type="button" id="goldTypeKaj" onclick="setGoldType('kaj')" class="flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border">
+                    Lena / Debit (Hamara customer par)
+                </button>
+            </div>
+            <input type="hidden" name="closing_gold" id="finalClosingGold" value="<?= round($currentOutstandingGold, 3) ?>">
+            <input type="number" step="0.001" id="inputGoldVal" value="<?= abs(round($currentOutstandingGold, 3)) ?>" required class="premium-input text-xs font-mono" placeholder="0.000">
+        </div>
         
-        <form method="POST" class="space-y-4" onsubmit="prepareSettleSubmit()">
-            <input type="hidden" name="settle_ledger" value="1">
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1.5">Settlement Date</label>
-                <input type="date" name="settlement_date" value="<?= date('Y-m-d') ?>" required class="premium-input text-xs">
+        <div>
+            <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Closing Cash Balance (₹) *</label>
+            <div class="flex space-x-2 mb-2">
+                <button type="button" id="cashTypeJama" onclick="setCashType('jama')" class="flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border">
+                    Jama / Credit (Customer ka hamare paas)
+                </button>
+                <button type="button" id="cashTypeKaj" onclick="setCashType('kaj')" class="flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border">
+                    Lena / Debit (Hamara customer par)
+                </button>
             </div>
-            
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1.5">Closing Gold Balance (gm) *</label>
-                <div class="flex space-x-2 mb-2">
-                    <button type="button" id="goldTypeJama" onclick="setGoldType('jama')" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                        Jama / Credit (Customer ka hamare paas)
-                    </button>
-                    <button type="button" id="goldTypeKaj" onclick="setGoldType('kaj')" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900 text-slate-400 border border-white/[0.06]">
-                        Lena / Debit (Hamara customer par)
-                    </button>
-                </div>
-                <input type="hidden" name="closing_gold" id="finalClosingGold" value="<?= round($currentOutstandingGold, 3) ?>">
-                <input type="number" step="0.001" id="inputGoldVal" value="<?= abs(round($currentOutstandingGold, 3)) ?>" required class="premium-input text-xs font-mono" placeholder="0.000">
-            </div>
-            
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-1.5">Closing Cash Balance (₹) *</label>
-                <div class="flex space-x-2 mb-2">
-                    <button type="button" id="cashTypeJama" onclick="setCashType('jama')" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                        Jama / Credit (Customer ka hamare paas)
-                    </button>
-                    <button type="button" id="cashTypeKaj" onclick="setCashType('kaj')" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900 text-slate-400 border border-white/[0.06]">
-                        Lena / Debit (Hamara customer par)
-                    </button>
-                </div>
-                <input type="hidden" name="closing_cash" id="finalClosingCash" value="<?= round($currentOutstandingCash, 2) ?>">
-                <input type="number" step="0.01" id="inputCashVal" value="<?= abs(round($currentOutstandingCash, 2)) ?>" required class="premium-input text-xs font-mono" placeholder="0.00">
-            </div>
-            
-            <div class="grid grid-cols-2 gap-3.5 pt-3 border-t border-slate-800">
-                <button type="button" onclick="document.getElementById('settlementModal').classList.add('hidden')" class="btn-secondary text-xs py-3">Cancel</button>
-                <button type="submit" class="btn-gold text-xs py-3">Confirm Settle</button>
-            </div>
-        </form>
+            <input type="hidden" name="closing_cash" id="finalClosingCash" value="<?= round($currentOutstandingCash, 2) ?>">
+            <input type="number" step="0.01" id="inputCashVal" value="<?= abs(round($currentOutstandingCash, 2)) ?>" required class="premium-input text-xs font-mono" placeholder="0.00">
+        </div>
+        
+        <div class="pt-3 border-t border-slate-800 flex justify-end">
+            <button type="submit" class="btn-gold text-xs py-3 px-6">Confirm Settle</button>
+        </div>
+    </form>
 
-        <script>
-            let currentGoldType = <?= $currentOutstandingGold >= 0 ? "'jama'" : "'kaj'" ?>;
-            let currentCashType = <?= $currentOutstandingCash >= 0 ? "'jama'" : "'kaj'" ?>;
+    <script>
+        let currentGoldType = <?= $currentOutstandingGold >= 0 ? "'jama'" : "'kaj'" ?>;
+        let currentCashType = <?= $currentOutstandingCash >= 0 ? "'jama'" : "'kaj'" ?>;
 
-            function updateTypeButtons() {
-                const gj = document.getElementById('goldTypeJama');
-                const gk = document.getElementById('goldTypeKaj');
-                if (gj && gk) {
-                    if (currentGoldType === 'jama') {
-                        gj.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm";
-                        gk.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900 text-slate-400 border border-white/[0.06]";
-                    } else {
-                        gk.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm";
-                        gj.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900 text-slate-400 border border-white/[0.06]";
-                    }
-                }
-
-                const cj = document.getElementById('cashTypeJama');
-                const ck = document.getElementById('cashTypeKaj');
-                if (cj && ck) {
-                    if (currentCashType === 'jama') {
-                        cj.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm";
-                        ck.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900 text-slate-400 border border-white/[0.06]";
-                    } else {
-                        ck.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm";
-                        cj.className = "flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900 text-slate-400 border border-white/[0.06]";
-                    }
+        function updateTypeButtons() {
+            const gj = document.getElementById('goldTypeJama');
+            const gk = document.getElementById('goldTypeKaj');
+            if (gj && gk) {
+                if (currentGoldType === 'jama') {
+                    gj.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm";
+                    gk.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-slate-950 text-slate-500 border border-white/[0.04] hover:bg-slate-900";
+                } else {
+                    gk.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm";
+                    gj.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-slate-950 text-slate-500 border border-white/[0.04] hover:bg-slate-900";
                 }
             }
 
-            function setGoldType(type) {
-                currentGoldType = type;
-                updateTypeButtons();
+            const cj = document.getElementById('cashTypeJama');
+            const ck = document.getElementById('cashTypeKaj');
+            if (cj && ck) {
+                if (currentCashType === 'jama') {
+                    cj.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm";
+                    ck.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-slate-950 text-slate-500 border border-white/[0.04] hover:bg-slate-900";
+                } else {
+                    ck.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm";
+                    cj.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-slate-950 text-slate-500 border border-white/[0.04] hover:bg-slate-900";
+                }
             }
+        }
 
-            function setCashType(type) {
-                currentCashType = type;
-                updateTypeButtons();
-            }
+        function setGoldType(type) {
+            currentGoldType = type;
+            updateTypeButtons();
+        }
 
-            function prepareSettleSubmit() {
-                const gVal = Math.abs(parseFloat(document.getElementById('inputGoldVal').value) || 0);
-                const cVal = Math.abs(parseFloat(document.getElementById('inputCashVal').value) || 0);
+        function setCashType(type) {
+            currentCashType = type;
+            updateTypeButtons();
+        }
 
-                document.getElementById('finalClosingGold').value = (currentGoldType === 'jama' ? gVal : -gVal);
-                document.getElementById('finalClosingCash').value = (currentCashType === 'jama' ? cVal : -cVal);
-                return true;
-            }
+        function prepareSettleSubmit() {
+            const gVal = Math.abs(parseFloat(document.getElementById('inputGoldVal').value) || 0);
+            const cVal = Math.abs(parseFloat(document.getElementById('inputCashVal').value) || 0);
 
-            // Init buttons state on load
-            document.addEventListener('DOMContentLoaded', updateTypeButtons);
-        </script>
-    </div>
+            document.getElementById('finalClosingGold').value = (currentGoldType === 'jama' ? gVal : -gVal);
+            document.getElementById('finalClosingCash').value = (currentCashType === 'jama' ? cVal : -cVal);
+            return true;
+        }
+
+        // Init buttons state on load
+        document.addEventListener('DOMContentLoaded', updateTypeButtons);
+    </script>
 </div>
 
 <script>

@@ -60,6 +60,17 @@ $stmt = $pdo->prepare("SELECT id FROM baparis WHERE user_id = ?");
 $stmt->execute([$userId]);
 $bapariIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+// Fetch Karigor Stats for Dashboard
+$stmtKarigor = $pdo->prepare("SELECT SUM(total_receive_fine) as total_rec_fine, SUM(total_profit_less) as total_profit_less FROM karigor_kaj_receives WHERE user_id = ?");
+$stmtKarigor->execute([$userId]);
+$karigorStats = $stmtKarigor->fetch();
+$totalKarigorProfitLess = floatval($karigorStats['total_profit_less'] ?? 0.0);
+
+$stmtKCount = $pdo->prepare("SELECT COUNT(*) FROM karigors WHERE user_id = ?");
+$stmtKCount->execute([$userId]);
+$totalKarigors = intval($stmtKCount->fetchColumn());
+
+
 $netFineBalance = 0.0;
 $netCashBalance = 0.0;
 
@@ -115,39 +126,44 @@ require_once 'header.php';
     </div>
 </div>
 
-<!-- Two-Column Balance Sub-grid -->
-<div class="grid grid-cols-2 gap-4 mb-8">
-    <div class="premium-card bg-[#121212]/80">
-        <span class="text-slate-500 text-[9px] uppercase font-semibold block mb-1">Cash Balance</span>
-        <div class="text-lg font-bold text-emerald-400 font-mono">₹<?= number_format($netCashBalance, 2) ?></div>
+<!-- Multi-Column Balance Sub-grid -->
+<div class="grid grid-cols-3 gap-3 mb-8">
+    <div class="premium-card bg-[#121212]/80 p-3">
+        <span class="text-slate-500 text-[8.5px] uppercase font-semibold block mb-1">Cash Balance</span>
+        <div class="text-base font-bold text-emerald-400 font-mono truncate">₹<?= number_format($netCashBalance, 0) ?></div>
     </div>
     
-    <div class="premium-card bg-[#121212]/80">
-        <span class="text-slate-500 text-[9px] uppercase font-semibold block mb-1">Active Baparis</span>
-        <div class="text-lg font-bold text-white font-mono"><?= $totalBaparis ?></div>
+    <div class="premium-card bg-[#121212]/80 p-3">
+        <span class="text-slate-500 text-[8.5px] uppercase font-semibold block mb-1">Baparis</span>
+        <div class="text-base font-bold text-white font-mono"><?= $totalBaparis ?></div>
+    </div>
+
+    <div class="premium-card bg-[#121212]/80 p-3">
+        <span class="text-slate-500 text-[8.5px] uppercase font-semibold block mb-1">Karigors</span>
+        <div class="text-base font-bold text-amber-400 font-mono"><?= $totalKarigors ?></div>
     </div>
 </div>
 
-<!-- Quick Actions Grid (Matching Layout Exactly) -->
+<!-- Quick Actions Grid -->
 <div class="mb-8">
     <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block mb-4">Quick Actions</span>
     <div class="grid grid-cols-2 gap-4">
-        <a href="entry.php?tab=deposit" class="premium-card flex items-center space-x-3.5 hover:border-slate-800">
-            <span class="material-symbols-rounded text-[26px] text-[#d8a735] bg-[#d8a735]/10 p-2 rounded-xl">payments</span>
+        <a href="baparis.php" class="premium-card flex items-center space-x-3.5 hover:border-slate-800">
+            <span class="material-symbols-rounded text-[26px] text-[#d8a735] bg-[#d8a735]/10 p-2 rounded-xl">group</span>
             <div>
-                <span class="text-sm font-bold text-white block">Fine Deposit</span>
+                <span class="text-sm font-bold text-white block">Baparis</span>
             </div>
         </a>
-        <a href="entry.php?tab=kaj" class="premium-card flex items-center space-x-3.5 hover:border-slate-800">
-            <span class="material-symbols-rounded text-[26px] text-[#d8a735] bg-[#d8a735]/10 p-2 rounded-xl">construction</span>
+        <a href="karigors.php" class="premium-card flex items-center space-x-3.5 hover:border-slate-800">
+            <span class="material-symbols-rounded text-[26px] text-[#d8a735] bg-[#d8a735]/10 p-2 rounded-xl">engineering</span>
             <div>
-                <span class="text-sm font-bold text-white block">Kaj Entry</span>
+                <span class="text-sm font-bold text-white block">Karigors</span>
             </div>
         </a>
-        <a href="baparis.php?action=new" class="premium-card flex items-center space-x-3.5 hover:border-slate-800">
-            <span class="material-symbols-rounded text-[26px] text-[#d8a735] bg-[#d8a735]/10 p-2 rounded-xl">person_add</span>
+        <a href="entry.php" class="premium-card flex items-center space-x-3.5 hover:border-slate-800">
+            <span class="material-symbols-rounded text-[26px] text-[#d8a735] bg-[#d8a735]/10 p-2 rounded-xl">add_circle</span>
             <div>
-                <span class="text-sm font-bold text-white block">Add Bapari</span>
+                <span class="text-sm font-bold text-white block">Entry</span>
             </div>
         </a>
         <a href="reports.php" class="premium-card flex items-center space-x-3.5 hover:border-slate-800">
@@ -159,11 +175,21 @@ require_once 'header.php';
     </div>
 </div>
 
-<!-- Reports Grid (Matching Layout Exactly) -->
+<!-- Reports Grid -->
 <div class="mb-8">
-    <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block mb-4">Reports</span>
+    <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block mb-4">Reports & Profits</span>
     
     <div class="grid grid-cols-2 gap-4">
+        <div class="premium-card bg-[#121212]/50 gold-border">
+            <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Bapari Profit Fine</span>
+            <div class="text-base font-bold text-[#d8a735] font-mono"><?= number_format($totalProfitFine, 3) ?> g</div>
+        </div>
+
+        <div class="premium-card bg-[#121212]/50 border-emerald-500/30">
+            <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Karigor Profit Less</span>
+            <div class="text-base font-bold text-emerald-400 font-mono"><?= number_format($totalKarigorProfitLess, 3) ?> g</div>
+        </div>
+
         <div class="premium-card bg-[#121212]/50">
             <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Total Fine Deposit</span>
             <div class="text-base font-bold text-white font-mono"><?= number_format($totalJamaFine, 3) ?> g</div>
@@ -173,28 +199,9 @@ require_once 'header.php';
             <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Total Kaj Fine</span>
             <div class="text-base font-bold text-white font-mono"><?= number_format($totalKajFine, 3) ?> g</div>
         </div>
-        
-        <div class="premium-card bg-[#121212]/50 gold-border">
-            <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Profit Fine</span>
-            <div class="text-base font-bold text-white font-mono"><?= number_format($totalProfitFine, 3) ?> g</div>
-        </div>
-        
-        <div class="premium-card bg-[#121212]/50">
-            <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Cash Received</span>
-            <div class="text-base font-bold text-white font-mono">₹<?= number_format($totalCashRec, 0) ?></div>
-        </div>
-        
-        <div class="premium-card bg-[#121212]/50">
-            <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Cash Bill</span>
-            <div class="text-base font-bold text-white font-mono">₹<?= number_format($totalCashBill, 0) ?></div>
-        </div>
-        
-        <div class="premium-card bg-[#121212]/50">
-            <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Cash Balance</span>
-            <div class="text-base font-bold text-emerald-400 font-mono">₹<?= number_format($netCashBalance, 0) ?></div>
-        </div>
     </div>
 </div>
+
 
 <!-- Load Demo Data Button - COMMENTED OUT
 <div class="mb-6">

@@ -1,0 +1,113 @@
+Array
+(
+    [0] => Array
+        (
+            [Field] => id
+            [Type] => int(11)
+            [Null] => NO
+            [Key] => PRI
+            [Default] => 
+            [Extra] => auto_increment
+        )
+
+    [1] => Array
+        (
+            [Field] => kaj_entry_id
+            [Type] => int(11)
+            [Null] => NO
+            [Key] => MUL
+            [Default] => 
+            [Extra] => 
+        )
+
+    [2] => Array
+        (
+            [Field] => item
+            [Type] => varchar(100)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [3] => Array
+        (
+            [Field] => gross
+            [Type] => decimal(12,3)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [4] => Array
+        (
+            [Field] => less
+            [Type] => decimal(12,3)
+            [Null] => NO
+            [Key] => 
+            [Default] => 0.000
+            [Extra] => 
+        )
+
+    [5] => Array
+        (
+            [Field] => net
+            [Type] => decimal(12,3)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [6] => Array
+        (
+            [Field] => milting
+            [Type] => decimal(5,2)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [7] => Array
+        (
+            [Field] => wastage
+            [Type] => decimal(5,2)
+            [Null] => NO
+            [Key] => 
+            [Default] => 0.00
+            [Extra] => 
+        )
+
+    [8] => Array
+        (
+            [Field] => hisab
+            [Type] => decimal(5,2)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [9] => Array
+        (
+            [Field] => kaj_fine
+            [Type] => decimal(12,3)
+            [Null] => NO
+            [Key] => 
+            [Default] => 
+            [Extra] => 
+        )
+
+    [10] => Array
+        (
+            [Field] => profit_fine
+            [Type] => decimal(12,3)
+            [Null] => NO
+            [Key] => 
+            [Default] => 0.000
+            [Extra] => 
+        )
+
+)

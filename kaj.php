@@ -74,27 +74,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Prepare items statement
                 $stmtItem = $pdo->prepare("
-                    INSERT INTO kaj_items (kaj_entry_id, item, gross, less, net, milting, wastage, hisab, kaj_fine, profit_fine) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO kaj_items (kaj_entry_id, item, gross, less, net, milting, wastage, hisab, kaj_fine, profit_fine, net_part1, net_part2, wastage1, wastage2, extra_pure) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 
                 foreach ($items as $it) {
-                    $item = trim($it['item'] ?? '');
+                    $item = trim($it['item'] ?? 'Ornament');
                     $gross = floatval($it['gross'] ?? 0.0);
                     $less = floatval($it['less'] ?? 0.0);
                     $milting = floatval($it['milting'] ?? 0.0);
                     $wastage = floatval($it['wastage'] ?? 0.0);
                     
+                    $netPart1 = floatval($it['net_part1'] ?? 0.0);
+                    $netPart2 = floatval($it['net_part2'] ?? 0.0);
+                    $wst1Raw = floatval($it['wastage1'] ?? 0.0);
+                    $wst2Raw = floatval($it['wastage2'] ?? 0.0);
+                    $extraPure = floatval($it['extra_pure'] ?? 0.0);
+                    
                     if (empty($item)) continue;
                     
                     // Calculations
                     $net = max(0, round($gross - $less, 3));
-                    $hisab = round($milting + $wastage, 2);
-                    $kajFine = round(($net * $hisab) / 100.0, 3);
-                    $profitFine = round(($wastage * $net) / 100.0, 3);
+                    if ($netPart1 > 0 || $netPart2 > 0) {
+                        $hisab1 = ($wst1Raw > 50) ? $wst1Raw : (($wst1Raw > 0) ? ($milting + $wst1Raw) : ($milting + $wastage));
+                        $wstVal1 = ($wst1Raw > 50) ? max(0, $wst1Raw - $milting) : (($wst1Raw > 0) ? $wst1Raw : $wastage);
+                        
+                        $hisab2 = ($wst2Raw > 50) ? $wst2Raw : (($wst2Raw > 0) ? ($milting + $wst2Raw) : ($milting + $wastage));
+                        $wstVal2 = ($wst2Raw > 50) ? max(0, $wst2Raw - $milting) : (($wst2Raw > 0) ? $wst2Raw : $wastage);
+
+                        $hisab = $hisab1;
+                        $net = $netPart1 + $netPart2;
+                        $kajFine = round(($netPart1 * ($hisab1 / 100.0)) + ($netPart2 * ($hisab2 / 100.0)) + $extraPure, 3);
+                        $profitFine = round(($netPart1 * ($wstVal1 / 100.0)) + ($netPart2 * ($wstVal2 / 100.0)), 3);
+                    } else {
+                        $hisab = round($milting + $wastage, 2);
+                        $kajFine = round((($net * $hisab) / 100.0) + $extraPure, 3);
+                        $profitFine = round(($wastage * $net) / 100.0, 3);
+                    }
                     
                     $stmtItem->execute([
-                        $kajEntryId, $item, $gross, $less, $net, $milting, $wastage, $hisab, $kajFine, $profitFine
+                        $kajEntryId, $item, $gross, $less, $net, $milting, $wastage, $hisab, $kajFine, $profitFine, $netPart1, $netPart2, $wst1Raw, $wst2Raw, $extraPure
                     ]);
                     
                     $totalKajFine += $kajFine;
@@ -160,16 +179,17 @@ if ($action === 'edit') {
     }
 }
 
-// Fetch all Kaj Entries joined with Baparis
+// Fetch all Kaj Entries joined with Baparis (Ordered by recent entry creation)
 $stmt = $pdo->prepare("
     SELECT k.*, b.name as bapari_name 
     FROM kaj_entries k
     JOIN baparis b ON k.bapari_id = b.id 
     WHERE k.user_id = ? 
-    ORDER BY k.date DESC, k.id DESC
+    ORDER BY k.id DESC
 ");
 $stmt->execute([$userId]);
 $kajEntries = $stmt->fetchAll();
+
 
 // Fetch Baparis for form selection
 $stmt = $pdo->prepare("SELECT id, name FROM baparis WHERE user_id = ? ORDER BY name ASC");
@@ -299,14 +319,15 @@ require_once 'header.php';
         var rowCount = 0;
         var formBlocked = <?= $blockForm ? 'true' : 'false' ?>;
         
-        function addItemRow(item = '', gross = '', less = '0', milting = '', wastage = '0') {
+        function addItemRow(item = '', gross = '', less = '0', milting = '', wastage = '0', netPart1 = '', netPart2 = '', wastage1 = '', wastage2 = '', extraPure = '') {
             var container = document.getElementById('itemRows');
             var div = document.createElement('div');
             div.id = 'row_' + rowCount;
             div.className = 'premium-card bg-slate-900/50 p-4 border border-slate-850 space-y-3';
             
-            var deleteBtn = '';
-            
+            var isSplitActive = (parseFloat(netPart1) > 0 || parseFloat(netPart2) > 0);
+            var isExtraPureActive = (parseFloat(extraPure) > 0);
+
             div.innerHTML = `
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold text-slate-500 uppercase">Item Details</span>
@@ -317,11 +338,11 @@ require_once 'header.php';
                     </div>
                     <div>
                         <label class="block text-[9px] uppercase text-slate-500 mb-1">Gross (g)</label>
-                        <input type="number" step="0.001" name="items[${rowCount}][gross]" id="gross_${rowCount}" value="${gross}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.000" oninput="calculateRow(${rowCount})">
+                        <input type="number" step="0.001" name="items[${rowCount}][gross]" id="gross_${rowCount}" value="${gross}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.000" oninput="calculateRow(${rowCount}, 'main')">
                     </div>
                     <div>
                         <label class="block text-[9px] uppercase text-slate-500 mb-1">Less (g)</label>
-                        <input type="number" step="0.001" name="items[${rowCount}][less]" id="less_${rowCount}" value="${less}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" oninput="calculateRow(${rowCount})">
+                        <input type="number" step="0.001" name="items[${rowCount}][less]" id="less_${rowCount}" value="${less}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" oninput="calculateRow(${rowCount}, 'main')">
                     </div>
                     <div>
                         <label class="block text-[9px] uppercase text-slate-500 mb-1">Mel / Purity (%)</label>
@@ -333,9 +354,66 @@ require_once 'header.php';
                     </div>
                 </div>
                 
+                <!-- Net Split controls inside dynamic card -->
+                <div class="grid grid-cols-2 gap-3 mt-3">
+                    <div class="bg-slate-950/60 p-2 rounded-xl border border-white/[0.03] flex items-center justify-between">
+                        <div>
+                            <span class="text-slate-500 text-[8px] uppercase font-bold block">Net</span>
+                            <div class="text-xs font-bold text-white font-mono mt-0.5" id="netLabel_${rowCount}">0.000 g</div>
+                        </div>
+                        <button type="button" onclick="toggleNetSplit(${rowCount})" class="w-6 h-6 rounded bg-[#d8a735]/15 border border-[#d8a735]/30 text-[#d8a735] hover:bg-[#d8a735]/25 flex items-center justify-center font-bold text-xs tap-target" title="Split Net into 2 parts">
+                            <span id="netSplitIcon_${rowCount}" class="material-symbols-rounded text-xs">${isSplitActive ? 'remove' : 'add'}</span>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-slate-950/60 p-2 rounded-xl border border-white/[0.03]">
+                        <span class="text-slate-500 text-[8px] uppercase font-bold block">Hisab %</span>
+                        <div class="text-xs font-bold text-white font-mono mt-0.5" id="hisabLabel_${rowCount}">0.00%</div>
+                    </div>
+                </div>
+
+                <!-- Split Net Container -->
+                <div id="netSplitSection_${rowCount}" class="${isSplitActive ? '' : 'hidden'} p-3 rounded-xl bg-slate-950/40 border border-[#d8a735]/20 space-y-3">
+                    <div class="text-[9px] font-bold uppercase tracking-wider text-[#d8a735]">Split Net Calculation</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Net (g)</label>
+                            <input type="number" step="0.001" id="netPart1_${rowCount}" name="items[${rowCount}][net_part1]" value="${netPart1}" oninput="onPart1Input(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
+                        </div>
+                        <div>
+                            <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Hisab / Wastage (%)</label>
+                            <input type="number" step="0.01" id="wastage1_${rowCount}" name="items[${rowCount}][wastage1]" value="${wastage1}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="Default Mel+Wst">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Net (g)</label>
+                            <input type="number" step="0.001" id="netPart2_${rowCount}" name="items[${rowCount}][net_part2]" value="${netPart2}" oninput="onPart2Input(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
+                        </div>
+                        <div>
+                            <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Hisab / Wastage (%)</label>
+                            <input type="number" step="0.01" id="wastage2_${rowCount}" name="items[${rowCount}][wastage2]" value="${wastage2}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="e.g. 3.50 or 95.30">
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="grid grid-cols-2 gap-3 pt-2 text-[11px] font-mono border-t border-slate-800/40 text-slate-400">
-                    <div>Gold Billed: <span id="kajfine_${rowCount}" class="font-bold text-white">0.000</span>g</div>
+                    <div class="relative">
+                        <div class="flex items-center justify-between">
+                            <span>Gold Billed:</span>
+                            <button type="button" onclick="toggleExtraPure(${rowCount})" class="w-5 h-5 rounded bg-[#d8a735]/15 border border-[#d8a735]/30 text-[#d8a735] hover:bg-[#d8a735]/25 flex items-center justify-center font-bold text-[9px] tap-target" title="Add Extra Pure Gold">
+                                <span id="extraPureIcon_${rowCount}" class="material-symbols-rounded text-[10px]">${isExtraPureActive ? 'remove' : 'add'}</span>
+                            </button>
+                        </div>
+                        <span id="kajfine_${rowCount}" class="font-bold text-white">0.000</span>g
+                    </div>
                     <div>Profit Gold: <span id="profit_${rowCount}" class="font-bold text-white">0.000</span>g</div>
+                </div>
+
+                <!-- Extra Pure Input Section -->
+                <div id="extraPureSection_${rowCount}" class="${isExtraPureActive ? '' : 'hidden'} p-3 rounded-xl bg-slate-950/40 border border-[#d8a735]/20 mt-2">
+                    <label class="block text-[8px] font-bold uppercase text-[#d8a735] mb-1">Extra Pure Gold (g)</label>
+                    <input type="number" step="0.001" id="extraPure_${rowCount}" name="items[${rowCount}][extra_pure]" value="${extraPure}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
                 </div>
             `;
             container.appendChild(div);
@@ -349,7 +427,73 @@ require_once 'header.php';
             updateTotalFine();
         }
         
-        function calculateRow(id) {
+        function toggleNetSplit(idx) {
+            const sec = document.getElementById(`netSplitSection_${idx}`);
+            const icon = document.getElementById(`netSplitIcon_${idx}`);
+            if (!sec) return;
+            if (sec.classList.contains('hidden')) {
+                sec.classList.remove('hidden');
+                if (icon) icon.textContent = 'remove';
+                
+                const gross = parseFloat(document.getElementById(`gross_${idx}`).value) || 0;
+                const less = parseFloat(document.getElementById(`less_${idx}`).value) || 0;
+                const net = Math.max(0, gross - less);
+                
+                const p1 = document.getElementById(`netPart1_${idx}`);
+                const p2 = document.getElementById(`netPart2_${idx}`);
+                
+                if (p1 && p2 && !p1.value && !p2.value) {
+                    p1.value = net.toFixed(3);
+                    p2.value = (0).toFixed(3);
+                }
+            } else {
+                sec.classList.add('hidden');
+                if (icon) icon.textContent = 'add';
+            }
+            calculateRow(idx);
+        }
+
+        function onPart1Input(idx) {
+            const gross = parseFloat(document.getElementById(`gross_${idx}`).value) || 0;
+            const less = parseFloat(document.getElementById(`less_${idx}`).value) || 0;
+            const totalNet = Math.max(0, gross - less);
+            
+            const p1Val = parseFloat(document.getElementById(`netPart1_${idx}`).value);
+            if (!isNaN(p1Val) && totalNet > 0) {
+                const p2Val = Math.max(0, totalNet - p1Val);
+                document.getElementById(`netPart2_${idx}`).value = p2Val.toFixed(3);
+            }
+            calculateRow(idx);
+        }
+
+        function onPart2Input(idx) {
+            const gross = parseFloat(document.getElementById(`gross_${idx}`).value) || 0;
+            const less = parseFloat(document.getElementById(`less_${idx}`).value) || 0;
+            const totalNet = Math.max(0, gross - less);
+            
+            const p2Val = parseFloat(document.getElementById(`netPart2_${idx}`).value);
+            if (!isNaN(p2Val) && totalNet > 0) {
+                const p1Val = Math.max(0, totalNet - p2Val);
+                document.getElementById(`netPart1_${idx}`).value = p1Val.toFixed(3);
+            }
+            calculateRow(idx);
+        }
+
+        function toggleExtraPure(idx) {
+            const sec = document.getElementById(`extraPureSection_${idx}`);
+            const icon = document.getElementById(`extraPureIcon_${idx}`);
+            if (!sec) return;
+            if (sec.classList.contains('hidden')) {
+                sec.classList.remove('hidden');
+                if (icon) icon.textContent = 'remove';
+            } else {
+                sec.classList.add('hidden');
+                if (icon) icon.textContent = 'add';
+            }
+            calculateRow(idx);
+        }
+
+        function calculateRow(id, source = '') {
             var grossEl = document.getElementById('gross_' + id);
             if (!grossEl) return;
             var gross = parseFloat(grossEl.value) || 0;
@@ -360,9 +504,84 @@ require_once 'header.php';
             var net = Math.max(0, gross - less);
             var hisab = milting + wastage;
             
-            var kajFine = (net * hisab) / 100;
-            var profitFine = (wastage * net) / 100;
+            const netSplitSec = document.getElementById(`netSplitSection_${id}`);
+            const isSplitActive = netSplitSec && !netSplitSec.classList.contains('hidden');
             
+            var kajFine = 0;
+            var profitFine = 0;
+            
+            if (isSplitActive) {
+                const p1El = document.getElementById(`netPart1_${id}`);
+                const p2El = document.getElementById(`netPart2_${id}`);
+                
+                if (source === 'main' && net > 0) {
+                    p1El.value = net.toFixed(3);
+                    p2El.value = (0).toFixed(3);
+                }
+                
+                const part1Net = parseFloat(p1El?.value) || 0;
+                const part2Net = parseFloat(p2El?.value) || 0;
+                
+                if (part1Net > 0 || part2Net > 0) {
+                    net = part1Net + part2Net;
+                }
+                
+                const rawWst1 = parseFloat(document.getElementById(`wastage1_${id}`)?.value);
+                const rawWst2 = parseFloat(document.getElementById(`wastage2_${id}`)?.value);
+                
+                let hisab1 = milting + wastage;
+                let wstVal1 = wastage;
+                if (!isNaN(rawWst1) && rawWst1 > 0) {
+                    if (rawWst1 > 50) {
+                        hisab1 = rawWst1;
+                        wstVal1 = Math.max(0, rawWst1 - milting);
+                    } else {
+                        wstVal1 = rawWst1;
+                        hisab1 = milting + rawWst1;
+                    }
+                }
+                
+                let hisab2 = milting + wastage;
+                let wstVal2 = wastage;
+                if (!isNaN(rawWst2) && rawWst2 > 0) {
+                    if (rawWst2 > 50) {
+                        hisab2 = rawWst2;
+                        wstVal2 = Math.max(0, rawWst2 - milting);
+                    } else {
+                        wstVal2 = rawWst2;
+                        hisab2 = milting + rawWst2;
+                    }
+                }
+                
+                kajFine = (part1Net * hisab1 / 100) + (part2Net * hisab2 / 100);
+                profitFine = (part1Net * wstVal1 / 100) + (part2Net * wstVal2 / 100);
+            } else {
+                kajFine = (net * hisab) / 100;
+                profitFine = (wastage * net) / 100;
+            }
+            
+            const extraPureSec = document.getElementById(`extraPureSection_${id}`);
+            const isExtraPureActive = extraPureSec && !extraPureSec.classList.contains('hidden');
+            if (isExtraPureActive) {
+                const extraPure = parseFloat(document.getElementById(`extraPure_${id}`).value) || 0;
+                kajFine += extraPure;
+                
+                // Autofill remark if empty
+                const remarkInput = document.getElementsByName('remark')[0];
+                if (remarkInput) {
+                    const autoText = `Incl. Extra Pure: ${extraPure.toFixed(3)}g`;
+                    if (extraPure > 0) {
+                        if (!remarkInput.value || remarkInput.value.startsWith('Incl. Extra Pure:')) {
+                            remarkInput.value = autoText;
+                        }
+                    } else if (remarkInput.value.startsWith('Incl. Extra Pure:')) {
+                        remarkInput.value = '';
+                    }
+                }
+            }
+            
+            document.getElementById(`netLabel_${id}`).innerText = net.toFixed(3) + ' g';
+            document.getElementById(`hisabLabel_${id}`).innerText = hisab.toFixed(2) + '%';
             document.getElementById('kajfine_' + id).innerText = kajFine.toFixed(3);
             document.getElementById('profit_' + id).innerText = profitFine.toFixed(3);
             
@@ -387,7 +606,12 @@ require_once 'header.php';
                         "<?= floatval($it['gross']) ?>",
                         "<?= floatval($it['less']) ?>",
                         "<?= floatval($it['milting']) ?>",
-                        "<?= floatval($it['wastage']) ?>"
+                        "<?= floatval($it['wastage']) ?>",
+                        "<?= floatval($it['net_part1'] ?? 0.0) ?>",
+                        "<?= floatval($it['net_part2'] ?? 0.0) ?>",
+                        "<?= floatval($it['wastage1'] ?? 0.0) ?>",
+                        "<?= floatval($it['wastage2'] ?? 0.0) ?>",
+                        "<?= floatval($it['extra_pure'] ?? 0.0) ?>"
                     );
                 <?php endforeach; ?>
             <?php else: ?>

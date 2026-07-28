@@ -89,6 +89,125 @@ if (session_status() == PHP_SESSION_NONE) {
         ");
     } catch (Exception $e) {}
 
+    // Add Net split & extra pure gold columns to kaj_items table
+    try {
+        $pdo->exec("ALTER TABLE `kaj_items` ADD COLUMN `net_part1` DECIMAL(12, 3) DEFAULT 0.000");
+    } catch (Exception $e) {}
+    try {
+        $pdo->exec("ALTER TABLE `kaj_items` ADD COLUMN `net_part2` DECIMAL(12, 3) DEFAULT 0.000");
+    } catch (Exception $e) {}
+    try {
+        $pdo->exec("ALTER TABLE `kaj_items` ADD COLUMN `wastage1` DECIMAL(5, 2) DEFAULT 0.00");
+    } catch (Exception $e) {}
+    try {
+        $pdo->exec("ALTER TABLE `kaj_items` ADD COLUMN `wastage2` DECIMAL(5, 2) DEFAULT 0.00");
+    } catch (Exception $e) {}
+    try {
+        $pdo->exec("ALTER TABLE `kaj_items` ADD COLUMN `extra_pure` DECIMAL(12, 3) DEFAULT 0.000");
+    } catch (Exception $e) {}
+
+    // Karigor Module Tables Migration
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `karigors` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT NOT NULL,
+                `name` VARCHAR(255) NOT NULL,
+                `mobile` VARCHAR(50) DEFAULT NULL,
+                `address` TEXT DEFAULT NULL,
+                `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+        ");
+    } catch (Exception $e) {}
+
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `karigor_material_issues` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT NOT NULL,
+                `date` DATE NOT NULL,
+                `karigor_id` INT NOT NULL,
+                `fine_weight` DECIMAL(12, 3) NOT NULL,
+                `purity` DECIMAL(5, 2) NOT NULL DEFAULT 100.00,
+                `issue_fine` DECIMAL(12, 3) NOT NULL,
+                `cash_paid` DECIMAL(12, 2) DEFAULT 0.00,
+                `remark` TEXT DEFAULT NULL,
+                `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`karigor_id`) REFERENCES `karigors` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+        ");
+    } catch (Exception $e) {}
+
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `karigor_kaj_receives` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT NOT NULL,
+                `date` DATE NOT NULL,
+                `karigor_id` INT NOT NULL,
+                `total_receive_fine` DECIMAL(12, 3) NOT NULL,
+                `total_profit_fine` DECIMAL(12, 3) DEFAULT 0.000,
+                `cash_paid` DECIMAL(12, 2) DEFAULT 0.00,
+                `remark` TEXT DEFAULT NULL,
+                `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`karigor_id`) REFERENCES `karigors` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+        ");
+    } catch (Exception $e) {}
+
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `karigor_kaj_receive_items` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `karigor_receive_id` INT NOT NULL,
+                `item` VARCHAR(100) NOT NULL,
+                `gross` DECIMAL(12, 3) NOT NULL,
+                `less` DECIMAL(12, 3) DEFAULT 0.000,
+                `net` DECIMAL(12, 3) NOT NULL,
+                `milting` DECIMAL(5, 2) NOT NULL,
+                `wastage` DECIMAL(5, 2) DEFAULT 0.00,
+                `hisab` DECIMAL(5, 2) NOT NULL,
+                `receive_fine` DECIMAL(12, 3) NOT NULL,
+                `profit_fine` DECIMAL(12, 3) DEFAULT 0.000,
+                `net_part1` DECIMAL(12, 3) DEFAULT 0.000,
+                `net_part2` DECIMAL(12, 3) DEFAULT 0.000,
+                `wastage1` DECIMAL(5, 2) DEFAULT 0.00,
+                `wastage2` DECIMAL(5, 2) DEFAULT 0.00,
+                `extra_pure` DECIMAL(12, 3) DEFAULT 0.000,
+                FOREIGN KEY (`karigor_receive_id`) REFERENCES `karigor_kaj_receives` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+        ");
+    } catch (Exception $e) {}
+
+    try {
+        $pdo->exec("ALTER TABLE `karigor_kaj_receives` ADD COLUMN `total_profit_less` DECIMAL(12, 3) DEFAULT 0.000");
+    } catch (Exception $e) {}
+
+    try {
+        $pdo->exec("ALTER TABLE `karigor_kaj_receive_items` ADD COLUMN `profit_less` DECIMAL(12, 3) DEFAULT 0.000");
+    } catch (Exception $e) {}
+
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `karigor_ledger_settlements` (
+
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT NOT NULL,
+                `karigor_id` INT NOT NULL,
+                `settlement_date` DATE NOT NULL,
+                `closing_gold` DECIMAL(12, 3) NOT NULL,
+                `closing_cash` DECIMAL(12, 2) NOT NULL,
+                `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`karigor_id`) REFERENCES `karigors` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+        ");
+    } catch (Exception $e) {}
+
+
     try {
         $pdo->exec("ALTER TABLE `users` ADD COLUMN `company_name` VARCHAR(255) DEFAULT NULL");
     } catch (Exception $e) {}
@@ -136,7 +255,7 @@ if (session_status() == PHP_SESSION_NONE) {
         }
         
         // Also promote the screenshot admin account if it exists
-        $pdo->exec("UPDATE `users` SET is_admin = 1, is_active = 1 WHERE email = 'sumankantidas100@gmail.com'");
+        $pdo->exec("UPDATE `users` SET password_hash = '$hash', is_admin = 1, is_active = 1 WHERE email = 'sumankantidas100@gmail.com'");
     } catch (Exception $e) {}
 
     // Enforce Authentication

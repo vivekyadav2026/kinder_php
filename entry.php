@@ -86,6 +86,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $totalProfitFine += $profitFine;
                 }
 
+                // Auto append extra pure note if missing in remark
+                $extraPureTotal = 0.0;
+                foreach ($items as $it) {
+                    $extraPureTotal += floatval($it['extra_pure'] ?? 0);
+                }
+                if ($extraPureTotal > 0 && empty($remark)) {
+                    $remark = "Incl. Extra Pure: " . number_format($extraPureTotal, 3) . "g";
+                }
+
                 // Insert into main table
                 $stmt = $pdo->prepare("
                     INSERT INTO kaj_entries (user_id, date, bapari_id, total_kaj_fine, total_profit_fine, cash_bill, remark) 
@@ -96,8 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Insert individual items
                 $stmtItem = $pdo->prepare("
-                    INSERT INTO kaj_items (kaj_entry_id, item, gross, less, net, milting, wastage, hisab, kaj_fine, profit_fine) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO kaj_items (kaj_entry_id, item, gross, less, net, milting, wastage, hisab, kaj_fine, profit_fine, net_part1, net_part2, wastage1, wastage2, extra_pure) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 
                 foreach ($items as $it) {
@@ -122,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $wstVal2 = ($wst2Raw > 50) ? max(0, $wst2Raw - $milting) : (($wst2Raw > 0) ? $wst2Raw : $wastage);
 
                         $hisab = $hisab1;
+                        $net = $netPart1 + $netPart2;
                         $kajFine = round(($netPart1 * ($hisab1 / 100)) + ($netPart2 * ($hisab2 / 100)) + $extraPure, 3);
                         $profitFine = round(($netPart1 * ($wstVal1 / 100)) + ($netPart2 * ($wstVal2 / 100)), 3);
                     } else {
@@ -130,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $profitFine = round($net * ($wastage / 100), 3);
                     }
                     
-                    $stmtItem->execute([$kajEntryId, $item, $gross, $less, $net, $milting, $wastage, $hisab, $kajFine, $profitFine]);
+                    $stmtItem->execute([$kajEntryId, $item, $gross, $less, $net, $milting, $wastage, $hisab, $kajFine, $profitFine, $netPart1, $netPart2, $wst1Raw, $wst2Raw, $extraPure]);
                 }
                 
                 $pdo->commit();
@@ -144,33 +154,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch last 5 Fine Deposits
-$stmtDep = $pdo->prepare("SELECT fd.*, b.name as bapari_name FROM fine_deposits fd JOIN baparis b ON fd.bapari_id = b.id WHERE fd.user_id = ? ORDER BY fd.date DESC, fd.id DESC LIMIT 5");
+// Fetch last 5 Fine Deposits (Ordered by recent entry creation)
+$stmtDep = $pdo->prepare("SELECT fd.*, b.name as bapari_name FROM fine_deposits fd JOIN baparis b ON fd.bapari_id = b.id WHERE fd.user_id = ? ORDER BY fd.id DESC LIMIT 5");
 $stmtDep->execute([$userId]);
 $recentDeposits = $stmtDep->fetchAll();
 
-// Fetch last 5 Kaj Entries
-$stmtKaj = $pdo->prepare("SELECT k.*, b.name as bapari_name FROM kaj_entries k JOIN baparis b ON k.bapari_id = b.id WHERE k.user_id = ? ORDER BY k.date DESC, k.id DESC LIMIT 5");
+// Fetch last 5 Kaj Entries (Ordered by recent entry creation)
+$stmtKaj = $pdo->prepare("SELECT k.*, b.name as bapari_name FROM kaj_entries k JOIN baparis b ON k.bapari_id = b.id WHERE k.user_id = ? ORDER BY k.id DESC LIMIT 5");
 $stmtKaj->execute([$userId]);
 $recentKaj = $stmtKaj->fetchAll();
+
 
 require_once 'header.php';
 ?>
 
 <!-- Title Heading -->
-<div class="mb-4 mt-2">
-    <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center">
-        Entry
+<div class="mb-6 mt-2 text-center">
+    <h1 class="text-2xl font-extrabold tracking-wider uppercase text-white">
+        ENTRY
     </h1>
 </div>
 
-<!-- Tab Switcher (Matching Reference Images) -->
+<?php /*
+<!-- ENTRY CATEGORIES CARDS (Functionality available in menu) -->
+<div class="space-y-6 mb-8 max-w-xl mx-auto">
+    <!-- Card 1: Bapari Entry -->
+    <div class="premium-card bg-[#121212]/90 border border-white/[0.08] p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-bold text-slate-200 flex items-center">
+                <span class="text-base mr-2">📦</span> Bapari Entry
+            </h2>
+            <a href="baparis.php?action=new" class="text-[10px] text-[#d8a735] hover:underline font-bold flex items-center">
+                <span class="material-symbols-rounded text-xs mr-0.5">add</span> Add Bapari
+            </a>
+        </div>
+        <div class="space-y-3">
+            <a href="deposits.php?action=new" class="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold text-center block shadow-lg transition-all tap-target">
+                Fine Deposit
+            </a>
+            <a href="kaj.php?action=new" class="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold text-center block shadow-lg transition-all tap-target">
+                Kaj Entry
+            </a>
+        </div>
+    </div>
+
+    <!-- Card 2: Karigor Entry -->
+    <div class="premium-card bg-[#121212]/90 border border-white/[0.08] p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-bold text-slate-200 flex items-center">
+                <span class="text-base mr-2">👨‍🏭</span> Karigor Entry
+            </h2>
+            <a href="karigors.php?action=new" class="text-[10px] text-[#d8a735] hover:underline font-bold flex items-center">
+                <span class="material-symbols-rounded text-xs mr-0.5">add</span> Add Karigor
+            </a>
+        </div>
+        <div class="space-y-3">
+            <a href="karigor_issue.php?action=new" class="w-full py-3.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold text-center block shadow-lg transition-all tap-target">
+                Issue Material
+            </a>
+            <a href="karigor_receive.php?action=new" class="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold text-center block shadow-lg transition-all tap-target">
+                Kaj Receive
+            </a>
+        </div>
+    </div>
+</div>
+*/ ?>
+
+
+<!-- Tab Switcher & Quick Form Below -->
 <div class="flex items-center space-x-0 bg-slate-900/60 p-1 rounded-2xl border border-white/[0.04] mb-6">
     <button onclick="switchTab('deposit')" id="tabBtnDeposit" class="flex-1 py-3 text-center text-sm font-bold rounded-xl transition-all tap-target <?= $activeTab == 'deposit' ? 'bg-[#d8a735] text-slate-950 shadow-md' : 'text-slate-400' ?>">
-        Fine Deposit
+        Quick Fine Deposit
     </button>
     <button onclick="switchTab('kaj')" id="tabBtnKaj" class="flex-1 py-3 text-center text-sm font-bold rounded-xl transition-all tap-target <?= $activeTab == 'kaj' ? 'bg-[#d8a735] text-slate-950 shadow-md' : 'text-slate-400' ?>">
-        Kaj Entry
+        Quick Kaj Entry
     </button>
 </div>
 
@@ -196,6 +253,7 @@ require_once 'header.php';
 
 <!-- 1. Fine Deposit Content -->
 <div id="tabContentDeposit" class="<?= $activeTab == 'deposit' ? '' : 'hidden' ?>">
+
     <form method="POST" class="space-y-5">
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Date</label>
@@ -279,11 +337,11 @@ require_once 'header.php';
                     <div class="grid grid-cols-2 gap-3.5">
                         <div>
                             <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Gross</label>
-                            <input type="number" step="0.001" name="items[0][gross]" id="gross_0" oninput="calcKajItem(0)" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm gross-input" placeholder="0.000" required>
+                            <input type="number" step="0.001" name="items[0][gross]" id="gross_0" oninput="calcKajItem(0, 'main')" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm gross-input" placeholder="0.000" required>
                         </div>
                         <div>
                             <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Less</label>
-                            <input type="number" step="0.001" name="items[0][less]" id="less_0" value="0" oninput="calcKajItem(0)" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm less-input" placeholder="0">
+                            <input type="number" step="0.001" name="items[0][less]" id="less_0" value="0" oninput="calcKajItem(0, 'main')" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm less-input" placeholder="0">
                         </div>
                     </div>
                     
@@ -294,7 +352,7 @@ require_once 'header.php';
                         </div>
                         <div>
                             <label class="block text-[9px] font-bold uppercase text-slate-500 mb-1">Wastage %</label>
-                            <input type="number" step="0.01" name="items[0][wastage]" id="wastage_0" value="3.50" oninput="calcKajItem(0)" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm wastage-input">
+                            <input type="number" step="0.01" name="items[0][wastage]" id="wastage_0" value="0" oninput="calcKajItem(0)" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm wastage-input">
                         </div>
                     </div>
                     
@@ -322,7 +380,7 @@ require_once 'header.php';
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Net (g)</label>
-                                <input type="number" step="0.001" id="netPart1_0" name="items[0][net_part1]" oninput="calcKajItem(0)" class="premium-input text-xs font-mono" placeholder="0.000">
+                                <input type="number" step="0.001" id="netPart1_0" name="items[0][net_part1]" oninput="onPart1Input(0)" class="premium-input text-xs font-mono" placeholder="0.000">
                             </div>
                             <div>
                                 <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Hisab / Wastage (%)</label>
@@ -332,7 +390,7 @@ require_once 'header.php';
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Net (g)</label>
-                                <input type="number" step="0.001" id="netPart2_0" name="items[0][net_part2]" oninput="calcKajItem(0)" class="premium-input text-xs font-mono" placeholder="0.000">
+                                <input type="number" step="0.001" id="netPart2_0" name="items[0][net_part2]" oninput="onPart2Input(0)" class="premium-input text-xs font-mono" placeholder="0.000">
                             </div>
                             <div>
                                 <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Hisab / Wastage (%)</label>
@@ -375,7 +433,7 @@ require_once 'header.php';
         
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Remark</label>
-            <input type="text" name="remark" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="Add optional remarks">
+            <input type="text" name="remark" id="kajRemarkInput" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input text-sm" placeholder="Add optional remarks">
         </div>
         
         <!-- Total aggregate indicator footer boxes -->
@@ -538,15 +596,48 @@ require_once 'header.php';
         if (sec.classList.contains('hidden')) {
             sec.classList.remove('hidden');
             if (icon) icon.textContent = 'remove';
-            // Auto populate Part 1 with current Net if empty
+            
             const gross = parseFloat(document.getElementById(`gross_${idx}`).value) || 0;
             const less = parseFloat(document.getElementById(`less_${idx}`).value) || 0;
             const net = Math.max(0, gross - less);
+            
             const p1 = document.getElementById(`netPart1_${idx}`);
-            if (p1 && !p1.value) p1.value = net.toFixed(3);
+            const p2 = document.getElementById(`netPart2_${idx}`);
+            
+            // Auto populate Part 1 with Total Net and Part 2 with 0 if both are empty
+            if (p1 && p2 && !p1.value && !p2.value) {
+                p1.value = net.toFixed(3);
+                p2.value = (0).toFixed(3);
+            }
         } else {
             sec.classList.add('hidden');
             if (icon) icon.textContent = 'add';
+        }
+        calcKajItem(idx);
+    }
+
+    function onPart1Input(idx) {
+        const gross = parseFloat(document.getElementById(`gross_${idx}`).value) || 0;
+        const less = parseFloat(document.getElementById(`less_${idx}`).value) || 0;
+        const totalNet = Math.max(0, gross - less);
+        
+        const p1Val = parseFloat(document.getElementById(`netPart1_${idx}`).value);
+        if (!isNaN(p1Val) && totalNet > 0) {
+            const p2Val = Math.max(0, totalNet - p1Val);
+            document.getElementById(`netPart2_${idx}`).value = p2Val.toFixed(3);
+        }
+        calcKajItem(idx);
+    }
+
+    function onPart2Input(idx) {
+        const gross = parseFloat(document.getElementById(`gross_${idx}`).value) || 0;
+        const less = parseFloat(document.getElementById(`less_${idx}`).value) || 0;
+        const totalNet = Math.max(0, gross - less);
+        
+        const p2Val = parseFloat(document.getElementById(`netPart2_${idx}`).value);
+        if (!isNaN(p2Val) && totalNet > 0) {
+            const p1Val = Math.max(0, totalNet - p2Val);
+            document.getElementById(`netPart1_${idx}`).value = p1Val.toFixed(3);
         }
         calcKajItem(idx);
     }
@@ -566,10 +657,10 @@ require_once 'header.php';
     }
 
     // Dynamic calculators for individual items
-    function calcKajItem(idx) {
+    function calcKajItem(idx, source = '') {
         const gross = parseFloat(document.getElementById(`gross_${idx}`).value) || 0;
         const less = parseFloat(document.getElementById(`less_${idx}`).value) || 0;
-        const net = Math.max(0, gross - less);
+        let net = Math.max(0, gross - less);
         
         const milting = parseFloat(document.getElementById(`milting_${idx}`).value) || 0;
         const wastage = parseFloat(document.getElementById(`wastage_${idx}`).value) || 0;
@@ -584,8 +675,22 @@ require_once 'header.php';
         let profitFine = 0;
         
         if (isSplitActive) {
-            const part1Net = parseFloat(document.getElementById(`netPart1_${idx}`).value) || 0;
-            const part2Net = parseFloat(document.getElementById(`netPart2_${idx}`).value) || 0;
+            const p1El = document.getElementById(`netPart1_${idx}`);
+            const p2El = document.getElementById(`netPart2_${idx}`);
+            
+            // If main Gross/Less changes, update Part 1 and Part 2 proportionally
+            if (source === 'main' && net > 0) {
+                p1El.value = net.toFixed(3);
+                p2El.value = (0).toFixed(3);
+            }
+            
+            const part1Net = parseFloat(p1El?.value) || 0;
+            const part2Net = parseFloat(p2El?.value) || 0;
+            
+            // When Split is active, Total Net is sum of Part 1 Net + Part 2 Net
+            if (part1Net > 0 || part2Net > 0) {
+                net = part1Net + part2Net;
+            }
             
             const rawWst1 = parseFloat(document.getElementById(`wastage1_${idx}`)?.value);
             const rawWst2 = parseFloat(document.getElementById(`wastage2_${idx}`)?.value);
@@ -632,6 +737,18 @@ require_once 'header.php';
         if (isExtraPureActive) {
             const extraPure = parseFloat(document.getElementById(`extraPure_${idx}`).value) || 0;
             kajFine += extraPure;
+            
+            const remarkInput = document.getElementById('kajRemarkInput');
+            if (remarkInput) {
+                const autoText = `Incl. Extra Pure: ${extraPure.toFixed(3)}g`;
+                if (extraPure > 0) {
+                    if (!remarkInput.value || remarkInput.value.startsWith('Incl. Extra Pure:')) {
+                        remarkInput.value = autoText;
+                    }
+                } else if (remarkInput.value.startsWith('Incl. Extra Pure:')) {
+                    remarkInput.value = '';
+                }
+            }
         }
         
         document.getElementById(`netLabel_${idx}`).textContent = net.toFixed(3) + " g";

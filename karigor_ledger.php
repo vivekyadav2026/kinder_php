@@ -1,0 +1,627 @@
+<?php
+require_once 'db.php';
+
+$karigorId = intval($_GET['karigor_id'] ?? 0);
+$from = $_GET['from'] ?? '';
+$to = $_GET['to'] ?? '';
+$isPrintMode = isset($_GET['print']) && $_GET['print'] == 1;
+
+if ($karigorId <= 0) {
+    echo "Invalid Karigor ID";
+    exit();
+}
+
+// Fetch Karigor Details
+$stmt = $pdo->prepare("SELECT * FROM karigors WHERE id = ? AND user_id = ?");
+$stmt->execute([$karigorId, $userId]);
+$karigor = $stmt->fetch();
+
+if (!$karigor) {
+    echo "Karigor not found";
+    exit();
+}
+
+// 1. Handle Karigor Ledger Settlement Form Submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['settle_karigor_ledger'])) {
+    $settleDate = $_POST['settlement_date'] ?? date('Y-m-d');
+    $closeGold = floatval($_POST['closing_gold']);
+    $closeCash = floatval($_POST['closing_cash']);
+    
+    $stmt = $pdo->prepare("INSERT INTO karigor_ledger_settlements (user_id, karigor_id, settlement_date, closing_gold, closing_cash) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$userId, $karigorId, $settleDate, $closeGold, $closeCash]);
+    
+    header("Location: karigor_ledger.php?karigor_id=" . $karigorId);
+    exit();
+}
+
+// Handle Delete Material Issue directly from Ledger
+if (isset($_GET['delete_issue'])) {
+    $id = intval($_GET['delete_issue']);
+    $stmt = $pdo->prepare("DELETE FROM karigor_material_issues WHERE id = ? AND user_id = ?");
+    $stmt->execute([$id, $userId]);
+    header("Location: karigor_ledger.php?karigor_id=" . $karigorId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : ""));
+    exit();
+}
+
+// Handle Delete Kaj Receive directly from Ledger
+if (isset($_GET['delete_receive'])) {
+    $id = intval($_GET['delete_receive']);
+    $stmt = $pdo->prepare("DELETE FROM karigor_kaj_receives WHERE id = ? AND user_id = ?");
+    $stmt->execute([$id, $userId]);
+    header("Location: karigor_ledger.php?karigor_id=" . $karigorId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : ""));
+    exit();
+}
+
+// 2. Fetch Latest Settlement Checkpoint
+$stmt = $pdo->prepare("SELECT * FROM karigor_ledger_settlements WHERE karigor_id = ? AND user_id = ? ORDER BY settlement_date DESC LIMIT 1");
+$stmt->execute([$karigorId, $userId]);
+$latestSettle = $stmt->fetch();
+
+// 3. Setup Default Dates based on Settlement checkpoint if not user-defined
+if (empty($from) && $latestSettle) {
+    $from = date('Y-m-d', strtotime($latestSettle['settlement_date'] . ' + 1 day'));
+}
+
+// 4. Calculate Opening Balance before $from Date
+$openingGold = 0.0;
+$openingCash = 0.0;
+$startCalculationFromDate = '';
+
+if (!empty($from)) {
+    $settleStmt = $pdo->prepare("SELECT * FROM karigor_ledger_settlements WHERE karigor_id = ? AND user_id = ? AND settlement_date < ? ORDER BY settlement_date DESC LIMIT 1");
+    $settleStmt->execute([$karigorId, $userId, $from]);
+    $prevSettle = $settleStmt->fetch();
+
+    if ($prevSettle) {
+        $openingGold = floatval($prevSettle['closing_gold']);
+        $openingCash = floatval($prevSettle['closing_cash']);
+        $startCalculationFromDate = $prevSettle['settlement_date'];
+    }
+
+    // Material issues (Material OUT / Debit: -)
+    $issueParamsBefore = [$userId, $karigorId, $from];
+    $issueQueryBefore = "SELECT SUM(issue_fine) as g, SUM(cash_paid) as c FROM karigor_material_issues WHERE user_id = ? AND karigor_id = ? AND date < ?";
+    if (!empty($startCalculationFromDate)) {
+        $issueQueryBefore .= " AND date > ?";
+        $issueParamsBefore[] = $startCalculationFromDate;
+    }
+    $stmt = $pdo->prepare($issueQueryBefore);
+    $stmt->execute($issueParamsBefore);
+    $issueBefore = $stmt->fetch();
+
+    // Kaj receives (Kaj IN / Credit: +)
+    $recParamsBefore = [$userId, $karigorId, $from];
+    $recQueryBefore = "SELECT SUM(total_receive_fine) as g, SUM(cash_paid) as c FROM karigor_kaj_receives WHERE user_id = ? AND karigor_id = ? AND date < ?";
+    if (!empty($startCalculationFromDate)) {
+        $recQueryBefore .= " AND date > ?";
+        $recParamsBefore[] = $startCalculationFromDate;
+    }
+    $stmt = $pdo->prepare($recQueryBefore);
+    $stmt->execute($recParamsBefore);
+    $recBefore = $stmt->fetch();
+
+    $openingGold += floatval($recBefore['g'] ?? 0) - floatval($issueBefore['g'] ?? 0);
+    $openingCash += floatval($recBefore['c'] ?? 0) - floatval($issueBefore['c'] ?? 0);
+}
+
+// 5. Fetch Material Issues within Date Range
+$issueQuery = "SELECT id, date, 'issue' as type, fine_weight, purity, issue_fine, cash_paid, remark, created_at FROM karigor_material_issues WHERE user_id = ? AND karigor_id = ?";
+$issueParams = [$userId, $karigorId];
+if (!empty($from)) { $issueQuery .= " AND date >= ?"; $issueParams[] = $from; }
+if (!empty($to)) { $issueQuery .= " AND date <= ?"; $issueParams[] = $to; }
+$stmt = $pdo->prepare($issueQuery);
+$stmt->execute($issueParams);
+$issues = $stmt->fetchAll();
+
+// 6. Fetch Kaj Receives within Date Range
+$recQuery = "SELECT id, date, 'receive' as type, total_receive_fine, total_profit_less, cash_paid, remark, created_at FROM karigor_kaj_receives WHERE user_id = ? AND karigor_id = ?";
+$recParams = [$userId, $karigorId];
+if (!empty($from)) { $recQuery .= " AND date >= ?"; $recParams[] = $from; }
+if (!empty($to)) { $recQuery .= " AND date <= ?"; $recParams[] = $to; }
+$stmt = $pdo->prepare($recQuery);
+$stmt->execute($recParams);
+$receives = $stmt->fetchAll();
+
+// Merge and sort ascending by date & creation time
+$entries = array_merge($issues, $receives);
+usort($entries, function($a, $b) {
+    $cmp = strcmp($a['date'], $b['date']);
+    if ($cmp === 0) {
+        return strcmp($a['created_at'], $b['created_at']);
+    }
+    return $cmp;
+});
+
+// Fetch subitems for Kaj Receives
+foreach ($entries as &$e) {
+    if ($e['type'] === 'receive') {
+        $stmtItems = $pdo->prepare("SELECT item, gross, less, net, milting, wastage, hisab, receive_fine, profit_less FROM karigor_kaj_receive_items WHERE karigor_receive_id = ?");
+        $stmtItems->execute([$e['id']]);
+        $e['items'] = $stmtItems->fetchAll();
+    }
+}
+unset($e);
+
+// 7. Flat map transactions into individual Ledger rows
+$ledgerRows = [];
+
+if (!empty($from) || $openingGold != 0 || $openingCash != 0) {
+    $ledgerRows[] = [
+        'date' => $from ?: (!empty($entries) ? $entries[0]['date'] : date('Y-m-d')),
+        'no' => '',
+        'name' => 'Opening Balance',
+        'gross' => 0.0,
+        'less' => 0.0,
+        'net' => 0.0,
+        'tch' => 0.0,
+        'wst' => 0.0,
+        'fine' => $openingGold,
+        'cash' => $openingCash,
+        'remark' => 'Opening Balance',
+        'is_opening' => true
+    ];
+}
+
+foreach ($entries as $e) {
+    if ($e['type'] === 'issue') {
+        $hasMetal = floatval($e['fine_weight']) > 0 || floatval($e['issue_fine']) > 0;
+        $hasCash = floatval($e['cash_paid']) > 0;
+
+        if ($hasMetal) {
+            $ledgerRows[] = [
+                'date' => $e['date'],
+                'no' => 'Issue No : ' . $e['id'],
+                'name' => floatval($e['purity']) === 100.0 ? 'Fine Material' : 'Raw Gold',
+                'gross' => floatval($e['fine_weight']),
+                'less' => 0.0,
+                'net' => floatval($e['fine_weight']),
+                'tch' => floatval($e['purity']),
+                'wst' => 0.0,
+                'fine' => -floatval($e['issue_fine']),
+                'cash' => $hasCash ? -floatval($e['cash_paid']) : 0.0,
+                'remark' => $e['remark'],
+                'is_opening' => false,
+                'type' => 'issue',
+                'id' => $e['id']
+            ];
+        } elseif ($hasCash) {
+            $ledgerRows[] = [
+                'date' => $e['date'],
+                'no' => 'Issue No : ' . $e['id'],
+                'name' => 'Cash Advance',
+                'gross' => 0.0,
+                'less' => 0.0,
+                'net' => 0.0,
+                'tch' => 0.0,
+                'wst' => 0.0,
+                'fine' => 0.0,
+                'cash' => -floatval($e['cash_paid']),
+                'remark' => $e['remark'],
+                'is_opening' => false,
+                'type' => 'issue',
+                'id' => $e['id']
+            ];
+        }
+    } else {
+        $items = $e['items'] ?? [];
+        $hasItems = !empty($items);
+        $cashVal = floatval($e['cash_paid']);
+
+        if ($hasItems) {
+            $first = true;
+            foreach ($items as $it) {
+                $ledgerRows[] = [
+                    'date' => $e['date'],
+                    'no' => 'Receive No : ' . $e['id'],
+                    'name' => $it['item'],
+                    'gross' => floatval($it['gross']),
+                    'less' => floatval($it['less']),
+                    'net' => floatval($it['net']),
+                    'tch' => floatval($it['milting']),
+                    'wst' => floatval($it['wastage']),
+                    'fine' => floatval($it['receive_fine']),
+                    'cash' => $first ? $cashVal : 0.0,
+                    'remark' => $e['remark'],
+                    'is_opening' => false,
+                    'type' => 'receive',
+                    'id' => $e['id']
+                ];
+                $first = false;
+            }
+        } elseif ($cashVal > 0) {
+            $ledgerRows[] = [
+                'date' => $e['date'],
+                'no' => 'Receive No : ' . $e['id'],
+                'name' => 'Cash Received',
+                'gross' => 0.0,
+                'less' => 0.0,
+                'net' => 0.0,
+                'tch' => 0.0,
+                'wst' => 0.0,
+                'fine' => 0.0,
+                'cash' => $cashVal,
+                'remark' => $e['remark'],
+                'is_opening' => false,
+                'type' => 'receive',
+                'id' => $e['id']
+            ];
+        }
+    }
+}
+
+// 8. Calculate cumulative running balance
+$fineRunning = 0.0;
+$cashRunning = 0.0;
+
+$totGross = 0.0;
+$totLess = 0.0;
+$totNet = 0.0;
+
+foreach ($ledgerRows as &$row) {
+    $fineRunning += $row['fine'];
+    $cashRunning += $row['cash'];
+    $row['running_fine'] = $fineRunning;
+    $row['running_cash'] = $cashRunning;
+
+    if (!$row['is_opening']) {
+        $totGross += $row['gross'];
+        $totLess += $row['less'];
+        $totNet += $row['net'];
+    }
+}
+unset($row);
+
+$currentOutstandingGold = $fineRunning;
+$currentOutstandingCash = $cashRunning;
+$lastTransactionDate = !empty($entries) ? end($entries)['date'] : '--';
+
+// 9. Fetch Settlement History list
+$stmt = $pdo->prepare("SELECT * FROM karigor_ledger_settlements WHERE karigor_id = ? AND user_id = ? ORDER BY settlement_date DESC");
+$stmt->execute([$karigorId, $userId]);
+$settlementsHistory = $stmt->fetchAll();
+
+if ($isPrintMode) {
+    // Print View
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Karigor Statement - <?= htmlspecialchars($karigor['name']) ?></title>
+        <style>
+            body { font-family: 'Times New Roman', Times, serif; font-size: 11px; color: #000; margin: 20px; background: #fff; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #777; padding: 5px 6px; text-align: left; vertical-align: top; }
+            th { background: #e2e8f0; font-weight: bold; text-align: center; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .font-mono { font-family: monospace; }
+            .text-green { color: #047857; font-weight: bold; }
+            .text-red { color: #b91c1c; font-weight: bold; }
+        </style>
+    </head>
+    <body onload="window.print()">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px;">
+            <div>
+                <div style="font-size: 16px; font-weight: bold; text-transform: uppercase;"><?= htmlspecialchars($currentUser['company_name'] ?: 'Dasgold') ?></div>
+                <div style="font-size: 10px; color: #555;">KARIGOR STATEMENT FOR: <strong><?= htmlspecialchars($karigor['name']) ?></strong></div>
+            </div>
+            <div style="text-align: right; font-size: 10px;">
+                Period: <strong><?= $from ? date('d/m/Y', strtotime($from)) : 'Start' ?></strong> to <strong><?= $to ? date('d/m/Y', strtotime($to)) : 'Today' ?></strong>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Ref No</th>
+                    <th>Item / Particulars</th>
+                    <th>Gross</th>
+                    <th>Net</th>
+                    <th>Tch / Wst</th>
+                    <th>Fine</th>
+                    <th>Cash</th>
+                    <th>Remark</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($ledgerRows as $r): ?>
+                    <tr>
+                        <td class="text-center"><?= date('d/m/Y', strtotime($r['date'])) ?></td>
+                        <td class="text-center"><?= htmlspecialchars($r['no']) ?></td>
+                        <td><?= htmlspecialchars($r['name']) ?></td>
+                        <td class="text-right font-mono"><?= !$r['is_opening'] && $r['gross'] > 0 ? number_format($r['gross'], 3) : '' ?></td>
+                        <td class="text-right font-mono"><?= !$r['is_opening'] && $r['net'] > 0 ? number_format($r['net'], 3) : '' ?></td>
+                        <td class="text-right font-mono"><?= !$r['is_opening'] && $r['tch'] > 0 ? number_format($r['tch'], 1) . '%' : '' ?></td>
+                        <td class="text-right font-mono">
+                            <?php 
+                            if ($r['fine'] != 0) {
+                                $isCr = $r['fine'] >= 0;
+                                echo "<span class='" . ($isCr ? 'text-green' : 'text-red') . "'>" . number_format(abs($r['fine']), 3) . ($isCr ? ' Cr' : ' Db') . "</span>";
+                            } else echo '0.000';
+                            ?>
+                        </td>
+                        <td class="text-right font-mono">
+                            <?php 
+                            if ($r['cash'] != 0) {
+                                $isCr = $r['cash'] >= 0;
+                                echo "<span class='" . ($isCr ? 'text-green' : 'text-red') . "'>" . number_format(abs($r['cash']), 0) . ($isCr ? ' Cr' : ' Db') . "</span>";
+                            } else echo '0';
+                            ?>
+                        </td>
+                        <td style="font-size: 10px;"><?= htmlspecialchars($r['remark']) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+
+require_once 'header.php';
+?>
+
+<!-- Title & Navigation -->
+<div class="mb-5 mt-2 flex items-center justify-between no-print">
+    <div class="flex items-center space-x-3">
+        <a href="karigors.php" class="w-9 h-9 rounded-xl bg-slate-900 border border-white/[0.04] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target">
+            <span class="material-symbols-rounded text-lg">arrow_back</span>
+        </a>
+        <div class="min-w-0">
+            <h1 class="text-xl font-bold text-white truncate leading-tight"><?= htmlspecialchars($karigor['name']) ?></h1>
+            <p class="text-[10px] text-slate-500 mt-0.5 truncate">Karigor Statement | <?= htmlspecialchars($karigor['mobile'] ?: 'No mobile') ?></p>
+        </div>
+    </div>
+</div>
+
+<!-- Outstanding Balance Panel -->
+<div class="mb-6">
+    <div class="flex items-center justify-between mb-3">
+        <span class="text-[#d8a735] text-[10px] uppercase font-bold tracking-wider block">Karigor Outstanding Balance</span>
+        <?php if (!$isReadOnly): ?>
+            <button onclick="document.getElementById('settlementSection').scrollIntoView({ behavior: 'smooth' })" class="px-3 py-1.5 rounded-lg bg-[#d8a735]/15 border border-[#d8a735]/25 text-[10px] text-[#d8a735] font-bold tracking-wider hover:bg-[#d8a735]/20 tap-target no-print flex items-center space-x-1">
+                <span class="material-symbols-rounded text-xs">done_all</span>
+                <span>Settle Karigor Ledger</span>
+            </button>
+        <?php endif; ?>
+    </div>
+    
+    <div class="grid grid-cols-2 gap-4">
+        <div class="premium-card bg-[#121212]/70 border-white/[0.03]">
+            <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Gold Balance</span>
+            <div class="text-lg font-bold font-mono <?= $currentOutstandingGold >= 0 ? 'text-emerald-400' : 'text-rose-400' ?>">
+                <?= number_format(abs($currentOutstandingGold), 3) ?> g <?= $currentOutstandingGold >= 0 ? 'Cr' : 'Db' ?>
+            </div>
+        </div>
+        <div class="premium-card bg-[#121212]/70 border-white/[0.03]">
+            <span class="text-slate-500 text-[9px] uppercase font-bold block mb-1">Cash Balance</span>
+            <div class="text-lg font-bold font-mono <?= $currentOutstandingCash >= 0 ? 'text-emerald-400' : 'text-rose-400' ?>">
+                ₹<?= number_format(abs($currentOutstandingCash), 2) ?> <?= $currentOutstandingCash >= 0 ? 'Cr' : 'Db' ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date Filter Form -->
+<form method="GET" class="premium-card bg-[#121212]/80 p-4 mb-6 grid grid-cols-2 gap-3.5 no-print">
+    <input type="hidden" name="karigor_id" value="<?= $karigorId ?>">
+    <div>
+        <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">From Date</label>
+        <input type="date" name="from" value="<?= htmlspecialchars($from) ?>" class="premium-input text-xs">
+    </div>
+    <div>
+        <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">To Date</label>
+        <input type="date" name="to" value="<?= htmlspecialchars($to) ?>" class="premium-input text-xs">
+    </div>
+    <div class="col-span-2 flex items-center space-x-2 pt-1.5">
+        <button type="submit" class="flex-1 btn-gold text-xs py-3 font-bold tracking-wider flex items-center justify-center space-x-1.5">
+            <span class="material-symbols-rounded text-sm">filter_alt</span>
+            <span>Filter Ledger</span>
+        </button>
+        <a href="karigor_ledger.php?karigor_id=<?= $karigorId ?>" class="px-4 py-3 rounded-xl bg-slate-900 border border-white/[0.04] text-[10px] font-bold text-slate-400 hover:text-white flex items-center justify-center">
+            Reset
+        </a>
+    </div>
+</form>
+
+<!-- PDF Export -->
+<div class="mb-6 no-print">
+    <a href="karigor_ledger.php?karigor_id=<?= $karigorId ?>&from=<?= $from ?>&to=<?= $to ?>&print=1" target="_blank" class="w-full py-3 rounded-xl border border-[#d8a735]/40 bg-transparent text-xs font-bold text-[#d8a735] hover:bg-[#d8a735]/5 flex items-center justify-center space-x-1.5 tap-target">
+        <span class="material-symbols-rounded text-base">print</span>
+        <span>Download Karigor Statement PDF</span>
+    </a>
+</div>
+
+<!-- Transactions Log -->
+<div class="mb-6">
+    <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-4">Transactions Log</span>
+    
+    <div class="space-y-4">
+        <?php 
+        $activeRows = array_filter($ledgerRows, function($r) { return !$r['is_opening']; });
+        
+        if (empty($activeRows)): ?>
+            <div class="premium-card text-center py-10">
+                <span class="material-symbols-rounded text-4xl text-slate-700 mb-2">receipt</span>
+                <p class="text-xs text-slate-500">No transactions recorded in this date range.</p>
+            </div>
+        <?php else: 
+            $screenRows = array_reverse($activeRows);
+            foreach ($screenRows as $row): 
+                $isIssue = ($row['type'] === 'issue');
+            ?>
+                <div class="premium-card bg-[#111111]/90">
+                    <div class="flex items-start justify-between border-b border-white/[0.04] pb-2.5 mb-2.5">
+                        <div>
+                            <span class="text-[9px] text-slate-500 font-mono"><?= date('d/m/Y', strtotime($row['date'])) ?></span>
+                            <div class="mt-0.5">
+                                <?php if ($isIssue): ?>
+                                    <span class="bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded-lg border border-orange-500/20 text-[8px] font-bold uppercase tracking-wider">Material Issue (OUT)</span>
+                                <?php else: ?>
+                                    <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 text-[8px] font-bold uppercase tracking-wider">Kaj Receive (IN)</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
+                        <div class="text-right">
+                            <span class="text-[8px] text-slate-500 uppercase block font-semibold">Running Balance</span>
+                            <span class="font-mono text-white text-xs block"><?= number_format($row['running_fine'], 3) ?> g</span>
+                            <span class="font-mono text-slate-500 text-[9px] block">₹<?= number_format($row['running_cash'], 2) ?></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 text-xs my-2">
+                        <div>
+                            <span class="text-[8px] text-slate-500 uppercase block">Gold Fine</span>
+                            <span class="font-mono font-bold text-sm <?= $row['fine'] >= 0 ? 'text-emerald-400' : 'text-rose-400' ?>">
+                                <?= $row['fine'] >= 0 ? '+' : '-' ?><?= number_format(abs($row['fine']), 3) ?> g
+                            </span>
+                        </div>
+                        <div>
+                            <span class="text-[8px] text-slate-500 uppercase block">Cash Amount</span>
+                            <span class="font-mono font-bold text-sm <?= $row['cash'] >= 0 ? 'text-emerald-400' : 'text-rose-400' ?>">
+                                <?= $row['cash'] != 0 ? ($row['cash'] >= 0 ? '+' : '-') . '₹' . number_format(abs($row['cash']), 0) : '--' ?>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="text-[10px] text-slate-400 mt-2 font-mono bg-slate-950/40 p-2.5 rounded-xl border border-white/[0.02]">
+                        <span class="font-sans font-bold text-slate-500 block mb-0.5">Details (<?= htmlspecialchars($row['name']) ?>):</span>
+                        <?php if ($row['name'] !== 'Cash Advance' && $row['name'] !== 'Cash Received'): ?>
+                            Gross: <?= number_format($row['gross'], 3) ?>g | Less: <?= number_format($row['less'], 3) ?>g<br>
+                            Purity: <?= number_format($row['tch'], 1) ?>% | Wastage: <?= number_format($row['wst'], 1) ?>%
+                        <?php else: ?>
+                            Cash Transaction
+                        <?php endif; ?>
+                        <?php if ($row['remark']): ?>
+                            <div class="mt-1 text-slate-500 font-sans">Narration: <?= htmlspecialchars($row['remark']) ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (!$isReadOnly): ?>
+                        <div class="flex items-center justify-end space-x-2.5 mt-3 pt-2.5 border-t border-white/[0.03] no-print">
+                            <?php if ($isIssue): ?>
+                                <a href="karigor_issue.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target">
+                                    <span class="material-symbols-rounded text-base">edit</span>
+                                </a>
+                                <a href="karigor_ledger.php?karigor_id=<?= $karigorId ?>&delete_issue=<?= $row['id'] ?>" onclick="return confirm('Delete this material issue entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target">
+                                    <span class="material-symbols-rounded text-base">delete</span>
+                                </a>
+                            <?php else: ?>
+                                <a href="karigor_receive.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target">
+                                    <span class="material-symbols-rounded text-base">edit</span>
+                                </a>
+                                <a href="karigor_ledger.php?karigor_id=<?= $karigorId ?>&delete_receive=<?= $row['id'] ?>" onclick="return confirm('Delete this kaj receive entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target">
+                                    <span class="material-symbols-rounded text-base">delete</span>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- INLINE SETTLE KARIGOR LEDGER FORM AT THE BOTTOM -->
+<div id="settlementSection" class="premium-card border-[#d8a735]/20 bg-[#121212]/80 mt-6 no-print">
+    <h2 class="text-sm font-bold text-[#d8a735] mb-3 flex items-center">
+        <span class="material-symbols-rounded text-lg mr-1.5">done_all</span> Settle Karigor Ledger Account
+    </h2>
+    
+    <p class="text-[11px] text-slate-400 mb-4 leading-relaxed">
+        Settling registers the current outstanding gold and cash balances as a fixed checkpoint for this Karigor.
+    </p>
+    
+    <form method="POST" class="space-y-4" onsubmit="prepareSettleSubmit()">
+        <input type="hidden" name="settle_karigor_ledger" value="1">
+        <div>
+            <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Settlement Date</label>
+            <input type="date" name="settlement_date" value="<?= date('Y-m-d') ?>" required class="premium-input text-xs">
+        </div>
+        
+        <div>
+            <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Closing Gold Balance (gm) *</label>
+            <div class="flex space-x-2 mb-2">
+                <button type="button" id="goldTypeJama" onclick="setGoldType('jama')" class="flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border">
+                    Jama / Credit (Karigor ka hamare paas)
+                </button>
+                <button type="button" id="goldTypeKaj" onclick="setGoldType('kaj')" class="flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border">
+                    Lena / Debit (Hamara karigor par)
+                </button>
+            </div>
+            <input type="hidden" name="closing_gold" id="finalClosingGold" value="<?= round($currentOutstandingGold, 3) ?>">
+            <input type="number" step="0.001" id="inputGoldVal" value="<?= abs(round($currentOutstandingGold, 3)) ?>" required class="premium-input text-xs font-mono" placeholder="0.000">
+        </div>
+        
+        <div>
+            <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Closing Cash Balance (₹) *</label>
+            <div class="flex space-x-2 mb-2">
+                <button type="button" id="cashTypeJama" onclick="setCashType('jama')" class="flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border">
+                    Jama / Credit (Karigor ka hamare paas)
+                </button>
+                <button type="button" id="cashTypeKaj" onclick="setCashType('kaj')" class="flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border">
+                    Lena / Debit (Hamara karigor par)
+                </button>
+            </div>
+            <input type="hidden" name="closing_cash" id="finalClosingCash" value="<?= round($currentOutstandingCash, 2) ?>">
+            <input type="number" step="0.01" id="inputCashVal" value="<?= abs(round($currentOutstandingCash, 2)) ?>" required class="premium-input text-xs font-mono" placeholder="0.00">
+        </div>
+        
+        <div class="pt-3 border-t border-slate-800 flex justify-end">
+            <button type="submit" class="btn-gold text-xs py-3 px-6">Confirm Settle</button>
+        </div>
+    </form>
+
+    <script>
+        let currentGoldType = <?= $currentOutstandingGold >= 0 ? "'jama'" : "'kaj'" ?>;
+        let currentCashType = <?= $currentOutstandingCash >= 0 ? "'jama'" : "'kaj'" ?>;
+
+        function updateTypeButtons() {
+            const gj = document.getElementById('goldTypeJama');
+            const gk = document.getElementById('goldTypeKaj');
+            if (gj && gk) {
+                if (currentGoldType === 'jama') {
+                    gj.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm";
+                    gk.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-slate-950 text-slate-500 border border-white/[0.04] hover:bg-slate-900";
+                } else {
+                    gk.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm";
+                    gj.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-slate-950 text-slate-500 border border-white/[0.04] hover:bg-slate-900";
+                }
+            }
+
+            const cj = document.getElementById('cashTypeJama');
+            const ck = document.getElementById('cashTypeKaj');
+            if (cj && ck) {
+                if (currentCashType === 'jama') {
+                    cj.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm";
+                    ck.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-slate-950 text-slate-500 border border-white/[0.04] hover:bg-slate-900";
+                } else {
+                    ck.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm";
+                    cj.className = "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all bg-slate-950 text-slate-500 border border-white/[0.04] hover:bg-slate-900";
+                }
+            }
+        }
+
+        function setGoldType(type) { currentGoldType = type; updateTypeButtons(); }
+        function setCashType(type) { currentCashType = type; updateTypeButtons(); }
+
+        function prepareSettleSubmit() {
+            const gVal = Math.abs(parseFloat(document.getElementById('inputGoldVal').value) || 0);
+            const cVal = Math.abs(parseFloat(document.getElementById('inputCashVal').value) || 0);
+
+            document.getElementById('finalClosingGold').value = (currentGoldType === 'jama' ? gVal : -gVal);
+            document.getElementById('finalClosingCash').value = (currentCashType === 'jama' ? cVal : -cVal);
+            return true;
+        }
+
+        document.addEventListener('DOMContentLoaded', updateTypeButtons);
+    </script>
+</div>
+
+<?php
+require_once 'footer.php';
+?>

@@ -62,23 +62,38 @@ $stmt = $pdo->prepare("SELECT id, name FROM baparis WHERE user_id = ? ORDER BY n
 $stmt->execute([$userId]);
 $baparis = $stmt->fetchAll();
 
+// Fetch karigors for selector
+$stmt = $pdo->prepare("SELECT id, name FROM karigors WHERE user_id = ? ORDER BY name ASC");
+$stmt->execute([$userId]);
+$karigors = $stmt->fetchAll();
+
 require_once 'header.php';
 ?>
 
 <!-- Title (Matching Image 1) -->
-<div class="mb-5 mt-2">
+<div class="mb-5 mt-2 flex items-center justify-between">
     <h1 class="text-3xl font-extrabold tracking-tight text-[#d8a735]">
-        Ledger
+        Ledger Statement
     </h1>
+</div>
+
+<!-- Mode Selector (Bapari vs Karigor) -->
+<div class="flex items-center space-x-2 mb-6">
+    <button type="button" id="btnTypeBapari" onclick="switchLedgerType('bapari')" class="flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-[#d8a735] text-slate-950 shadow-md">
+        Bapari Ledger
+    </button>
+    <button type="button" id="btnTypeKarigor" onclick="switchLedgerType('karigor')" class="flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-slate-900 text-slate-400 border border-white/[0.04] hover:text-white">
+        Karigor Ledger
+    </button>
 </div>
 
 <form id="ledgerForm" method="GET" action="ledger.php" class="space-y-6">
     <!-- Select Bapari Dropdown -->
-    <div class="relative">
+    <div id="bapariSelectGroup" class="relative">
         <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
             <span class="material-symbols-rounded text-lg">person</span>
         </span>
-        <select name="bapari_id" id="bapariId" required class="premium-input pl-10 text-sm appearance-none">
+        <select name="bapari_id" id="bapariId" class="premium-input pl-10 text-sm appearance-none">
             <option value="">Select Bapari</option>
             <?php foreach ($baparis as $b): ?>
                 <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
@@ -88,6 +103,23 @@ require_once 'header.php';
             <span class="material-symbols-rounded text-lg">keyboard_arrow_down</span>
         </span>
     </div>
+
+    <!-- Select Karigor Dropdown (Hidden initially) -->
+    <div id="karigorSelectGroup" class="relative hidden">
+        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+            <span class="material-symbols-rounded text-lg">engineering</span>
+        </span>
+        <select name="karigor_id" id="karigorId" class="premium-input pl-10 text-sm appearance-none">
+            <option value="">Select Karigor</option>
+            <?php foreach ($karigors as $k): ?>
+                <option value="<?= $k['id'] ?>"><?= htmlspecialchars($k['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500">
+            <span class="material-symbols-rounded text-lg">keyboard_arrow_down</span>
+        </span>
+    </div>
+
 
     <!-- From and To Date Pickers Side by Side -->
     <div class="grid grid-cols-2 gap-4">
@@ -123,22 +155,60 @@ require_once 'header.php';
 </form>
 
 <script>
-    function generatePDF() {
-        const bapariId = document.getElementById('bapariId').value;
-        if (!bapariId) {
-            alert('Please select a Bapari first!');
-            return;
+    let currentLedgerType = 'bapari';
+
+    function switchLedgerType(type) {
+        currentLedgerType = type;
+        const form = document.getElementById('ledgerForm');
+        const bGroup = document.getElementById('bapariSelectGroup');
+        const kGroup = document.getElementById('karigorSelectGroup');
+        const bBtn = document.getElementById('btnTypeBapari');
+        const kBtn = document.getElementById('btnTypeKarigor');
+
+        if (type === 'bapari') {
+            form.action = 'ledger.php';
+            bGroup.classList.remove('hidden');
+            kGroup.classList.add('hidden');
+            bBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-[#d8a735] text-slate-950 shadow-md";
+            kBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-slate-900 text-slate-400 border border-white/[0.04] hover:text-white";
+        } else {
+            form.action = 'karigor_ledger.php';
+            kGroup.classList.remove('hidden');
+            bGroup.classList.add('hidden');
+            kBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-[#d8a735] text-slate-950 shadow-md";
+            bBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-slate-900 text-slate-400 border border-white/[0.04] hover:text-white";
         }
+    }
+
+    function generatePDF() {
         const from = document.getElementById('fromDate').value;
         const to = document.getElementById('toDate').value;
-        let url = `ledger.php?bapari_id=${bapariId}`;
-        if (from) url += `&from=${from}`;
-        if (to) url += `&to=${to}`;
-        url += `&print=1`;
-        
-        // Open PDF Print view
-        const w = window.open(url, '_blank');
-        w.focus();
+
+        if (currentLedgerType === 'bapari') {
+            const bapariId = document.getElementById('bapariId').value;
+            if (!bapariId) {
+                alert('Please select a Bapari first!');
+                return;
+            }
+            let url = `ledger.php?bapari_id=${bapariId}`;
+            if (from) url += `&from=${from}`;
+            if (to) url += `&to=${to}`;
+            url += `&print=1`;
+            const w = window.open(url, '_blank');
+            w.focus();
+        } else {
+            const karigorId = document.getElementById('karigorId').value;
+            if (!karigorId) {
+                alert('Please select a Karigor first!');
+                return;
+            }
+            let url = `karigor_ledger.php?karigor_id=${karigorId}`;
+            if (from) url += `&from=${from}`;
+            if (to) url += `&to=${to}`;
+            url += `&print=1`;
+            const w = window.open(url, '_blank');
+            w.focus();
+        }
     }
 
     function generateCSV() {
@@ -153,7 +223,6 @@ require_once 'header.php';
         if (from) url += `&from=${from}`;
         if (to) url += `&to=${to}`;
         
-        // Trigger file download
         window.location.href = url;
     }
 </script>
@@ -161,3 +230,4 @@ require_once 'header.php';
 <?php
 require_once 'footer.php';
 ?>
+

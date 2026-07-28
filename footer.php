@@ -2,38 +2,43 @@
     
     <!-- Mobile Sticky Bottom Navigation Bar (Matching Reference Image 1) -->
     <div class="fixed bottom-0 left-0 right-0 z-50 bg-[#0A0A0A]/95 backdrop-blur-md border-t border-white/[0.04] md:hidden block shadow-2xl animate-fade-in" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
-        <div class="flex justify-around items-center h-16 px-1 text-[10px] font-bold">
+        <div class="flex justify-around items-center h-16 px-0.5 text-[9px] font-bold">
             <?php 
             $curr = basename($_SERVER['PHP_SELF']); 
             ?>
-            <a href="index.php" class="flex flex-col items-center justify-center py-1 w-16 transition-colors tap-target <?= $curr == 'index.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
-                <span class="material-symbols-rounded text-[24px] <?= $curr == 'index.php' ? 'fill-1' : '' ?>">grid_view</span>
-                <span class="mt-1">Dashboard</span>
+            <a href="index.php" class="flex flex-col items-center justify-center py-1 flex-1 transition-colors tap-target <?= $curr == 'index.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[22px] <?= $curr == 'index.php' ? 'fill-1' : '' ?>">grid_view</span>
+                <span class="mt-0.5">Home</span>
             </a>
-            <a href="baparis.php" class="flex flex-col items-center justify-center py-1 w-16 transition-colors tap-target <?= $curr == 'baparis.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
-                <span class="material-symbols-rounded text-[24px] <?= $curr == 'baparis.php' ? 'fill-1' : '' ?>">group</span>
-                <span class="mt-1">Bapari</span>
+            <a href="baparis.php" class="flex flex-col items-center justify-center py-1 flex-1 transition-colors tap-target <?= $curr == 'baparis.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[22px] <?= $curr == 'baparis.php' ? 'fill-1' : '' ?>">group</span>
+                <span class="mt-0.5">Bapari</span>
             </a>
-            <a href="entry.php" class="flex flex-col items-center justify-center py-1 w-16 transition-colors tap-target <?= $curr == 'entry.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
-                <span class="material-symbols-rounded text-[24px] <?= $curr == 'entry.php' ? 'fill-1' : '' ?>">add_circle</span>
-                <span class="mt-1">Entry</span>
+            <a href="karigors.php" class="flex flex-col items-center justify-center py-1 flex-1 transition-colors tap-target <?= $curr == 'karigors.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[22px] <?= $curr == 'karigors.php' ? 'fill-1' : '' ?>">engineering</span>
+                <span class="mt-0.5">Karigor</span>
             </a>
-            <a href="reports.php" class="flex flex-col items-center justify-center py-1 w-14 transition-colors tap-target <?= $curr == 'reports.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
-                <span class="material-symbols-rounded text-[24px] <?= $curr == 'reports.php' ? 'fill-1' : '' ?>">book</span>
-                <span class="mt-1">Ledger</span>
+            <a href="entry.php" class="flex flex-col items-center justify-center py-1 flex-1 transition-colors tap-target <?= $curr == 'entry.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[22px] <?= $curr == 'entry.php' ? 'fill-1' : '' ?>">add_circle</span>
+                <span class="mt-0.5">Entry</span>
+            </a>
+            <a href="reports.php" class="flex flex-col items-center justify-center py-1 flex-1 transition-colors tap-target <?= ($curr == 'reports.php' || $curr == 'ledger.php' || $curr == 'karigor_ledger.php') ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[22px] <?= ($curr == 'reports.php' || $curr == 'ledger.php' || $curr == 'karigor_ledger.php') ? 'fill-1' : '' ?>">book</span>
+                <span class="mt-0.5">Ledger</span>
             </a>
             <?php if ($isAdmin): ?>
-                <a href="admin.php" class="flex flex-col items-center justify-center py-1 w-14 transition-colors tap-target <?= $curr == 'admin.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
-                    <span class="material-symbols-rounded text-[24px] <?= $curr == 'admin.php' ? 'fill-1' : '' ?>">shield</span>
-                    <span class="mt-1">Admin</span>
+                <a href="admin.php" class="flex flex-col items-center justify-center py-1 flex-1 transition-colors tap-target <?= $curr == 'admin.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                    <span class="material-symbols-rounded text-[22px] <?= $curr == 'admin.php' ? 'fill-1' : '' ?>">shield</span>
+                    <span class="mt-0.5">Admin</span>
                 </a>
             <?php endif; ?>
-            <a href="settings.php" class="flex flex-col items-center justify-center py-1 w-14 transition-colors tap-target <?= $curr == 'settings.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
-                <span class="material-symbols-rounded text-[24px] <?= $curr == 'settings.php' ? 'fill-1' : '' ?>">settings</span>
-                <span class="mt-1">Settings</span>
+            <a href="settings.php" class="flex flex-col items-center justify-center py-1 flex-1 transition-colors tap-target <?= $curr == 'settings.php' ? 'text-[#d8a735]' : 'text-slate-500 hover:text-slate-300' ?>">
+                <span class="material-symbols-rounded text-[22px] <?= $curr == 'settings.php' ? 'fill-1' : '' ?>">settings</span>
+                <span class="mt-0.5">Settings</span>
             </a>
         </div>
     </div>
+
 
     <!-- PWA Install Action Prompt Card -->
     <?php if (isset($_SESSION['user_id'])): ?>

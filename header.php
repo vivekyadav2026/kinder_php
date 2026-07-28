@@ -292,7 +292,7 @@
         <nav class="flex items-center space-x-6 text-xs font-bold text-slate-400">
             <a href="index.php" class="hover:text-[#d8a735] transition-colors py-2">Dashboard</a>
             
-            <!-- Customers Menu with Dropdown -->
+            <!-- Bapari Menu with Dropdown -->
             <div class="relative group">
                 <button class="hover:text-[#d8a735] transition-colors py-2 flex items-center space-x-1 focus:outline-none">
                     <span>Bapari</span>
@@ -303,6 +303,21 @@
                     <a href="baparis.php?action=new" class="block px-3.5 py-2 rounded-lg hover:bg-white/[0.03] hover:text-[#d8a735]">Add Bapari</a>
                 </div>
             </div>
+
+            <!-- Karigor Menu with Dropdown -->
+            <div class="relative group">
+                <button class="hover:text-[#d8a735] transition-colors py-2 flex items-center space-x-1 focus:outline-none">
+                    <span>Karigor</span>
+                    <span class="material-symbols-rounded text-sm">keyboard_arrow_down</span>
+                </button>
+                <div class="absolute left-0 mt-1 w-44 rounded-xl bg-[#121212] border border-white/[0.06] p-1.5 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <a href="karigors.php" class="block px-3.5 py-2 rounded-lg hover:bg-white/[0.03] hover:text-[#d8a735]">Karigor List</a>
+                    <a href="karigors.php?action=new" class="block px-3.5 py-2 rounded-lg hover:bg-white/[0.03] hover:text-[#d8a735]">Add Karigor</a>
+                    <a href="karigor_issue.php?action=new" class="block px-3.5 py-2 rounded-lg hover:bg-white/[0.03] hover:text-[#d8a735]">Issue Material</a>
+                    <a href="karigor_receive.php?action=new" class="block px-3.5 py-2 rounded-lg hover:bg-white/[0.03] hover:text-[#d8a735]">Kaj Receive</a>
+                </div>
+            </div>
+
 
             <!-- Entry Menu with Dropdown -->
             <div class="relative group">
