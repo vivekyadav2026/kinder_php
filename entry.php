@@ -175,8 +175,7 @@ require_once 'header.php';
     </h1>
 </div>
 
-<?php /*
-<!-- ENTRY CATEGORIES CARDS (Functionality available in menu) -->
+<!-- ENTRY CATEGORIES CARDS -->
 <div class="space-y-6 mb-8 max-w-xl mx-auto">
     <!-- Card 1: Bapari Entry -->
     <div class="premium-card bg-[#121212]/90 border border-white/[0.08] p-5 shadow-xl">
@@ -218,7 +217,6 @@ require_once 'header.php';
         </div>
     </div>
 </div>
-*/ ?>
 
 
 <!-- Tab Switcher & Quick Form Below -->

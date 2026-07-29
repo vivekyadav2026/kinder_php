@@ -52,21 +52,26 @@ if (isset($_GET['delete_kaj'])) {
     exit();
 }
 
+// Handle Delete Settlement directly from Ledger
+if (isset($_GET['delete_settlement'])) {
+    $id = intval($_GET['delete_settlement']);
+    $stmt = $pdo->prepare("DELETE FROM ledger_settlements WHERE id = ? AND user_id = ?");
+    $stmt->execute([$id, $userId]);
+    header("Location: ledger.php?bapari_id=" . $bapariId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : ""));
+    exit();
+}
+
 // 2. Fetch Latest Settlement Checkpoint
 $stmt = $pdo->prepare("SELECT * FROM ledger_settlements WHERE bapari_id = ? AND user_id = ? ORDER BY settlement_date DESC LIMIT 1");
 $stmt->execute([$bapariId, $userId]);
 $latestSettle = $stmt->fetch();
 
-// 3. Setup Default Dates based on Settlement checkpoint if not user-defined
-if (empty($from) && $latestSettle) {
-    // Show entries only AFTER the last settlement
-    $from = date('Y-m-d', strtotime($latestSettle['settlement_date'] . ' + 1 day'));
-}
+// 3. Setup Default Dates (Keep all entries visible by default)
+// $from remains empty unless user explicitly selects a date filter
 
 // 4. Calculate Opening Balance before $from Date
 $openingGold = 0.0;
 $openingCash = 0.0;
-$startCalculationFromDate = '';
 
 if (!empty($from)) {
     // Find the most recent settlement dated *before* the filtered From Date
@@ -74,6 +79,7 @@ if (!empty($from)) {
     $settleStmt->execute([$bapariId, $userId, $from]);
     $prevSettle = $settleStmt->fetch();
 
+    $startCalculationFromDate = '';
     if ($prevSettle) {
         $openingGold = floatval($prevSettle['closing_gold']);
         $openingCash = floatval($prevSettle['closing_cash']);
@@ -123,11 +129,22 @@ $stmt = $pdo->prepare($kajQuery);
 $stmt->execute($kajParams);
 $kajs = $stmt->fetchAll();
 
+// 6b. Fetch Settlements within Date Range
+$settleQuery = "SELECT id, settlement_date as date, 'settlement' as type, closing_gold, closing_cash, created_at FROM ledger_settlements WHERE user_id = ? AND bapari_id = ?";
+$settleParams = [$userId, $bapariId];
+if (!empty($from)) { $settleQuery .= " AND settlement_date >= ?"; $settleParams[] = $from; }
+if (!empty($to)) { $settleQuery .= " AND settlement_date <= ?"; $settleParams[] = $to; }
+$stmt = $pdo->prepare($settleQuery);
+$stmt->execute($settleParams);
+$settlements = $stmt->fetchAll();
+
 // Merge and sort ascending by date & creation time
-$entries = array_merge($deposits, $kajs);
+$entries = array_merge($deposits, $kajs, $settlements);
 usort($entries, function($a, $b) {
     $cmp = strcmp($a['date'], $b['date']);
     if ($cmp === 0) {
+        if ($a['type'] === 'settlement') return 1;
+        if ($b['type'] === 'settlement') return -1;
         return strcmp($a['created_at'], $b['created_at']);
     }
     return $cmp;
@@ -136,7 +153,7 @@ usort($entries, function($a, $b) {
 // Fetch subitems for Kaj entries
 foreach ($entries as &$e) {
     if ($e['type'] === 'kaj') {
-        $stmtItems = $pdo->prepare("SELECT item, gross, less, net, milting, wastage, hisab, kaj_fine, profit_fine FROM kaj_items WHERE kaj_entry_id = ?");
+        $stmtItems = $pdo->prepare("SELECT item, gross, less, net, milting, wastage, hisab, kaj_fine, profit_fine, net_part1, net_part2, wastage1, wastage2, extra_pure FROM kaj_items WHERE kaj_entry_id = ?");
         $stmtItems->execute([$e['id']]);
         $e['items'] = $stmtItems->fetchAll();
     }
@@ -145,6 +162,8 @@ unset($e);
 
 // 7. Flat map transactions into individual Ledger rows (Tally layout)
 $ledgerRows = [];
+$calcFineTracker = $openingGold;
+$calcCashTracker = $openingCash;
 
 // Insert Opening Balance Row if a date filter is set OR if non-zero opening balance exists
 if (!empty($from) || $openingGold != 0 || $openingCash != 0) {
@@ -160,7 +179,13 @@ if (!empty($from) || $openingGold != 0 || $openingCash != 0) {
         'fine' => $openingGold,
         'cash' => $openingCash,
         'remark' => 'Opening Balance',
-        'is_opening' => true
+        'is_opening' => true,
+        'is_settlement' => false,
+        'net_part1' => 0.0,
+        'net_part2' => 0.0,
+        'wastage1' => 0.0,
+        'wastage2' => 0.0,
+        'extra_pure' => 0.0
     ];
 }
 
@@ -170,6 +195,11 @@ foreach ($entries as $e) {
         $hasCash = floatval($e['cash_received']) > 0;
 
         if ($hasMetal) {
+            $fineVal = floatval($e['jama_fine']);
+            $cashVal = $hasCash ? floatval($e['cash_received']) : 0.0;
+            $calcFineTracker += $fineVal;
+            $calcCashTracker += $cashVal;
+
             $ledgerRows[] = [
                 'date' => $e['date'],
                 'no' => 'Inward No : ' . $e['id'],
@@ -179,14 +209,23 @@ foreach ($entries as $e) {
                 'net' => floatval($e['fine_weight']),
                 'tch' => floatval($e['purity']),
                 'wst' => 0.0,
-                'fine' => floatval($e['jama_fine']),
-                'cash' => $hasCash ? floatval($e['cash_received']) : 0.0,
+                'fine' => $fineVal,
+                'cash' => $cashVal,
                 'remark' => $e['remark'],
                 'is_opening' => false,
+                'is_settlement' => false,
                 'type' => 'deposit',
-                'id' => $e['id']
+                'id' => $e['id'],
+                'net_part1' => 0.0,
+                'net_part2' => 0.0,
+                'wastage1' => 0.0,
+                'wastage2' => 0.0,
+                'extra_pure' => 0.0
             ];
         } elseif ($hasCash) {
+            $cashVal = floatval($e['cash_received']);
+            $calcCashTracker += $cashVal;
+
             $ledgerRows[] = [
                 'date' => $e['date'],
                 'no' => 'Inward No : ' . $e['id'],
@@ -197,14 +236,20 @@ foreach ($entries as $e) {
                 'tch' => 0.0,
                 'wst' => 0.0,
                 'fine' => 0.0,
-                'cash' => floatval($e['cash_received']),
+                'cash' => $cashVal,
                 'remark' => $e['remark'],
                 'is_opening' => false,
+                'is_settlement' => false,
                 'type' => 'deposit',
-                'id' => $e['id']
+                'id' => $e['id'],
+                'net_part1' => 0.0,
+                'net_part2' => 0.0,
+                'wastage1' => 0.0,
+                'wastage2' => 0.0,
+                'extra_pure' => 0.0
             ];
         }
-    } else {
+    } elseif ($e['type'] === 'kaj') {
         $items = $e['items'] ?? [];
         $hasItems = !empty($items);
         $cashVal = floatval($e['cash_bill']);
@@ -212,6 +257,11 @@ foreach ($entries as $e) {
         if ($hasItems) {
             $first = true;
             foreach ($items as $it) {
+                $fineVal = -floatval($it['kaj_fine']);
+                $cVal = $first ? -$cashVal : 0.0;
+                $calcFineTracker += $fineVal;
+                $calcCashTracker += $cVal;
+
                 $ledgerRows[] = [
                     'date' => $e['date'],
                     'no' => 'Outward No : ' . $e['id'],
@@ -221,16 +271,25 @@ foreach ($entries as $e) {
                     'net' => floatval($it['net']),
                     'tch' => floatval($it['milting']),
                     'wst' => floatval($it['wastage']),
-                    'fine' => -floatval($it['kaj_fine']),
-                    'cash' => $first ? -$cashVal : 0.0,
+                    'fine' => $fineVal,
+                    'cash' => $cVal,
                     'remark' => $e['remark'],
                     'is_opening' => false,
+                    'is_settlement' => false,
                     'type' => 'kaj',
-                    'id' => $e['id']
+                    'id' => $e['id'],
+                    'net_part1' => floatval($it['net_part1'] ?? 0),
+                    'net_part2' => floatval($it['net_part2'] ?? 0),
+                    'wastage1' => floatval($it['wastage1'] ?? 0),
+                    'wastage2' => floatval($it['wastage2'] ?? 0),
+                    'extra_pure' => floatval($it['extra_pure'] ?? 0)
                 ];
                 $first = false;
             }
         } elseif ($cashVal > 0) {
+            $cVal = -$cashVal;
+            $calcCashTracker += $cVal;
+
             $ledgerRows[] = [
                 'date' => $e['date'],
                 'no' => 'Outward No : ' . $e['id'],
@@ -241,13 +300,51 @@ foreach ($entries as $e) {
                 'tch' => 0.0,
                 'wst' => 0.0,
                 'fine' => 0.0,
-                'cash' => -$cashVal,
+                'cash' => $cVal,
                 'remark' => $e['remark'],
                 'is_opening' => false,
+                'is_settlement' => false,
                 'type' => 'kaj',
-                'id' => $e['id']
+                'id' => $e['id'],
+                'net_part1' => 0.0,
+                'net_part2' => 0.0,
+                'wastage1' => 0.0,
+                'wastage2' => 0.0,
+                'extra_pure' => 0.0
             ];
         }
+    } elseif ($e['type'] === 'settlement') {
+        $targetGold = floatval($e['closing_gold']);
+        $targetCash = floatval($e['closing_cash']);
+
+        $adjGold = round($targetGold - $calcFineTracker, 3);
+        $adjCash = round($targetCash - $calcCashTracker, 2);
+
+        $calcFineTracker = $targetGold;
+        $calcCashTracker = $targetCash;
+
+        $ledgerRows[] = [
+            'date' => $e['date'],
+            'no' => 'Settle No : ' . $e['id'],
+            'name' => 'Ledger Settlement',
+            'gross' => 0.0,
+            'less' => 0.0,
+            'net' => 0.0,
+            'tch' => 0.0,
+            'wst' => 0.0,
+            'fine' => $adjGold,
+            'cash' => $adjCash,
+            'remark' => 'Closing Balance Settled to ' . number_format($targetGold, 3) . 'g' . ($targetCash != 0 ? ' (₹' . number_format($targetCash, 2) . ')' : ''),
+            'is_opening' => false,
+            'is_settlement' => true,
+            'type' => 'settlement',
+            'id' => $e['id'],
+            'net_part1' => 0.0,
+            'net_part2' => 0.0,
+            'wastage1' => 0.0,
+            'wastage2' => 0.0,
+            'extra_pure' => 0.0
+        ];
     }
 }
 
@@ -400,22 +497,53 @@ if ($isPrintMode) {
                     <tr>
                         <td class="text-center"><?= date('d/m/Y', strtotime($r['date'])) ?></td>
                         <td class="text-center"><?= htmlspecialchars($r['no']) ?></td>
-                        <td><?= htmlspecialchars($r['name']) ?></td>
+                        <?php 
+                        $p1 = floatval($r['net_part1'] ?? 0);
+                        $p2 = floatval($r['net_part2'] ?? 0);
+                        $ex = floatval($r['extra_pure'] ?? 0);
+                        $hasSplit = ($p1 > 0 || $p2 > 0);
+                        
+                        if ($hasSplit) {
+                            $w1 = floatval($r['wastage1'] ?? 0);
+                            $w2 = floatval($r['wastage2'] ?? 0);
+                            $mel = floatval($r['tch'] ?? 0);
+                            $wstDef = floatval($r['wst'] ?? 0);
+                            
+                            $eff1 = ($w1 > 50) ? $w1 : (($w1 > 0) ? ($mel + $w1) : ($mel + $wstDef));
+                            $eff2 = ($w2 > 50) ? $w2 : (($w2 > 0) ? ($mel + $w2) : ($mel + $wstDef));
+                        }
+                        ?>
+                        <td>
+                            <strong><?= htmlspecialchars($r['name']) ?></strong>
+                        </td>
                         <td class="text-right font-mono">
                             <?php if (!$r['is_opening'] && $r['name'] !== 'Cash'): ?>
-                                <?= number_format($r['gross'], 3) ?><br>
-                                <span class="stacked-val"><?= number_format($r['less'], 3) ?></span>
+                                <?php if ($hasSplit): ?>
+                                    <span style="font-size: 9px; font-weight: bold;">P1: <?= number_format($p1, 3) ?></span><br>
+                                    <span class="stacked-val" style="font-weight: bold;">P2: <?= number_format($p2, 3) ?></span>
+                                <?php else: ?>
+                                    <?= number_format($r['gross'], 3) ?><br>
+                                    <span class="stacked-val"><?= number_format($r['less'], 3) ?></span>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                         <td class="text-right font-mono">
                             <?php if (!$r['is_opening'] && $r['name'] !== 'Cash'): ?>
                                 <?= number_format($r['net'], 3) ?>
+                                <?php if ($ex > 0): ?>
+                                    <br><span class="stacked-val" style="color: #b45309; font-weight: bold;">+<?= number_format($ex, 3) ?> Ex</span>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                         <td class="text-right font-mono">
                             <?php if (!$r['is_opening'] && $r['name'] !== 'Cash'): ?>
-                                <?= number_format($r['tch'], 2) ?><br>
-                                <span class="stacked-val"><?= number_format($r['wst'], 2) ?></span>
+                                <?php if ($hasSplit): ?>
+                                    <span style="font-size: 9px; font-weight: bold; color: #b45309;"><?= number_format($eff1, 2) ?>%</span><br>
+                                    <span class="stacked-val" style="font-weight: bold; color: #b45309;"><?= number_format($eff2, 2) ?>%</span>
+                                <?php else: ?>
+                                    <?= number_format($r['tch'], 2) ?><br>
+                                    <span class="stacked-val"><?= number_format($r['wst'], 2) ?></span>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                         <td class="text-right font-mono">
@@ -592,7 +720,9 @@ require_once 'header.php';
                         <div>
                             <span class="text-[9px] text-slate-500 font-mono"><?= date('d/m/Y', strtotime($row['date'])) ?></span>
                             <div class="mt-0.5">
-                                <?php if ($isDeposit): ?>
+                                <?php if ($row['is_settlement']): ?>
+                                    <span class="bg-[#d8a735]/10 text-[#d8a735] px-2 py-0.5 rounded-lg border border-[#d8a735]/20 text-[8px] font-bold uppercase tracking-wider">Ledger Settlement</span>
+                                <?php elseif ($isDeposit): ?>
                                     <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20 text-[8px] font-bold uppercase tracking-wider">Fine Deposit</span>
                                 <?php else: ?>
                                     <span class="bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded-lg border border-rose-500/20 text-[8px] font-bold uppercase tracking-wider">Kaj Entry</span>
@@ -628,6 +758,21 @@ require_once 'header.php';
                         <?php if ($row['name'] !== 'Cash'): ?>
                             Gross: <?= number_format($row['gross'], 3) ?>g | Less: <?= number_format($row['less'], 3) ?>g<br>
                             Purity: <?= number_format($row['tch'], 1) ?>% | Wastage: <?= number_format($row['wst'], 1) ?>%
+                            <?php 
+                            $splitNotes = [];
+                            if (!empty($row['net_part1']) && floatval($row['net_part1']) > 0) {
+                                $splitNotes[] = "P1 Net: " . number_format($row['net_part1'], 3) . "g (" . number_format($row['wastage1'], 2) . "%)";
+                            }
+                            if (!empty($row['net_part2']) && floatval($row['net_part2']) > 0) {
+                                $splitNotes[] = "P2 Net: " . number_format($row['net_part2'], 3) . "g (" . number_format($row['wastage2'], 2) . "%)";
+                            }
+                            if (!empty($row['extra_pure']) && floatval($row['extra_pure']) > 0) {
+                                $splitNotes[] = "Extra Pure: " . number_format($row['extra_pure'], 3) . "g";
+                            }
+                            if (!empty($splitNotes)) {
+                                echo "<br><span class='text-[#d8a735] font-bold'>" . htmlspecialchars(implode(" | ", $splitNotes)) . "</span>";
+                            }
+                            ?>
                         <?php else: ?>
                             Cash Entry
                         <?php endif; ?>
@@ -639,7 +784,11 @@ require_once 'header.php';
                     <!-- Edit/Delete Action Links -->
                     <?php if (!$isReadOnly): ?>
                         <div class="flex items-center justify-end space-x-2.5 mt-3 pt-2.5 border-t border-white/[0.03] no-print">
-                            <?php if ($isDeposit): ?>
+                            <?php if ($row['is_settlement']): ?>
+                                <a href="ledger.php?bapari_id=<?= $bapariId ?>&delete_settlement=<?= $row['id'] ?>&from=<?= $from ?>&to=<?= $to ?>" onclick="return confirm('Are you sure you want to delete this settlement?')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete Settlement">
+                                    <span class="material-symbols-rounded text-base">delete</span>
+                                </a>
+                            <?php elseif ($isDeposit): ?>
                                 <a href="deposits.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Entry">
                                     <span class="material-symbols-rounded text-base">edit</span>
                                 </a>
