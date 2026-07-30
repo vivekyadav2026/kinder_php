@@ -158,11 +158,11 @@ require_once 'header.php';
         <form method="POST" class="space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#d8a735] mb-2">Date *</label>
                     <input type="date" name="date" value="<?= date('Y-m-d') ?>" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Select Karigor *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#d8a735] mb-2">Select Karigor *</label>
                     <select name="karigor_id" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input">
                         <option value="">-- Choose Karigor --</option>
                         <?php foreach ($karigorsList as $k): ?>
@@ -174,28 +174,28 @@ require_once 'header.php';
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Gold Weight (g) *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-200 mb-2">Gold Weight (g) *</label>
                     <input type="number" step="0.001" name="fine_weight" id="fine_weight" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input" placeholder="0.000" oninput="calcIssueFine()">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Purity / Mel (%)</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-200 mb-2">Purity / Mel (%)</label>
                     <input type="number" step="0.01" name="purity" id="purity" value="100" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input" placeholder="100.00" oninput="calcIssueFine()">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Calculated Issue Fine (g)</label>
-                    <input type="text" id="calculated_issue" disabled class="premium-input bg-slate-900 border-none font-mono text-orange-400" placeholder="0.000">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-orange-400 mb-2">Calculated Issue Fine (g)</label>
+                    <input type="text" id="calculated_issue" disabled class="premium-input bg-slate-900 border-none font-mono text-orange-400 font-bold" placeholder="0.000">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Cash Paid to Karigor (₹)</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-200 mb-2">Cash Paid to Karigor (₹)</label>
                     <input type="number" step="0.01" name="cash_paid" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input" placeholder="0.00">
                 </div>
             </div>
 
             <div>
-                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Remark / Narration</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-200 mb-2">Remark / Narration</label>
                 <input type="text" name="remark" <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input" placeholder="e.g. Raw gold issued for 22k necklace job">
             </div>
             

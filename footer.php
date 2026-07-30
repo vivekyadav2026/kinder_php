@@ -51,7 +51,7 @@
     <?php endif; ?>
 
     <!-- Desktop Footer -->
-    <footer class="mt-16 mb-8 md:mb-6 text-center text-xs text-slate-600">
+    <footer class="hidden md:block mt-16 mb-8 text-center text-xs text-slate-600">
         <p>&copy; 2026 Dasgold Ledger Pro. All rights reserved.</p>
     </footer>
 

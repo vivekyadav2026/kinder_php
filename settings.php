@@ -132,83 +132,151 @@ $toDate = $_GET['to_date'] ?? '';
 $filterMonth = $_GET['month'] ?? '';
 $filterYear = $_GET['year'] ?? '';
 $filterItem = trim($_GET['item'] ?? '');
-$filterBapariId = intval($_GET['bapari_id'] ?? 0);
+
+$accountTarget = $_GET['target'] ?? 'b_0';
+if (isset($_GET['bapari_id']) && intval($_GET['bapari_id']) > 0) {
+    $accountTarget = 'b_' . intval($_GET['bapari_id']);
+} elseif (isset($_GET['karigor_id']) && intval($_GET['karigor_id']) > 0) {
+    $accountTarget = 'k_' . intval($_GET['karigor_id']);
+}
 
 // Fetch Baparis for filter dropdown
 $stmt = $pdo->prepare("SELECT id, name FROM baparis WHERE user_id = ? ORDER BY name ASC");
 $stmt->execute([$userId]);
 $filterBaparis = $stmt->fetchAll();
 
-// Base Queries for aggregates
-$depQuery = "SELECT * FROM fine_deposits WHERE user_id = ?";
-$depParams = [$userId];
-if ($fromDate) { $depQuery .= " AND date >= ?"; $depParams[] = $fromDate; }
-if ($toDate) { $depQuery .= " AND date <= ?"; $depParams[] = $toDate; }
-if ($filterYear) { $depQuery .= " AND YEAR(date) = ?"; $depParams[] = $filterYear; }
-if ($filterMonth) { $depQuery .= " AND MONTH(date) = ?"; $depParams[] = $filterMonth; }
-if ($filterBapariId > 0) { $depQuery .= " AND bapari_id = ?"; $depParams[] = $filterBapariId; }
+// Fetch Karigors for filter dropdown
+$stmt = $pdo->prepare("SELECT id, name FROM karigors WHERE user_id = ? ORDER BY name ASC");
+$stmt->execute([$userId]);
+$filterKarigors = $stmt->fetchAll();
 
-$stmt = $pdo->prepare($depQuery);
-$stmt->execute($depParams);
-$deposits = $stmt->fetchAll();
+$isKarigorTarget = (strpos($accountTarget, 'k_') === 0);
+$targetId = intval(substr($accountTarget, 2));
 
-$kajQuery = "SELECT k.* FROM kaj_entries k WHERE k.user_id = ?";
-$kajParams = [$userId];
-if ($fromDate) { $kajQuery .= " AND k.date >= ?"; $kajParams[] = $fromDate; }
-if ($toDate) { $kajQuery .= " AND k.date <= ?"; $kajParams[] = $toDate; }
-if ($filterYear) { $kajQuery .= " AND YEAR(k.date) = ?"; $kajParams[] = $filterYear; }
-if ($filterMonth) { $kajQuery .= " AND MONTH(k.date) = ?"; $kajParams[] = $filterMonth; }
-if ($filterBapariId > 0) { $kajQuery .= " AND k.bapari_id = ?"; $kajParams[] = $filterBapariId; }
-if ($filterItem) {
-    $kajQuery .= " AND EXISTS (SELECT 1 FROM kaj_items ki WHERE ki.kaj_entry_id = k.id AND ki.item LIKE ?)";
-    $kajParams[] = '%' . $filterItem . '%';
-}
-
-$stmt = $pdo->prepare($kajQuery);
-$stmt->execute($kajParams);
-$kajEntries = $stmt->fetchAll();
-
-// Calculate aggregates
-$totalJama = 0.0;
-$totalRec = 0.0;
-foreach ($deposits as $d) {
-    $totalJama += floatval($d['jama_fine']);
-    $totalRec += floatval($d['cash_received']);
-}
-
-$totalKajFine = 0.0;
-$totalProfitFine = 0.0;
-$totalBill = 0.0;
-foreach ($kajEntries as $k) {
-    $totalKajFine += floatval($k['total_kaj_fine']);
-    $totalProfitFine += floatval($k['total_profit_fine']);
-    $totalBill += floatval($k['cash_bill']);
-}
-
-// Calculate Total Net weight of Kaj jobs
-$totalNetKaj = 0.0;
-if (!empty($kajEntries)) {
-    $kajEntryIds = array_column($kajEntries, 'id');
-    $inClause = implode(',', array_fill(0, count($kajEntryIds), '?'));
-    $stmtItems = $pdo->prepare("SELECT SUM(net) as total_net FROM kaj_items WHERE kaj_entry_id IN ($inClause)");
-    $stmtItems->execute($kajEntryIds);
-    $totalNetKaj = floatval($stmtItems->fetch()['total_net'] ?? 0.0);
-}
-
-$netFineBalance = round($totalJama - $totalKajFine, 3);
-$netCashBalance = round($totalRec - $totalBill, 2);
-
-// Fetch Karigor aggregates
-$stmtKarigorRec = $pdo->prepare("SELECT SUM(total_receive_fine) as tot_rec, SUM(total_profit_less) as tot_profit_less, SUM(cash_paid) as tot_cash FROM karigor_kaj_receives WHERE user_id = ?");
+// Fetch Karigor profit total
+$stmtKarigorRec = $pdo->prepare("SELECT SUM(total_profit_less) as tot_profit_less FROM karigor_kaj_receives WHERE user_id = ?");
 $stmtKarigorRec->execute([$userId]);
-$karigorRecStats = $stmtKarigorRec->fetch();
+$totalKarigorProfitLess = floatval($stmtKarigorRec->fetch()['tot_profit_less'] ?? 0.0);
 
-$totalKarigorReceiveFine = floatval($karigorRecStats['tot_rec'] ?? 0.0);
-$totalKarigorProfitLess = floatval($karigorRecStats['tot_profit_less'] ?? 0.0);
+if (!$isKarigorTarget) {
+    // Bapari Filtering
+    $filterBapariId = $targetId;
 
-$stmtKarigorIssue = $pdo->prepare("SELECT SUM(issue_fine) as tot_issue FROM karigor_material_issues WHERE user_id = ?");
-$stmtKarigorIssue->execute([$userId]);
-$totalKarigorIssueFine = floatval($stmtKarigorIssue->fetch()['tot_issue'] ?? 0.0);
+    $depQuery = "SELECT * FROM fine_deposits WHERE user_id = ?";
+    $depParams = [$userId];
+    if ($fromDate) { $depQuery .= " AND date >= ?"; $depParams[] = $fromDate; }
+    if ($toDate) { $depQuery .= " AND date <= ?"; $depParams[] = $toDate; }
+    if ($filterYear) { $depQuery .= " AND YEAR(date) = ?"; $depParams[] = $filterYear; }
+    if ($filterMonth) { $depQuery .= " AND MONTH(date) = ?"; $depParams[] = $filterMonth; }
+    if ($filterBapariId > 0) { $depQuery .= " AND bapari_id = ?"; $depParams[] = $filterBapariId; }
+
+    $stmt = $pdo->prepare($depQuery);
+    $stmt->execute($depParams);
+    $deposits = $stmt->fetchAll();
+
+    $kajQuery = "SELECT k.* FROM kaj_entries k WHERE k.user_id = ?";
+    $kajParams = [$userId];
+    if ($fromDate) { $kajQuery .= " AND k.date >= ?"; $kajParams[] = $fromDate; }
+    if ($toDate) { $kajQuery .= " AND k.date <= ?"; $kajParams[] = $toDate; }
+    if ($filterYear) { $kajQuery .= " AND YEAR(k.date) = ?"; $kajParams[] = $filterYear; }
+    if ($filterMonth) { $kajQuery .= " AND MONTH(k.date) = ?"; $kajParams[] = $filterMonth; }
+    if ($filterBapariId > 0) { $kajQuery .= " AND k.bapari_id = ?"; $kajParams[] = $filterBapariId; }
+    if ($filterItem) {
+        $kajQuery .= " AND EXISTS (SELECT 1 FROM kaj_items ki WHERE ki.kaj_entry_id = k.id AND ki.item LIKE ?)";
+        $kajParams[] = '%' . $filterItem . '%';
+    }
+
+    $stmt = $pdo->prepare($kajQuery);
+    $stmt->execute($kajParams);
+    $kajEntries = $stmt->fetchAll();
+
+    $totalJama = 0.0;
+    $totalRec = 0.0;
+    foreach ($deposits as $d) {
+        $totalJama += floatval($d['jama_fine']);
+        $totalRec += floatval($d['cash_received']);
+    }
+
+    $totalKajFine = 0.0;
+    $totalProfitFine = 0.0;
+    $totalBill = 0.0;
+    foreach ($kajEntries as $k) {
+        $totalKajFine += floatval($k['total_kaj_fine']);
+        $totalProfitFine += floatval($k['total_profit_fine']);
+        $totalBill += floatval($k['cash_bill']);
+    }
+
+    $totalNetKaj = 0.0;
+    if (!empty($kajEntries)) {
+        $kajEntryIds = array_column($kajEntries, 'id');
+        $inClause = implode(',', array_fill(0, count($kajEntryIds), '?'));
+        $stmtItems = $pdo->prepare("SELECT SUM(net) as total_net FROM kaj_items WHERE kaj_entry_id IN ($inClause)");
+        $stmtItems->execute($kajEntryIds);
+        $totalNetKaj = floatval($stmtItems->fetch()['total_net'] ?? 0.0);
+    }
+
+    $netFineBalance = round($totalJama - $totalKajFine, 3);
+    $netCashBalance = round($totalRec - $totalBill, 2);
+
+} else {
+    // Karigor Filtering
+    $filterKarigorId = $targetId;
+
+    $issueQuery = "SELECT * FROM karigor_material_issues WHERE user_id = ?";
+    $issueParams = [$userId];
+    if ($fromDate) { $issueQuery .= " AND date >= ?"; $issueParams[] = $fromDate; }
+    if ($toDate) { $issueQuery .= " AND date <= ?"; $issueParams[] = $toDate; }
+    if ($filterYear) { $issueQuery .= " AND YEAR(date) = ?"; $issueParams[] = $filterYear; }
+    if ($filterMonth) { $issueQuery .= " AND MONTH(date) = ?"; $issueParams[] = $filterMonth; }
+    if ($filterKarigorId > 0) { $issueQuery .= " AND karigor_id = ?"; $issueParams[] = $filterKarigorId; }
+
+    $stmt = $pdo->prepare($issueQuery);
+    $stmt->execute($issueParams);
+    $issues = $stmt->fetchAll();
+
+    $recQuery = "SELECT r.* FROM karigor_kaj_receives r WHERE r.user_id = ?";
+    $recParams = [$userId];
+    if ($fromDate) { $recQuery .= " AND r.date >= ?"; $recParams[] = $fromDate; }
+    if ($toDate) { $recQuery .= " AND r.date <= ?"; $recParams[] = $toDate; }
+    if ($filterYear) { $recQuery .= " AND YEAR(r.date) = ?"; $recParams[] = $filterYear; }
+    if ($filterMonth) { $recQuery .= " AND MONTH(r.date) = ?"; $recParams[] = $filterMonth; }
+    if ($filterKarigorId > 0) { $recQuery .= " AND r.karigor_id = ?"; $recParams[] = $filterKarigorId; }
+    if ($filterItem) {
+        $recQuery .= " AND EXISTS (SELECT 1 FROM karigor_kaj_receive_items kri WHERE kri.karigor_receive_id = r.id AND kri.item LIKE ?)";
+        $recParams[] = '%' . $filterItem . '%';
+    }
+
+    $stmt = $pdo->prepare($recQuery);
+    $stmt->execute($recParams);
+    $recEntries = $stmt->fetchAll();
+
+    $totalJama = 0.0;
+    $totalRec = 0.0;
+    foreach ($recEntries as $r) {
+        $totalJama += floatval($r['total_receive_fine']);
+        $totalRec += floatval($r['cash_paid']);
+    }
+
+    $totalKajFine = 0.0;
+    $totalBill = 0.0;
+    foreach ($issues as $i) {
+        $totalKajFine += floatval($i['issue_fine']);
+        $totalBill += floatval($i['cash_paid']);
+    }
+
+    $totalProfitFine = 0.0;
+    $totalNetKaj = 0.0;
+    if (!empty($recEntries)) {
+        $recEntryIds = array_column($recEntries, 'id');
+        $inClause = implode(',', array_fill(0, count($recEntryIds), '?'));
+        $stmtItems = $pdo->prepare("SELECT SUM(net) as total_net FROM karigor_kaj_receive_items WHERE karigor_receive_id IN ($inClause)");
+        $stmtItems->execute($recEntryIds);
+        $totalNetKaj = floatval($stmtItems->fetch()['total_net'] ?? 0.0);
+    }
+
+    $netFineBalance = round($totalJama - $totalKajFine, 3);
+    $netCashBalance = round($totalRec - $totalBill, 2);
+}
 
 require_once 'header.php';
 ?>
@@ -360,11 +428,19 @@ require_once 'header.php';
     <div class="premium-card bg-[#121212]/80 space-y-4">
         <form method="GET" id="reportFilterForm">
             <div class="mb-3">
-                <select name="bapari_id" class="premium-input text-xs">
-                    <option value="">All Baparis (All Customers)</option>
-                    <?php foreach ($filterBaparis as $b): ?>
-                        <option value="<?= $b['id'] ?>" <?= $filterBapariId === intval($b['id']) ? 'selected' : '' ?>><?= htmlspecialchars($b['name']) ?></option>
-                    <?php endforeach; ?>
+                <select name="target" class="premium-input text-xs">
+                    <optgroup label="Bapari / Customers">
+                        <option value="b_0" <?= $accountTarget === 'b_0' ? 'selected' : '' ?>>All Baparis (All Customers)</option>
+                        <?php foreach ($filterBaparis as $b): ?>
+                            <option value="b_<?= $b['id'] ?>" <?= $accountTarget === 'b_' . $b['id'] ? 'selected' : '' ?>><?= htmlspecialchars($b['name']) ?></option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                    <optgroup label="Karigor / Artisans">
+                        <option value="k_0" <?= $accountTarget === 'k_0' ? 'selected' : '' ?>>All Karigors (All Artisans)</option>
+                        <?php foreach ($filterKarigors as $k): ?>
+                            <option value="k_<?= $k['id'] ?>" <?= $accountTarget === 'k_' . $k['id'] ? 'selected' : '' ?>><?= htmlspecialchars($k['name']) ?></option>
+                        <?php endforeach; ?>
+                    </optgroup>
                 </select>
             </div>
             

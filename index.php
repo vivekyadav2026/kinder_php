@@ -75,27 +75,33 @@ $netFineBalance = 0.0;
 $netCashBalance = 0.0;
 
 foreach ($bapariIds as $bid) {
-    $settleStmt = $pdo->prepare("SELECT * FROM ledger_settlements WHERE bapari_id = ? AND user_id = ? ORDER BY settlement_date DESC LIMIT 1");
+    $settleStmt = $pdo->prepare("SELECT * FROM ledger_settlements WHERE bapari_id = ? AND user_id = ? ORDER BY settlement_date DESC, created_at DESC LIMIT 1");
     $settleStmt->execute([$bid, $userId]);
     $settlement = $settleStmt->fetch();
     
-    $from = '1970-01-01';
     $gold = 0.0;
     $cash = 0.0;
     
     if ($settlement) {
         $gold = floatval($settlement['closing_gold']);
         $cash = floatval($settlement['closing_cash']);
-        $from = date('Y-m-d', strtotime($settlement['settlement_date'] . ' +1 day'));
+        
+        $depStmt = $pdo->prepare("SELECT SUM(jama_fine) as g, SUM(cash_received) as c FROM fine_deposits WHERE bapari_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))");
+        $depStmt->execute([$bid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']]);
+        $dep = $depStmt->fetch();
+        
+        $kajStmt = $pdo->prepare("SELECT SUM(total_kaj_fine) as g, SUM(cash_bill) as c FROM kaj_entries WHERE bapari_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))");
+        $kajStmt->execute([$bid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']]);
+        $kaj = $kajStmt->fetch();
+    } else {
+        $depStmt = $pdo->prepare("SELECT SUM(jama_fine) as g, SUM(cash_received) as c FROM fine_deposits WHERE bapari_id = ? AND user_id = ?");
+        $depStmt->execute([$bid, $userId]);
+        $dep = $depStmt->fetch();
+        
+        $kajStmt = $pdo->prepare("SELECT SUM(total_kaj_fine) as g, SUM(cash_bill) as c FROM kaj_entries WHERE bapari_id = ? AND user_id = ?");
+        $kajStmt->execute([$bid, $userId]);
+        $kaj = $kajStmt->fetch();
     }
-    
-    $depStmt = $pdo->prepare("SELECT SUM(jama_fine) as g, SUM(cash_received) as c FROM fine_deposits WHERE bapari_id = ? AND user_id = ? AND date >= ?");
-    $depStmt->execute([$bid, $userId, $from]);
-    $dep = $depStmt->fetch();
-    
-    $kajStmt = $pdo->prepare("SELECT SUM(total_kaj_fine) as g, SUM(cash_bill) as c FROM kaj_entries WHERE bapari_id = ? AND user_id = ? AND date >= ?");
-    $kajStmt->execute([$bid, $userId, $from]);
-    $kaj = $kajStmt->fetch();
     
     $gold += floatval($dep['g'] ?? 0) - floatval($kaj['g'] ?? 0);
     $cash += floatval($dep['c'] ?? 0) - floatval($kaj['c'] ?? 0);

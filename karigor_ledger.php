@@ -141,8 +141,6 @@ $entries = array_merge($issues, $receives, $settlements);
 usort($entries, function($a, $b) {
     $cmp = strcmp($a['date'], $b['date']);
     if ($cmp === 0) {
-        if ($a['type'] === 'settlement') return 1;
-        if ($b['type'] === 'settlement') return -1;
         return strcmp($a['created_at'], $b['created_at']);
     }
     return $cmp;

@@ -99,6 +99,7 @@
         @media (min-width: 768px) {
             body {
                 padding-top: calc(env(safe-area-inset-top, 0px) + 112px); /* Desktop Padding: Rates bar + Logo Header */
+                padding-bottom: 24px; /* Less padding on desktop since no bottom navbar */
             }
         }
 
@@ -130,17 +131,25 @@
         .premium-input {
             width: 100%;
             background-color: rgba(20, 20, 20, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px;
-            padding: 14px 16px;
+            padding: 16px 18px;
             color: #ffffff;
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: 500;
             transition: all 0.2s ease;
         }
         .premium-input:focus {
             outline: none;
             border-color: var(--gold-color);
-            box-shadow: 0 0 0 3px rgba(216, 167, 53, 0.15);
+            background-color: rgba(30, 30, 30, 0.95);
+            box-shadow: 0 0 0 4px rgba(216, 167, 53, 0.25);
+        }
+        select.premium-input option {
+            background-color: #111111;
+            color: #ffffff;
+            font-size: 16px;
+            padding: 10px;
         }
         
         /* Premium Buttons */

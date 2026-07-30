@@ -243,11 +243,11 @@ require_once 'header.php';
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#d8a735] mb-2">Date *</label>
                     <input type="date" name="date" value="<?= $action === 'edit' ? $editEntry['date'] : date('Y-m-d') ?>" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Select Karigor *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#d8a735] mb-2">Select Karigor *</label>
                     <select name="karigor_id" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input">
                         <option value="">-- Choose Karigor --</option>
                         <?php foreach ($karigorsList as $k): ?>
@@ -260,7 +260,7 @@ require_once 'header.php';
             <!-- Items Dynamic Container -->
             <div class="space-y-4 pt-2">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Received Ornaments / Fine Items</span>
+                    <span class="text-xs font-extrabold uppercase tracking-widest text-[#d8a735]">Received Ornaments / Fine Items</span>
                     <?php if (!$blockForm): ?>
                         <button type="button" onclick="addItemRow()" class="text-xs text-[#d8a735] hover:underline flex items-center font-semibold">
                             <span class="material-symbols-rounded text-sm mr-1">add_circle</span> Add Item
@@ -274,13 +274,13 @@ require_once 'header.php';
             </div>
 
             <!-- Summary Totals -->
-            <div class="p-4 rounded-2xl bg-slate-950/60 border border-white/[0.04] grid grid-cols-1 sm:grid-cols-2 gap-4 my-4 font-mono text-xs">
+            <div class="p-4 rounded-2xl bg-slate-950/80 border border-white/[0.08] grid grid-cols-1 sm:grid-cols-2 gap-4 my-4 font-mono text-xs">
                 <div>
-                    <span class="text-slate-500 text-[9px] uppercase block">Total Receive Fine (g)</span>
+                    <span class="text-slate-300 text-[10px] uppercase font-bold tracking-wider block">Total Receive Fine (g)</span>
                     <span id="grandTotalReceiveFine" class="text-emerald-400 font-bold text-base">0.000 g</span>
                 </div>
                 <div>
-                    <span class="text-slate-500 text-[9px] uppercase block">Total Profit Less (g)</span>
+                    <span class="text-slate-300 text-[10px] uppercase font-bold tracking-wider block">Total Profit Less (g)</span>
                     <span id="grandTotalProfitLess" class="text-amber-400 font-bold text-base">0.000 g</span>
                 </div>
             </div>
@@ -288,11 +288,11 @@ require_once 'header.php';
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Cash Paid / Labor Charge (₹)</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-200 mb-2">Cash Paid / Labor Charge (₹)</label>
                     <input type="number" step="0.01" name="cash_paid" value="<?= $action === 'edit' ? $editEntry['cash_paid'] : '' ?>" <?= $blockForm ? 'disabled' : '' ?> class="premium-input" placeholder="0.00">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Remark / Narration</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-200 mb-2">Remark / Narration</label>
                     <input type="text" name="remark" value="<?= $action === 'edit' ? htmlspecialchars($editEntry['remark']) : '' ?>" <?= $blockForm ? 'disabled' : '' ?> class="premium-input" placeholder="Optional details...">
                 </div>
             </div>
@@ -377,16 +377,18 @@ require_once 'header.php';
             var container = document.getElementById('itemRows');
             var div = document.createElement('div');
             div.id = 'row_' + rowCount;
-            div.className = 'p-4 rounded-2xl bg-slate-950/40 border border-white/[0.04] space-y-3 relative';
+            div.className = 'p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 relative';
             
             var isSplitActive = (parseFloat(netPart1) > 0 || parseFloat(netPart2) > 0);
             var isExtraPureActive = (parseFloat(extraPure) > 0);
 
             div.innerHTML = `
-                <div class="flex items-center justify-between border-b border-white/[0.03] pb-2">
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">Item #${rowCount + 1}</span>
+                <div class="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                    <span class="text-xs font-extrabold text-[#d8a735] uppercase tracking-wider flex items-center">
+                        <span class="material-symbols-rounded text-sm mr-1.5">inventory_2</span> ITEM #${rowCount + 1}
+                    </span>
                     ${!formBlocked && rowCount > 0 ? `
-                        <button type="button" onclick="removeRow(${rowCount})" class="text-rose-400 hover:text-rose-300 text-xs flex items-center">
+                        <button type="button" onclick="removeRow(${rowCount})" class="text-rose-400 hover:text-rose-300 text-xs flex items-center font-bold">
                             <span class="material-symbols-rounded text-sm mr-0.5">delete</span> Remove
                         </button>
                     ` : ''}
@@ -394,57 +396,57 @@ require_once 'header.php';
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Item Name *</label>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Item Name *</label>
                         <input type="text" name="items[${rowCount}][item]" value="${item}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-xs" placeholder="e.g. Gold Necklace">
                     </div>
                     <div>
-                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Gross (g) *</label>
-                        <input type="number" step="0.001" name="items[${rowCount}][gross]" id="gross_${rowCount}" value="${gross}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.000" oninput="calculateRow(${rowCount}, 'main')">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Gross (g) *</label>
+                        <input type="number" step="0.001" name="items[${rowCount}][gross]" id="gross_${rowCount}" value="${gross}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" placeholder="0.000" oninput="calculateRow(${rowCount}, 'main')">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Less (g)</label>
-                        <input type="number" step="0.001" name="items[${rowCount}][less]" id="less_${rowCount}" value="${less}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.000" oninput="calculateRow(${rowCount}, 'main')">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Less (g)</label>
+                        <input type="number" step="0.001" name="items[${rowCount}][less]" id="less_${rowCount}" value="${less}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" placeholder="0.000" oninput="calculateRow(${rowCount}, 'main')">
                     </div>
                     <div>
-                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Purity / Mel (%) *</label>
-                        <input type="number" step="0.01" name="items[${rowCount}][milting]" id="milting_${rowCount}" value="${milting}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.00" oninput="calculateRow(${rowCount})">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Purity / Mel (%) *</label>
+                        <input type="number" step="0.01" name="items[${rowCount}][milting]" id="milting_${rowCount}" value="${milting}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" placeholder="0.00" oninput="calculateRow(${rowCount})">
                     </div>
                     <div>
-                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Wastage (%)</label>
-                        <input type="number" step="0.01" name="items[${rowCount}][wastage]" id="wastage_${rowCount}" value="${wastage}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.00" oninput="calculateRow(${rowCount})">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Wastage (%)</label>
+                        <input type="number" step="0.01" name="items[${rowCount}][wastage]" id="wastage_${rowCount}" value="${wastage}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" placeholder="0.00" oninput="calculateRow(${rowCount})">
                     </div>
                 </div>
 
                 <!-- Action Controls: Split Net & Extra Pure Gold -->
                 <div class="flex items-center space-x-4 pt-1">
                     <div class="flex items-center space-x-1.5">
-                        <button type="button" onclick="toggleNetSplit(${rowCount})" class="w-6 h-6 rounded bg-[#d8a735]/15 border border-[#d8a735]/30 text-[#d8a735] hover:bg-[#d8a735]/25 flex items-center justify-center font-bold text-xs tap-target">
+                        <button type="button" onclick="toggleNetSplit(${rowCount})" class="w-6 h-6 rounded bg-[#d8a735]/20 border border-[#d8a735]/40 text-[#d8a735] hover:bg-[#d8a735]/30 flex items-center justify-center font-bold text-xs tap-target">
                             <span id="netSplitIcon_${rowCount}" class="material-symbols-rounded text-xs">${isSplitActive ? 'remove' : 'add'}</span>
                         </button>
-                        <span class="text-[10px] font-bold text-slate-300">Split Net</span>
+                        <span class="text-xs font-bold text-slate-200">Split Net</span>
                     </div>
 
                     <div class="flex items-center space-x-1.5">
-                        <button type="button" onclick="toggleExtraPure(${rowCount})" class="w-6 h-6 rounded bg-[#d8a735]/15 border border-[#d8a735]/30 text-[#d8a735] hover:bg-[#d8a735]/25 flex items-center justify-center font-bold text-xs tap-target">
+                        <button type="button" onclick="toggleExtraPure(${rowCount})" class="w-6 h-6 rounded bg-[#d8a735]/20 border border-[#d8a735]/40 text-[#d8a735] hover:bg-[#d8a735]/30 flex items-center justify-center font-bold text-xs tap-target">
                             <span id="extraPureIcon_${rowCount}" class="material-symbols-rounded text-xs">${isExtraPureActive ? 'remove' : 'add'}</span>
                         </button>
-                        <span class="text-[10px] font-bold text-slate-300">Extra Pure Gold</span>
+                        <span class="text-xs font-bold text-slate-200">Extra Pure Gold</span>
                     </div>
                 </div>
 
                 <!-- Split Net Container -->
-                <div id="netSplitSection_${rowCount}" class="${isSplitActive ? '' : 'hidden'} p-3 rounded-xl bg-slate-950/40 border border-[#d8a735]/20 space-y-3">
-                    <div class="text-[9px] font-bold uppercase tracking-wider text-[#d8a735]">Split Net Calculation</div>
+                <div id="netSplitSection_${rowCount}" class="${isSplitActive ? '' : 'hidden'} p-3.5 rounded-xl bg-slate-950/80 border border-[#d8a735]/30 space-y-3">
+                    <div class="text-xs font-bold uppercase tracking-wider text-[#d8a735]">Split Net Calculation</div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Net (g)</label>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#d8a735] mb-1">Part 1 Net (g)</label>
                             <input type="number" step="0.001" id="netPart1_${rowCount}" name="items[${rowCount}][net_part1]" value="${netPart1}" oninput="onPart1Input(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
                         </div>
                         <div>
-                            <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Wastage (%)</label>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#d8a735] mb-1">Part 1 Wastage (%)</label>
                             <input type="number" step="0.01" id="wastage1_${rowCount}" name="items[${rowCount}][wastage1]" value="${wastage1}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="Default">
                         </div>
                     </div>

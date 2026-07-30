@@ -265,13 +265,13 @@ require_once 'header.php';
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#d8a735] mb-2">Date *</label>
                     <input type="date" name="date" value="<?= $action === 'edit' ? $editEntry['date'] : date('Y-m-d') ?>" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Select Customer *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#d8a735] mb-2">Select Customer *</label>
                     <select name="bapari_id" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input">
-                        <option value="">-- Choose --</option>
+                        <option value="">-- Choose Customer --</option>
                         <?php foreach ($baparisList as $b): 
                             $selected = ($action === 'edit' && intval($editEntry['bapari_id']) === intval($b['id'])) ? 'selected' : '';
                         ?>
@@ -280,7 +280,7 @@ require_once 'header.php';
                     </select>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Majdoori Bill / Labor Charge (₹)</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-200 mb-2">Majdoori Bill / Labor Charge (₹)</label>
                     <input type="number" step="0.01" name="cash_bill" value="<?= $action === 'edit' ? $editEntry['cash_bill'] : '' ?>" <?= $blockForm ? 'disabled' : '' ?> class="premium-input" placeholder="0.00">
                 </div>
             </div>
@@ -288,7 +288,7 @@ require_once 'header.php';
             <!-- Items Area -->
             <div class="mt-4">
                 <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Item Details</h3>
+                    <h3 class="text-xs font-extrabold uppercase tracking-widest text-[#d8a735]">Item Details</h3>
                 </div>
                 
                 <div id="itemRows" class="space-y-4">
@@ -297,7 +297,7 @@ require_once 'header.php';
             </div>
 
             <div>
-                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Remark / Narration</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-200 mb-2">Remark / Narration</label>
                 <input type="text" name="remark" value="<?= $action === 'edit' ? htmlspecialchars($editEntry['remark']) : '' ?>" <?= $blockForm ? 'disabled' : '' ?> class="premium-input" placeholder="Optional details...">
             </div>
             
@@ -323,96 +323,99 @@ require_once 'header.php';
             var container = document.getElementById('itemRows');
             var div = document.createElement('div');
             div.id = 'row_' + rowCount;
-            div.className = 'premium-card bg-slate-900/50 p-4 border border-slate-850 space-y-3';
+            div.className = 'premium-card bg-slate-900/80 p-4 border border-slate-800 space-y-3';
             
             var isSplitActive = (parseFloat(netPart1) > 0 || parseFloat(netPart2) > 0);
             var isExtraPureActive = (parseFloat(extraPure) > 0);
 
             div.innerHTML = `
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase">Item Details</span>
+                <div class="flex items-center justify-between border-b border-white/[0.06] pb-2 mb-1">
+                    <span class="text-xs font-extrabold text-[#d8a735] uppercase tracking-wider flex items-center">
+                        <span class="material-symbols-rounded text-sm mr-1.5">inventory_2</span> ITEM DETAILS
+                    </span>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 gap-3">
                     <div class="col-span-2">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Ornament / Item Name *</label>
                         <input type="text" name="items[${rowCount}][item]" value="${item}" required ${formBlocked ? 'disabled' : ''} class="premium-input" placeholder="Ornament Name (e.g. Chain)">
                     </div>
                     <div>
-                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Gross (g)</label>
-                        <input type="number" step="0.001" name="items[${rowCount}][gross]" id="gross_${rowCount}" value="${gross}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.000" oninput="calculateRow(${rowCount}, 'main')">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Gross (g) *</label>
+                        <input type="number" step="0.001" name="items[${rowCount}][gross]" id="gross_${rowCount}" value="${gross}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" placeholder="0.000" oninput="calculateRow(${rowCount}, 'main')">
                     </div>
                     <div>
-                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Less (g)</label>
-                        <input type="number" step="0.001" name="items[${rowCount}][less]" id="less_${rowCount}" value="${less}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" oninput="calculateRow(${rowCount}, 'main')">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Less (g)</label>
+                        <input type="number" step="0.001" name="items[${rowCount}][less]" id="less_${rowCount}" value="${less}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" oninput="calculateRow(${rowCount}, 'main')">
                     </div>
                     <div>
-                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Mel / Purity (%)</label>
-                        <input type="number" step="0.01" name="items[${rowCount}][milting]" id="milting_${rowCount}" value="${milting}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" placeholder="0.00" oninput="calculateRow(${rowCount})">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Mel / Purity (%) *</label>
+                        <input type="number" step="0.01" name="items[${rowCount}][milting]" id="milting_${rowCount}" value="${milting}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" placeholder="0.00" oninput="calculateRow(${rowCount})">
                     </div>
                     <div>
-                        <label class="block text-[9px] uppercase text-slate-500 mb-1">Chhij / Wastage (%)</label>
-                        <input type="number" step="0.01" name="items[${rowCount}][wastage]" id="wastage_${rowCount}" value="${wastage}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono" oninput="calculateRow(${rowCount})">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Chhij / Wastage (%)</label>
+                        <input type="number" step="0.01" name="items[${rowCount}][wastage]" id="wastage_${rowCount}" value="${wastage}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" oninput="calculateRow(${rowCount})">
                     </div>
                 </div>
                 
                 <!-- Net Split controls inside dynamic card -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                    <div class="bg-slate-950/60 p-2 rounded-xl border border-white/[0.03] flex items-center justify-between">
+                    <div class="bg-slate-950/80 p-2.5 rounded-xl border border-white/[0.08] flex items-center justify-between">
                         <div>
-                            <span class="text-slate-500 text-[8px] uppercase font-bold block">Net</span>
-                            <div class="text-xs font-bold text-white font-mono mt-0.5" id="netLabel_${rowCount}">0.000 g</div>
+                            <span class="text-slate-300 text-[10px] uppercase font-bold tracking-wider block">Net Weight</span>
+                            <div class="text-sm font-bold text-white font-mono mt-0.5" id="netLabel_${rowCount}">0.000 g</div>
                         </div>
-                        <button type="button" onclick="toggleNetSplit(${rowCount})" class="w-6 h-6 rounded bg-[#d8a735]/15 border border-[#d8a735]/30 text-[#d8a735] hover:bg-[#d8a735]/25 flex items-center justify-center font-bold text-xs tap-target" title="Split Net into 2 parts">
-                            <span id="netSplitIcon_${rowCount}" class="material-symbols-rounded text-xs">${isSplitActive ? 'remove' : 'add'}</span>
+                        <button type="button" onclick="toggleNetSplit(${rowCount})" class="w-7 h-7 rounded-lg bg-[#d8a735]/20 border border-[#d8a735]/40 text-[#d8a735] hover:bg-[#d8a735]/30 flex items-center justify-center font-bold text-xs tap-target" title="Split Net into 2 parts">
+                            <span id="netSplitIcon_${rowCount}" class="material-symbols-rounded text-sm">${isSplitActive ? 'remove' : 'add'}</span>
                         </button>
                     </div>
                     
-                    <div class="bg-slate-950/60 p-2 rounded-xl border border-white/[0.03]">
-                        <span class="text-slate-500 text-[8px] uppercase font-bold block">Hisab %</span>
-                        <div class="text-xs font-bold text-white font-mono mt-0.5" id="hisabLabel_${rowCount}">0.00%</div>
+                    <div class="bg-slate-950/80 p-2.5 rounded-xl border border-white/[0.08]">
+                        <span class="text-slate-300 text-[10px] uppercase font-bold tracking-wider block">Hisab %</span>
+                        <div class="text-sm font-bold text-[#d8a735] font-mono mt-0.5" id="hisabLabel_${rowCount}">0.00%</div>
                     </div>
                 </div>
 
                 <!-- Split Net Container -->
-                <div id="netSplitSection_${rowCount}" class="${isSplitActive ? '' : 'hidden'} p-3 rounded-xl bg-slate-950/40 border border-[#d8a735]/20 space-y-3">
-                    <div class="text-[9px] font-bold uppercase tracking-wider text-[#d8a735]">Split Net Calculation</div>
+                <div id="netSplitSection_${rowCount}" class="${isSplitActive ? '' : 'hidden'} p-3.5 rounded-xl bg-slate-950/80 border border-[#d8a735]/30 space-y-3">
+                    <div class="text-xs font-bold uppercase tracking-wider text-[#d8a735]">Split Net Calculation</div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Net (g)</label>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#d8a735] mb-1">Part 1 Net (g)</label>
                             <input type="number" step="0.001" id="netPart1_${rowCount}" name="items[${rowCount}][net_part1]" value="${netPart1}" oninput="onPart1Input(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
                         </div>
                         <div>
-                            <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 1 Hisab / Wastage (%)</label>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#d8a735] mb-1">Part 1 Hisab / Wastage (%)</label>
                             <input type="number" step="0.01" id="wastage1_${rowCount}" name="items[${rowCount}][wastage1]" value="${wastage1}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="Default Mel+Wst">
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Net (g)</label>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#d8a735] mb-1">Part 2 Net (g)</label>
                             <input type="number" step="0.001" id="netPart2_${rowCount}" name="items[${rowCount}][net_part2]" value="${netPart2}" oninput="onPart2Input(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
                         </div>
                         <div>
-                            <label class="block text-[8px] font-bold uppercase text-slate-400 mb-1">Part 2 Hisab / Wastage (%)</label>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#d8a735] mb-1">Part 2 Hisab / Wastage (%)</label>
                             <input type="number" step="0.01" id="wastage2_${rowCount}" name="items[${rowCount}][wastage2]" value="${wastage2}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="e.g. 3.50 or 95.30">
                         </div>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-[11px] font-mono border-t border-slate-800/40 text-slate-400">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs font-mono border-t border-slate-800/40 text-slate-300">
                     <div class="relative">
                         <div class="flex items-center justify-between">
-                            <span>Gold Billed:</span>
-                            <button type="button" onclick="toggleExtraPure(${rowCount})" class="w-5 h-5 rounded bg-[#d8a735]/15 border border-[#d8a735]/30 text-[#d8a735] hover:bg-[#d8a735]/25 flex items-center justify-center font-bold text-[9px] tap-target" title="Add Extra Pure Gold">
-                                <span id="extraPureIcon_${rowCount}" class="material-symbols-rounded text-[10px]">${isExtraPureActive ? 'remove' : 'add'}</span>
+                            <span class="font-bold text-slate-300">Gold Billed:</span>
+                            <button type="button" onclick="toggleExtraPure(${rowCount})" class="w-6 h-6 rounded-lg bg-[#d8a735]/20 border border-[#d8a735]/40 text-[#d8a735] hover:bg-[#d8a735]/30 flex items-center justify-center font-bold text-xs tap-target" title="Add Extra Pure Gold">
+                                <span id="extraPureIcon_${rowCount}" class="material-symbols-rounded text-xs">${isExtraPureActive ? 'remove' : 'add'}</span>
                             </button>
                         </div>
-                        <span id="kajfine_${rowCount}" class="font-bold text-white">0.000</span>g
+                        <span id="kajfine_${rowCount}" class="font-bold text-[#d8a735] text-sm">0.000</span> g
                     </div>
-                    <div>Profit Gold: <span id="profit_${rowCount}" class="font-bold text-white">0.000</span>g</div>
+                    <div><span class="font-bold text-slate-300">Profit Gold:</span> <span id="profit_${rowCount}" class="font-bold text-emerald-400 text-sm">0.000</span> g</div>
                 </div>
 
                 <!-- Extra Pure Input Section -->
-                <div id="extraPureSection_${rowCount}" class="${isExtraPureActive ? '' : 'hidden'} p-3 rounded-xl bg-slate-950/40 border border-[#d8a735]/20 mt-2">
-                    <label class="block text-[8px] font-bold uppercase text-[#d8a735] mb-1">Extra Pure Gold (g)</label>
+                <div id="extraPureSection_${rowCount}" class="${isExtraPureActive ? '' : 'hidden'} p-3.5 rounded-xl bg-slate-950/80 border border-[#d8a735]/30 mt-2">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-[#d8a735] mb-1">Extra Pure Gold (g)</label>
                     <input type="number" step="0.001" id="extraPure_${rowCount}" name="items[${rowCount}][extra_pure]" value="${extraPure}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="0.000">
                 </div>
             `;
