@@ -21,14 +21,30 @@ if (!$bapari) {
     exit();
 }
 
+$editSettlement = null;
+if (isset($_GET['edit_settlement'])) {
+    $esId = intval($_GET['edit_settlement']);
+    $stmt = $pdo->prepare("SELECT * FROM ledger_settlements WHERE id = ? AND user_id = ?");
+    $stmt->execute([$esId, $userId]);
+    $editSettlement = $stmt->fetch();
+}
+
 // 1. Handle Ledger Settlement Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['settle_ledger'])) {
     $settleDate = $_POST['settlement_date'] ?? date('Y-m-d');
     $closeGold = floatval($_POST['closing_gold']);
     $closeCash = floatval($_POST['closing_cash']);
     
-    $stmt = $pdo->prepare("INSERT INTO ledger_settlements (user_id, bapari_id, settlement_date, closing_gold, closing_cash) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$userId, $bapariId, $settleDate, $closeGold, $closeCash]);
+    if (!empty($_POST['settlement_id'])) {
+        // UPDATE existing settlement
+        $settleId = intval($_POST['settlement_id']);
+        $stmt = $pdo->prepare("UPDATE ledger_settlements SET settlement_date = ?, closing_gold = ?, closing_cash = ? WHERE id = ? AND user_id = ?");
+        $stmt->execute([$settleDate, $closeGold, $closeCash, $settleId, $userId]);
+    } else {
+        // INSERT new settlement
+        $stmt = $pdo->prepare("INSERT INTO ledger_settlements (user_id, bapari_id, settlement_date, closing_gold, closing_cash) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$userId, $bapariId, $settleDate, $closeGold, $closeCash]);
+    }
     
     header("Location: ledger.php?bapari_id=" . $bapariId);
     exit();
@@ -696,8 +712,20 @@ require_once 'header.php';
 </div>
 
 <!-- Statement List (Exposing both edit and delete options) -->
-<div class="mb-6">
+<div class="mb-6" id="transactionsLog">
     <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block mb-4">Transactions Log</span>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (window.location.search.includes('from=') || window.location.search.includes('to=')) {
+                const log = document.getElementById('transactionsLog');
+                if (log) {
+                    setTimeout(() => {
+                        log.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                }
+            }
+        });
+    </script>
     
     <div class="space-y-4">
         <?php 
@@ -783,6 +811,9 @@ require_once 'header.php';
                     <?php if (!$isReadOnly): ?>
                         <div class="flex items-center justify-end space-x-2.5 mt-3 pt-2.5 border-t border-white/[0.03] no-print">
                             <?php if ($row['is_settlement']): ?>
+                                <a href="ledger.php?bapari_id=<?= $bapariId ?>&edit_settlement=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Settlement">
+                                    <span class="material-symbols-rounded text-base">edit</span>
+                                </a>
                                 <a href="ledger.php?bapari_id=<?= $bapariId ?>&delete_settlement=<?= $row['id'] ?>&from=<?= $from ?>&to=<?= $to ?>" onclick="return confirm('Are you sure you want to delete this settlement?')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete Settlement">
                                     <span class="material-symbols-rounded text-base">delete</span>
                                 </a>
@@ -839,18 +870,29 @@ require_once 'header.php';
 <!-- INLINE SETTLE LEDGER FORM AT THE BOTTOM -->
 <div id="settlementSection" class="premium-card border-[#d8a735]/20 bg-[#121212]/80 mt-6 no-print">
     <h2 class="text-sm font-bold text-[#d8a735] mb-3 flex items-center">
-        <span class="material-symbols-rounded text-lg mr-1.5">done_all</span> Settle Ledger Account
+        <span class="material-symbols-rounded text-lg mr-1.5"><?= $editSettlement ? 'edit' : 'done_all' ?></span> 
+        <?= $editSettlement ? 'Edit Ledger Settlement' : 'Settle Ledger Account' ?>
     </h2>
     
     <p class="text-[11px] text-slate-400 mb-4 leading-relaxed">
-        Settling this ledger registers the current outstanding gold and cash balances as a fixed checkpoint. Future statements will start with these values as their opening balances.
+        <?= $editSettlement ? 'Update the selected settlement checkpoint.' : 'Settling this ledger registers the current outstanding gold and cash balances as a fixed checkpoint. Future statements will start with these values as their opening balances.' ?>
     </p>
     
-    <form method="POST" class="space-y-4" onsubmit="prepareSettleSubmit()">
+    <?php 
+        $sDate = $editSettlement ? $editSettlement['settlement_date'] : date('Y-m-d');
+        $sGold = $editSettlement ? $editSettlement['closing_gold'] : $currentOutstandingGold;
+        $sCash = $editSettlement ? $editSettlement['closing_cash'] : $currentOutstandingCash;
+    ?>
+    
+    <form method="POST" action="ledger.php?bapari_id=<?= $bapariId ?>" class="space-y-4" onsubmit="prepareSettleSubmit()">
         <input type="hidden" name="settle_ledger" value="1">
+        <?php if ($editSettlement): ?>
+            <input type="hidden" name="settlement_id" value="<?= $editSettlement['id'] ?>">
+        <?php endif; ?>
+        
         <div>
             <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Settlement Date</label>
-            <input type="date" name="settlement_date" value="<?= date('Y-m-d') ?>" required class="premium-input text-xs">
+            <input type="date" name="settlement_date" value="<?= $sDate ?>" required class="premium-input text-xs">
         </div>
         
         <div>
@@ -863,8 +905,8 @@ require_once 'header.php';
                     Lena / Debit (Hamara customer par)
                 </button>
             </div>
-            <input type="hidden" name="closing_gold" id="finalClosingGold" value="<?= round($currentOutstandingGold, 3) ?>">
-            <input type="number" step="0.001" id="inputGoldVal" value="<?= abs(round($currentOutstandingGold, 3)) ?>" required class="premium-input text-xs font-mono" placeholder="0.000">
+            <input type="hidden" name="closing_gold" id="finalClosingGold" value="<?= round($sGold, 3) ?>">
+            <input type="number" step="0.001" id="inputGoldVal" value="<?= abs(round($sGold, 3)) ?>" required class="premium-input text-xs font-mono" placeholder="0.000">
         </div>
         
         <div>
@@ -877,18 +919,21 @@ require_once 'header.php';
                     Lena / Debit (Hamara customer par)
                 </button>
             </div>
-            <input type="hidden" name="closing_cash" id="finalClosingCash" value="<?= round($currentOutstandingCash, 2) ?>">
-            <input type="number" step="0.01" id="inputCashVal" value="<?= abs(round($currentOutstandingCash, 2)) ?>" required class="premium-input text-xs font-mono" placeholder="0.00">
+            <input type="hidden" name="closing_cash" id="finalClosingCash" value="<?= round($sCash, 2) ?>">
+            <input type="number" step="0.01" id="inputCashVal" value="<?= abs(round($sCash, 2)) ?>" required class="premium-input text-xs font-mono" placeholder="0.00">
         </div>
         
-        <div class="pt-3 border-t border-slate-800 flex justify-end">
-            <button type="submit" class="btn-gold text-xs py-3 px-6">Confirm Settle</button>
+        <div class="pt-3 border-t border-slate-800 flex justify-end space-x-3">
+            <?php if ($editSettlement): ?>
+                <a href="ledger.php?bapari_id=<?= $bapariId ?>" class="px-6 py-3 rounded-xl bg-slate-900 border border-white/[0.04] text-xs font-bold text-slate-400 hover:text-white transition-colors">Cancel</a>
+            <?php endif; ?>
+            <button type="submit" class="btn-gold text-xs py-3 px-6"><?= $editSettlement ? 'Update Settlement' : 'Confirm Settle' ?></button>
         </div>
     </form>
 
     <script>
-        let currentGoldType = <?= $currentOutstandingGold >= 0 ? "'jama'" : "'kaj'" ?>;
-        let currentCashType = <?= $currentOutstandingCash >= 0 ? "'jama'" : "'kaj'" ?>;
+        let currentGoldType = <?= $sGold >= 0 ? "'jama'" : "'kaj'" ?>;
+        let currentCashType = <?= $sCash >= 0 ? "'jama'" : "'kaj'" ?>;
 
         function updateTypeButtons() {
             const gj = document.getElementById('goldTypeJama');
@@ -936,7 +981,19 @@ require_once 'header.php';
         }
 
         // Init buttons state on load
-        document.addEventListener('DOMContentLoaded', updateTypeButtons);
+        document.addEventListener('DOMContentLoaded', () => {
+            updateTypeButtons();
+            
+            // Auto-scroll to form if editing
+            if (window.location.search.includes('edit_settlement=')) {
+                const section = document.getElementById('settlementSection');
+                if (section) {
+                    setTimeout(() => {
+                        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                }
+            }
+        });
     </script>
 </div>
 

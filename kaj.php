@@ -319,7 +319,7 @@ require_once 'header.php';
         var rowCount = 0;
         var formBlocked = <?= $blockForm ? 'true' : 'false' ?>;
         
-        function addItemRow(item = '', gross = '', less = '0', milting = '', wastage = '0', netPart1 = '', netPart2 = '', wastage1 = '', wastage2 = '', extraPure = '') {
+        function addItemRow(item = '', gross = '', less = '0', milting = '91.80', wastage = '0', netPart1 = '', netPart2 = '', wastage1 = '', wastage2 = '', extraPure = '') {
             var container = document.getElementById('itemRows');
             var div = document.createElement('div');
             div.id = 'row_' + rowCount;

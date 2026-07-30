@@ -110,6 +110,47 @@ foreach ($bapariIds as $bid) {
     $netCashBalance += $cash;
 }
 
+// Calculate Karigor Balances
+$stmt = $pdo->prepare("SELECT id FROM karigors WHERE user_id = ?");
+$stmt->execute([$userId]);
+$karigorIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+foreach ($karigorIds as $kid) {
+    $settleStmt = $pdo->prepare("SELECT * FROM karigor_ledger_settlements WHERE karigor_id = ? AND user_id = ? ORDER BY settlement_date DESC, created_at DESC LIMIT 1");
+    $settleStmt->execute([$kid, $userId]);
+    $settlement = $settleStmt->fetch();
+    
+    $gold = 0.0;
+    $cash = 0.0;
+    
+    if ($settlement) {
+        $gold = floatval($settlement['closing_gold']);
+        $cash = floatval($settlement['closing_cash']);
+        
+        $issueStmt = $pdo->prepare("SELECT SUM(issue_fine) as g, SUM(cash_paid) as c FROM karigor_material_issues WHERE karigor_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))");
+        $issueStmt->execute([$kid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']]);
+        $issue = $issueStmt->fetch();
+        
+        $recStmt = $pdo->prepare("SELECT SUM(total_receive_fine) as g, SUM(cash_paid) as c FROM karigor_kaj_receives WHERE karigor_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))");
+        $recStmt->execute([$kid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']]);
+        $rec = $recStmt->fetch();
+    } else {
+        $issueStmt = $pdo->prepare("SELECT SUM(issue_fine) as g, SUM(cash_paid) as c FROM karigor_material_issues WHERE karigor_id = ? AND user_id = ?");
+        $issueStmt->execute([$kid, $userId]);
+        $issue = $issueStmt->fetch();
+        
+        $recStmt = $pdo->prepare("SELECT SUM(total_receive_fine) as g, SUM(cash_paid) as c FROM karigor_kaj_receives WHERE karigor_id = ? AND user_id = ?");
+        $recStmt->execute([$kid, $userId]);
+        $rec = $recStmt->fetch();
+    }
+    
+    $gold += floatval($rec['g'] ?? 0) - floatval($issue['g'] ?? 0);
+    $cash += floatval($rec['c'] ?? 0) - floatval($issue['c'] ?? 0);
+    
+    $netFineBalance += $gold;
+    $netCashBalance += $cash;
+}
+
 $netFineBalance = round($netFineBalance, 3);
 $netCashBalance = round($netCashBalance, 2);
 
@@ -127,8 +168,8 @@ require_once 'header.php';
 <!-- Highlighted Fine Balance Block -->
 <div class="mb-6">
     <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block mb-1">Fine Balance</span>
-    <div class="text-5xl font-extrabold text-[#d8a735] font-mono tracking-tight leading-none">
-        <?= number_format($netFineBalance, 3) ?> <span class="text-xl font-normal text-slate-400">g</span>
+    <div class="text-5xl font-extrabold <?= $netFineBalance > 0 ? 'text-emerald-400' : ($netFineBalance < 0 ? 'text-rose-400' : 'text-[#d8a735]') ?> font-mono tracking-tight leading-none">
+        <?= $netFineBalance > 0 ? '+' : '' ?><?= number_format($netFineBalance, 3) ?> <span class="text-xl font-normal text-slate-400">g</span>
     </div>
 </div>
 
@@ -136,7 +177,9 @@ require_once 'header.php';
 <div class="grid grid-cols-3 gap-3 mb-8">
     <div class="premium-card bg-[#121212]/80 p-3">
         <span class="text-slate-500 text-[8.5px] uppercase font-semibold block mb-1">Cash Balance</span>
-        <div class="text-base font-bold text-emerald-400 font-mono truncate">₹<?= number_format($netCashBalance, 0) ?></div>
+        <div class="text-base font-bold <?= $netCashBalance > 0 ? 'text-emerald-400' : ($netCashBalance < 0 ? 'text-rose-400' : 'text-slate-300') ?> font-mono truncate">
+            <?= $netCashBalance > 0 ? '+' : ($netCashBalance < 0 ? '-' : '') ?>₹<?= number_format(abs($netCashBalance), 0) ?>
+        </div>
     </div>
     
     <div class="premium-card bg-[#121212]/80 p-3">

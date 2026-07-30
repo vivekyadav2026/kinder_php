@@ -329,10 +329,22 @@ require_once 'header.php';
                             <span class="font-mono text-rose-400 font-bold text-xs"><?= $i['cash_paid'] > 0 ? '₹' . number_format($i['cash_paid'], 0) : '--' ?></span>
                         </div>
                     </div>
-                    <div>
-                        <span class="text-[9px] text-slate-500 uppercase block">Material Fine Issued</span>
-                        <span class="font-mono text-orange-400 text-sm font-bold">-<?= number_format($i['issue_fine'], 3) ?> g</span>
-                        <span class="text-[9.5px] text-slate-500 font-mono block mt-1">Weight: <?= $i['fine_weight'] ?>g | Purity: <?= $i['purity'] ?>%</span>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[9px] text-slate-500 uppercase block">Material Fine Issued</span>
+                            <span class="font-mono text-orange-400 text-sm font-bold">-<?= number_format($i['issue_fine'], 3) ?> g</span>
+                            <span class="text-[9.5px] text-slate-500 font-mono block mt-1">Weight: <?= $i['fine_weight'] ?>g | Purity: <?= $i['purity'] ?>%</span>
+                        </div>
+                        <?php if (!$isReadOnly): ?>
+                            <div class="flex items-center space-x-2">
+                                <a href="karigor_issue.php?action=edit&id=<?= $i['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target">
+                                    <span class="material-symbols-rounded text-sm">edit</span>
+                                </a>
+                                <a href="karigor_issue.php?delete=<?= $i['id'] ?>" onclick="return confirm('Are you sure you want to delete this issue entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target">
+                                    <span class="material-symbols-rounded text-sm">delete</span>
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
