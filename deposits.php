@@ -361,10 +361,22 @@ require_once 'header.php';
                             <span class="font-mono text-emerald-400 font-bold text-xs"><?= $d['cash_received'] > 0 ? '₹' . number_format($d['cash_received'], 0) : '--' ?></span>
                         </div>
                     </div>
-                    <div>
-                        <span class="text-[9px] text-slate-500 uppercase block">Gold Fine Deposit</span>
-                        <span class="font-mono text-emerald-400 text-sm font-bold">+<?= number_format($d['jama_fine'], 3) ?> g</span>
-                        <span class="text-[9.5px] text-slate-500 font-mono block mt-1">Weight: <?= $d['fine_weight'] ?>g | Purity: <?= $d['purity'] ?>%</span>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[9px] text-slate-500 uppercase block">Gold Fine Deposit</span>
+                            <span class="font-mono text-emerald-400 text-sm font-bold">+<?= number_format($d['jama_fine'], 3) ?> g</span>
+                            <span class="text-[9.5px] text-slate-500 font-mono block mt-1">Weight: <?= $d['fine_weight'] ?>g | Purity: <?= $d['purity'] ?>%</span>
+                        </div>
+                        <?php if (!$isReadOnly): ?>
+                            <div class="flex items-center space-x-2">
+                                <a href="deposits.php?action=edit&id=<?= $d['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target">
+                                    <span class="material-symbols-rounded text-sm">edit</span>
+                                </a>
+                                <a href="deposits.php?delete=<?= $d['id'] ?>" onclick="return confirm('Are you sure you want to delete this deposit entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target">
+                                    <span class="material-symbols-rounded text-sm">delete</span>
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
