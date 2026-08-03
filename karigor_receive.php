@@ -126,6 +126,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtUpdate->execute([$totalReceiveFine, $totalProfitFine, $receiveId]);
                 
                 $pdo->commit();
+                
+                if (!empty($_POST['return_url'])) {
+                    header("Location: " . $_POST['return_url']);
+                    exit();
+                }
+                
                 $success = 'Kaj Receive entry saved successfully!';
                 $action = 'list';
 
@@ -236,7 +242,8 @@ require_once 'header.php';
             <a href="karigor_receive.php" class="text-xs text-slate-400 hover:text-white font-normal">Cancel</a>
         </h2>
         
-        <form method="POST" id="receiveForm" class="space-y-5">
+        <form method="POST" id="kajForm" class="space-y-5">
+            <input type="hidden" name="return_url" value="<?= htmlspecialchars($_GET['return_url'] ?? '') ?>">
             <?php if ($action === 'edit'): ?>
                 <input type="hidden" name="id" value="<?= $editEntry['id'] ?>">
             <?php endif; ?>
@@ -298,7 +305,7 @@ require_once 'header.php';
             </div>
 
             <div class="flex items-center justify-end space-x-3 pt-4 border-t border-white/[0.04]">
-                <a href="karigor_receive.php" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
+                <a href="<?= !empty($_GET['return_url']) ? htmlspecialchars($_GET['return_url']) : 'karigor_receive.php' ?>" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
                 <?php if (!$blockForm): ?>
                     <button type="submit" name="<?= $action === 'edit' ? 'edit_receive' : 'add_receive' ?>" class="btn-gold text-sm px-5 py-2.5">
                         <?= $action === 'edit' ? 'Update Kaj Receive' : 'Save Kaj Receive' ?>
@@ -598,7 +605,7 @@ require_once 'header.php';
             <div class="premium-card text-center py-10 text-slate-500">No Kaj Receive entries recorded.</div>
         <?php else: ?>
             <?php foreach ($receives as $r): ?>
-                <div class="premium-card bg-[#111111]/85">
+                <div id="entry_<?= $r['id'] ?>" class="premium-card bg-[#111111]/85">
                     <div class="flex justify-between items-start border-b border-white/[0.04] pb-2.5 mb-2.5">
                         <div>
                             <span class="text-[9px] text-slate-500 font-mono"><?= date('d/m/Y', strtotime($r['date'])) ?></span>
@@ -616,7 +623,7 @@ require_once 'header.php';
                         </div>
                         <?php if (!$isReadOnly): ?>
                             <div class="flex items-center space-x-2">
-                                <a href="karigor_receive.php?action=edit&id=<?= $r['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target">
+                                <a href="karigor_receive.php?action=edit&id=<?= $r['id'] ?>&return_url=<?= urlencode("karigor_receive.php#entry_{$r['id']}") ?>" class="w-8 h-8 rounded-lg bg-slate-900 border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target">
                                     <span class="material-symbols-rounded text-sm">edit</span>
                                 </a>
                                 <a href="karigor_receive.php?delete=<?= $r['id'] ?>" onclick="return confirm('Are you sure you want to delete this receive entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target">

@@ -78,6 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("UPDATE fine_deposits SET date = ?, bapari_id = ?, fine_weight = ?, purity = ?, jama_fine = ?, cash_received = ?, remark = ? WHERE id = ? AND user_id = ?");
                 $stmt->execute([$date, $bapariIdInput, $fineWeight, $purity, $jamaFine, $cashReceived, $remark, $id, $userId]);
                 
+                if (!empty($_POST['return_url'])) {
+                    header("Location: " . $_POST['return_url']);
+                    exit();
+                }
+                
                 $success = 'Gold Jama updated successfully!';
                 $action = 'list';
             }
@@ -270,6 +275,7 @@ require_once 'header.php';
 
         <form method="POST" class="space-y-5">
             <input type="hidden" name="id" value="<?= $dep['id'] ?>">
+            <input type="hidden" name="return_url" value="<?= htmlspecialchars($_GET['return_url'] ?? '') ?>">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
@@ -313,7 +319,7 @@ require_once 'header.php';
             </div>
             
             <div class="flex items-center justify-end space-x-3 pt-4">
-                <a href="deposits.php" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
+                <a href="<?= !empty($_GET['return_url']) ? htmlspecialchars($_GET['return_url']) : 'deposits.php' ?>" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
                 <?php if (!$blockForm): ?>
                     <button type="submit" name="edit_deposit" class="btn-gold text-sm px-5 py-2.5">Update Gold Jama</button>
                 <?php endif; ?>
@@ -350,7 +356,7 @@ require_once 'header.php';
             <div class="premium-card text-center py-10 text-slate-500">No deposits recorded.</div>
         <?php else: ?>
             <?php foreach ($deposits as $d): ?>
-                <div class="premium-card bg-[#111111]/85">
+                <div id="entry_<?= $d['id'] ?>" class="premium-card bg-[#111111]/85">
                     <div class="flex justify-between items-start border-b border-white/[0.04] pb-2.5 mb-2.5">
                         <div>
                             <span class="text-[9px] text-slate-500 font-mono"><?= date('d/m/Y', strtotime($d['date'])) ?></span>
@@ -369,7 +375,7 @@ require_once 'header.php';
                         </div>
                         <?php if (!$isReadOnly): ?>
                             <div class="flex items-center space-x-2">
-                                <a href="deposits.php?action=edit&id=<?= $d['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target">
+                                <a href="deposits.php?action=edit&id=<?= $d['id'] ?>&return_url=<?= urlencode("deposits.php#entry_{$d['id']}") ?>" class="w-8 h-8 rounded-lg bg-slate-900 border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target">
                                     <span class="material-symbols-rounded text-sm">edit</span>
                                 </a>
                                 <a href="deposits.php?delete=<?= $d['id'] ?>" onclick="return confirm('Are you sure you want to delete this deposit entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target">

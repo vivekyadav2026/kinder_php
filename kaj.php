@@ -125,6 +125,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtUpdate->execute([$totalKajFine, $totalProfitFine, $kajEntryId]);
                 
                 $pdo->commit();
+                
+                if (!empty($_POST['return_url'])) {
+                    header("Location: " . $_POST['return_url']);
+                    exit();
+                }
+                
                 $success = 'Kaarigari Job saved successfully!';
                 $action = 'list';
             } catch (Exception $e) {
@@ -259,6 +265,7 @@ require_once 'header.php';
         <?php endif; ?>
 
         <form method="POST" id="kajForm" class="space-y-5">
+            <input type="hidden" name="return_url" value="<?= htmlspecialchars($_GET['return_url'] ?? '') ?>">
             <?php if ($action === 'edit'): ?>
                 <input type="hidden" name="id" value="<?= $editEntry['id'] ?>">
             <?php endif; ?>
@@ -306,7 +313,7 @@ require_once 'header.php';
                     Est. Total Gold: <span id="totalFineDisp" class="text-rose-400 font-bold">0.000 g</span>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <a href="kaj.php" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
+                    <a href="<?= !empty($_GET['return_url']) ? htmlspecialchars($_GET['return_url']) : 'kaj.php' ?>" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
                     <?php if (!$blockForm): ?>
                         <button type="submit" name="<?= $action === 'edit' ? 'edit_kaj' : 'add_kaj' ?>" class="btn-gold text-sm px-5 py-2.5">Save Job</button>
                     <?php endif; ?>
@@ -649,7 +656,7 @@ require_once 'header.php';
             </div>
         <?php else: ?>
             <?php foreach ($kajEntries as $k): ?>
-                <div class="premium-card">
+                <div id="entry_<?= $k['id'] ?>" class="premium-card">
                     <div class="flex items-start justify-between border-b border-slate-800/80 pb-3 mb-3">
                         <div>
                             <span class="text-[10px] text-slate-500 font-semibold font-mono"><?= date('d/m/Y', strtotime($k['date'])) ?></span>
@@ -681,7 +688,7 @@ require_once 'header.php';
 
                     <?php if (!$isReadOnly): ?>
                         <div class="flex items-center justify-end space-x-2 mt-4 pt-3 border-t border-slate-800/40">
-                            <a href="kaj.php?action=edit&id=<?= $k['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300 transition-colors tap-target" title="Edit">
+                            <a href="kaj.php?action=edit&id=<?= $k['id'] ?>&return_url=<?= urlencode("kaj.php#entry_{$k['id']}") ?>" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300 transition-colors tap-target" title="Edit">
                                 <span class="material-symbols-rounded text-base">edit</span>
                             </a>
                             <a href="kaj.php?delete=<?= $k['id'] ?>" onclick="return confirm('Are you sure you want to delete this Kaarigari Job entry? This will also delete all of its items.')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete">

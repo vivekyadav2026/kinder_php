@@ -55,7 +55,7 @@ if (isset($_GET['delete_issue'])) {
     $id = intval($_GET['delete_issue']);
     $stmt = $pdo->prepare("DELETE FROM karigor_material_issues WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
-    header("Location: karigor_ledger.php?karigor_id=" . $karigorId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : ""));
+    header("Location: karigor_ledger.php?karigor_id=" . $karigorId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : "") . "#transactionsLog");
     exit();
 }
 
@@ -64,7 +64,7 @@ if (isset($_GET['delete_receive'])) {
     $id = intval($_GET['delete_receive']);
     $stmt = $pdo->prepare("DELETE FROM karigor_kaj_receives WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
-    header("Location: karigor_ledger.php?karigor_id=" . $karigorId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : ""));
+    header("Location: karigor_ledger.php?karigor_id=" . $karigorId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : "") . "#transactionsLog");
     exit();
 }
 
@@ -73,7 +73,7 @@ if (isset($_GET['delete_settlement'])) {
     $id = intval($_GET['delete_settlement']);
     $stmt = $pdo->prepare("DELETE FROM karigor_ledger_settlements WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
-    header("Location: karigor_ledger.php?karigor_id=" . $karigorId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : ""));
+    header("Location: karigor_ledger.php?karigor_id=" . $karigorId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : "") . "#transactionsLog");
     exit();
 }
 
@@ -618,12 +618,12 @@ require_once 'header.php';
                 <span class="material-symbols-rounded text-4xl text-slate-700 mb-2">receipt</span>
                 <p class="text-xs text-slate-500">No transactions recorded in this date range.</p>
             </div>
-        <?php else: 
+            <?php 
             $screenRows = array_reverse($activeRows);
             foreach ($screenRows as $row): 
                 $isIssue = ($row['type'] === 'issue');
             ?>
-                <div class="premium-card bg-[#111111]/90">
+                <div id="entry_<?= $row['type'] ?>_<?= $row['id'] ?>" class="premium-card bg-[#111111]/90">
                     <div class="flex items-start justify-between border-b border-white/[0.04] pb-2.5 mb-2.5">
                         <div>
                             <span class="text-[9px] text-slate-500 font-mono"><?= date('d/m/Y', strtotime($row['date'])) ?></span>
@@ -696,14 +696,14 @@ require_once 'header.php';
                                     <span class="material-symbols-rounded text-base">delete</span>
                                 </a>
                             <?php elseif ($isIssue): ?>
-                                <a href="karigor_issue.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target">
+                                <a href="karigor_issue.php?action=edit&id=<?= $row['id'] ?>&return_url=<?= urlencode("karigor_ledger.php?karigor_id={$karigorId}&from={$from}&to={$to}#entry_issue_{$row['id']}") ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target">
                                     <span class="material-symbols-rounded text-base">edit</span>
                                 </a>
                                 <a href="karigor_ledger.php?karigor_id=<?= $karigorId ?>&delete_issue=<?= $row['id'] ?>" onclick="return confirm('Delete this material issue entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target">
                                     <span class="material-symbols-rounded text-base">delete</span>
                                 </a>
                             <?php else: ?>
-                                <a href="karigor_receive.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target">
+                                <a href="karigor_receive.php?action=edit&id=<?= $row['id'] ?>&return_url=<?= urlencode("karigor_ledger.php?karigor_id={$karigorId}&from={$from}&to={$to}#entry_receive_{$row['id']}") ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target">
                                     <span class="material-symbols-rounded text-base">edit</span>
                                 </a>
                                 <a href="karigor_ledger.php?karigor_id=<?= $karigorId ?>&delete_receive=<?= $row['id'] ?>" onclick="return confirm('Delete this kaj receive entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target">

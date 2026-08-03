@@ -215,8 +215,90 @@ if (!$isKarigorTarget) {
         $totalNetKaj = floatval($stmtItems->fetch()['total_net'] ?? 0.0);
     }
 
-    $netFineBalance = round($totalJama - $totalKajFine, 3);
-    $netCashBalance = round($totalRec - $totalBill, 2);
+    // Calculate accurate running balances for Baparis
+    $baparisToCalc = ($filterBapariId > 0) ? [$filterBapariId] : array_column($filterBaparis, 'id');
+    $netFineBalance = 0.0;
+    $netCashBalance = 0.0;
+    
+    $cutoffDate = '';
+    if ($toDate) {
+        $cutoffDate = $toDate;
+    } elseif ($filterYear && $filterMonth) {
+        $cutoffDate = date('Y-m-t', strtotime("$filterYear-" . str_pad($filterMonth, 2, '0', STR_PAD_LEFT) . "-01"));
+    } elseif ($filterYear) {
+        $cutoffDate = "$filterYear-12-31";
+    }
+
+    foreach ($baparisToCalc as $bid) {
+        $settleQuery = "SELECT * FROM ledger_settlements WHERE bapari_id = ? AND user_id = ?";
+        $settleParams = [$bid, $userId];
+        if ($cutoffDate) {
+            $settleQuery .= " AND settlement_date <= ?";
+            $settleParams[] = $cutoffDate;
+        }
+        $settleQuery .= " ORDER BY settlement_date DESC, created_at DESC LIMIT 1";
+        
+        $stmt = $pdo->prepare($settleQuery);
+        $stmt->execute($settleParams);
+        $settlement = $stmt->fetch();
+        
+        $bGold = 0.0;
+        $bCash = 0.0;
+        
+        if ($settlement) {
+            $bGold = floatval($settlement['closing_gold']);
+            $bCash = floatval($settlement['closing_cash']);
+            
+            $depQ = "SELECT SUM(jama_fine) as g, SUM(cash_received) as c FROM fine_deposits WHERE bapari_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))";
+            $depP = [$bid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']];
+            if ($cutoffDate) {
+                $depQ .= " AND date <= ?";
+                $depP[] = $cutoffDate;
+            }
+            $stmt = $pdo->prepare($depQ);
+            $stmt->execute($depP);
+            $dep = $stmt->fetch();
+            
+            $kajQ = "SELECT SUM(total_kaj_fine) as g, SUM(cash_bill) as c FROM kaj_entries WHERE bapari_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))";
+            $kajP = [$bid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']];
+            if ($cutoffDate) {
+                $kajQ .= " AND date <= ?";
+                $kajP[] = $cutoffDate;
+            }
+            $stmt = $pdo->prepare($kajQ);
+            $stmt->execute($kajP);
+            $kaj = $stmt->fetch();
+        } else {
+            $depQ = "SELECT SUM(jama_fine) as g, SUM(cash_received) as c FROM fine_deposits WHERE bapari_id = ? AND user_id = ?";
+            $depP = [$bid, $userId];
+            if ($cutoffDate) {
+                $depQ .= " AND date <= ?";
+                $depP[] = $cutoffDate;
+            }
+            $stmt = $pdo->prepare($depQ);
+            $stmt->execute($depP);
+            $dep = $stmt->fetch();
+            
+            $kajQ = "SELECT SUM(total_kaj_fine) as g, SUM(cash_bill) as c FROM kaj_entries WHERE bapari_id = ? AND user_id = ?";
+            $kajP = [$bid, $userId];
+            if ($cutoffDate) {
+                $kajQ .= " AND date <= ?";
+                $kajP[] = $cutoffDate;
+            }
+            $stmt = $pdo->prepare($kajQ);
+            $stmt->execute($kajP);
+            $kaj = $stmt->fetch();
+        }
+        
+        $bGold += floatval($dep['g'] ?? 0) - floatval($kaj['g'] ?? 0);
+        $bCash += floatval($dep['c'] ?? 0) - floatval($kaj['c'] ?? 0);
+        
+        $netFineBalance += $bGold;
+        $netCashBalance += $bCash;
+    }
+    
+    $netFineBalance = round($netFineBalance, 3);
+    $netCashBalance = round($netCashBalance, 2);
 
 } else {
     // Karigor Filtering
@@ -274,8 +356,90 @@ if (!$isKarigorTarget) {
         $totalNetKaj = floatval($stmtItems->fetch()['total_net'] ?? 0.0);
     }
 
-    $netFineBalance = round($totalJama - $totalKajFine, 3);
-    $netCashBalance = round($totalRec - $totalBill, 2);
+    // Calculate accurate running balances for Karigors
+    $karigorsToCalc = ($filterKarigorId > 0) ? [$filterKarigorId] : array_column($filterKarigors, 'id');
+    $netFineBalance = 0.0;
+    $netCashBalance = 0.0;
+    
+    $cutoffDate = '';
+    if ($toDate) {
+        $cutoffDate = $toDate;
+    } elseif ($filterYear && $filterMonth) {
+        $cutoffDate = date('Y-m-t', strtotime("$filterYear-" . str_pad($filterMonth, 2, '0', STR_PAD_LEFT) . "-01"));
+    } elseif ($filterYear) {
+        $cutoffDate = "$filterYear-12-31";
+    }
+
+    foreach ($karigorsToCalc as $kid) {
+        $settleQuery = "SELECT * FROM karigor_ledger_settlements WHERE karigor_id = ? AND user_id = ?";
+        $settleParams = [$kid, $userId];
+        if ($cutoffDate) {
+            $settleQuery .= " AND settlement_date <= ?";
+            $settleParams[] = $cutoffDate;
+        }
+        $settleQuery .= " ORDER BY settlement_date DESC, created_at DESC LIMIT 1";
+        
+        $stmt = $pdo->prepare($settleQuery);
+        $stmt->execute($settleParams);
+        $settlement = $stmt->fetch();
+        
+        $kGold = 0.0;
+        $kCash = 0.0;
+        
+        if ($settlement) {
+            $kGold = floatval($settlement['closing_gold']);
+            $kCash = floatval($settlement['closing_cash']);
+            
+            $issQ = "SELECT SUM(issue_fine) as g, SUM(cash_paid) as c FROM karigor_material_issues WHERE karigor_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))";
+            $issP = [$kid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']];
+            if ($cutoffDate) {
+                $issQ .= " AND date <= ?";
+                $issP[] = $cutoffDate;
+            }
+            $stmt = $pdo->prepare($issQ);
+            $stmt->execute($issP);
+            $iss = $stmt->fetch();
+            
+            $recQ = "SELECT SUM(total_receive_fine) as g, SUM(cash_paid) as c FROM karigor_kaj_receives WHERE karigor_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))";
+            $recP = [$kid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']];
+            if ($cutoffDate) {
+                $recQ .= " AND date <= ?";
+                $recP[] = $cutoffDate;
+            }
+            $stmt = $pdo->prepare($recQ);
+            $stmt->execute($recP);
+            $rec = $stmt->fetch();
+        } else {
+            $issQ = "SELECT SUM(issue_fine) as g, SUM(cash_paid) as c FROM karigor_material_issues WHERE karigor_id = ? AND user_id = ?";
+            $issP = [$kid, $userId];
+            if ($cutoffDate) {
+                $issQ .= " AND date <= ?";
+                $issP[] = $cutoffDate;
+            }
+            $stmt = $pdo->prepare($issQ);
+            $stmt->execute($issP);
+            $iss = $stmt->fetch();
+            
+            $recQ = "SELECT SUM(total_receive_fine) as g, SUM(cash_paid) as c FROM karigor_kaj_receives WHERE karigor_id = ? AND user_id = ?";
+            $recP = [$kid, $userId];
+            if ($cutoffDate) {
+                $recQ .= " AND date <= ?";
+                $recP[] = $cutoffDate;
+            }
+            $stmt = $pdo->prepare($recQ);
+            $stmt->execute($recP);
+            $rec = $stmt->fetch();
+        }
+        
+        $kGold += floatval($rec['g'] ?? 0) - floatval($iss['g'] ?? 0);
+        $kCash += floatval($rec['c'] ?? 0) - floatval($iss['c'] ?? 0);
+        
+        $netFineBalance += $kGold;
+        $netCashBalance += $kCash;
+    }
+    
+    $netFineBalance = round($netFineBalance, 3);
+    $netCashBalance = round($netCashBalance, 2);
 }
 
 require_once 'header.php';
@@ -486,11 +650,11 @@ require_once 'header.php';
         <!-- Dynamic aggregates results inside settings (Matching Image 2) -->
         <div class="space-y-3 pt-3.5 border-t border-slate-800">
             <div class="bg-slate-950/60 p-3 rounded-xl border border-white/[0.03] flex justify-between items-center text-xs">
-                <span class="text-slate-500 font-semibold uppercase text-[9px]">Total Fine Deposit</span>
+                <span class="text-slate-500 font-semibold uppercase text-[9px]"><?= $isKarigorTarget ? 'Total Kaj Joma' : 'Total Fine Deposit' ?></span>
                 <span class="font-bold font-mono"><?= number_format($totalJama, 3) ?> g</span>
             </div>
             <div class="bg-slate-950/60 p-3 rounded-xl border border-white/[0.03] flex justify-between items-center text-xs">
-                <span class="text-slate-500 font-semibold uppercase text-[9px]">Total Kaj Fine</span>
+                <span class="text-slate-500 font-semibold uppercase text-[9px]"><?= $isKarigorTarget ? 'Total Material Issue' : 'Total Kaj Fine' ?></span>
                 <span class="font-bold font-mono"><?= number_format($totalKajFine, 3) ?> g</span>
             </div>
             <div class="bg-slate-950/60 p-3 rounded-xl border border-white/[0.03] flex justify-between items-center text-xs">

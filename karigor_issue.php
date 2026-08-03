@@ -75,7 +75,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("UPDATE karigor_material_issues SET date = ?, karigor_id = ?, fine_weight = ?, purity = ?, issue_fine = ?, cash_paid = ?, remark = ? WHERE id = ? AND user_id = ?");
                 $stmt->execute([$date, $karigorIdInput, $fineWeight, $purity, $issueFine, $cashPaid, $remark, $id, $userId]);
                 
-                $success = 'Material Issue entry updated successfully!';
+                if (!empty($_POST['return_url'])) {
+                    header("Location: " . $_POST['return_url']);
+                    exit();
+                }
+                
+                $success = 'Material Issue updated successfully!';
                 $action = 'list';
             }
         }
@@ -238,6 +243,7 @@ require_once 'header.php';
         
         <form method="POST" class="space-y-5">
             <input type="hidden" name="id" value="<?= $issue['id'] ?>">
+            <input type="hidden" name="return_url" value="<?= htmlspecialchars($_GET['return_url'] ?? '') ?>">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Date *</label>
@@ -281,7 +287,7 @@ require_once 'header.php';
             </div>
             
             <div class="flex items-center justify-end space-x-3 pt-4">
-                <a href="karigor_issue.php" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
+                <a href="<?= !empty($_GET['return_url']) ? htmlspecialchars($_GET['return_url']) : 'karigor_issue.php' ?>" class="btn-secondary text-sm px-5 py-2.5">Cancel</a>
                 <?php if (!$blockForm): ?>
                     <button type="submit" name="edit_issue" class="btn-gold text-sm px-5 py-2.5">Update Material Issue</button>
                 <?php endif; ?>
@@ -318,7 +324,7 @@ require_once 'header.php';
             <div class="premium-card text-center py-10 text-slate-500">No material issues recorded.</div>
         <?php else: ?>
             <?php foreach ($issues as $i): ?>
-                <div class="premium-card bg-[#111111]/85">
+                <div id="entry_<?= $i['id'] ?>" class="premium-card bg-[#111111]/85 border-orange-500/10">
                     <div class="flex justify-between items-start border-b border-white/[0.04] pb-2.5 mb-2.5">
                         <div>
                             <span class="text-[9px] text-slate-500 font-mono"><?= date('d/m/Y', strtotime($i['date'])) ?></span>
@@ -337,7 +343,7 @@ require_once 'header.php';
                         </div>
                         <?php if (!$isReadOnly): ?>
                             <div class="flex items-center space-x-2">
-                                <a href="karigor_issue.php?action=edit&id=<?= $i['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target">
+                                <a href="karigor_issue.php?action=edit&id=<?= $i['id'] ?>&return_url=<?= urlencode("karigor_issue.php#entry_{$i['id']}") ?>" class="w-8 h-8 rounded-lg bg-slate-900 border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white transition-colors tap-target">
                                     <span class="material-symbols-rounded text-sm">edit</span>
                                 </a>
                                 <a href="karigor_issue.php?delete=<?= $i['id'] ?>" onclick="return confirm('Are you sure you want to delete this issue entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target">

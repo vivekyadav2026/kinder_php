@@ -55,7 +55,7 @@ if (isset($_GET['delete_deposit'])) {
     $id = intval($_GET['delete_deposit']);
     $stmt = $pdo->prepare("DELETE FROM fine_deposits WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
-    header("Location: ledger.php?bapari_id=" . $bapariId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : ""));
+    header("Location: ledger.php?bapari_id=" . $bapariId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : "") . "#transactionsLog");
     exit();
 }
 
@@ -64,7 +64,7 @@ if (isset($_GET['delete_kaj'])) {
     $id = intval($_GET['delete_kaj']);
     $stmt = $pdo->prepare("DELETE FROM kaj_entries WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
-    header("Location: ledger.php?bapari_id=" . $bapariId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : ""));
+    header("Location: ledger.php?bapari_id=" . $bapariId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : "") . "#transactionsLog");
     exit();
 }
 
@@ -73,7 +73,7 @@ if (isset($_GET['delete_settlement'])) {
     $id = intval($_GET['delete_settlement']);
     $stmt = $pdo->prepare("DELETE FROM ledger_settlements WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
-    header("Location: ledger.php?bapari_id=" . $bapariId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : ""));
+    header("Location: ledger.php?bapari_id=" . $bapariId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : "") . "#transactionsLog");
     exit();
 }
 
@@ -736,12 +736,12 @@ require_once 'header.php';
                 <span class="material-symbols-rounded text-4xl text-slate-700 mb-2">receipt</span>
                 <p class="text-xs text-slate-500">No transactions recorded in this date range.</p>
             </div>
-        <?php else: 
+            <?php 
             $screenRows = array_reverse($activeRows);
             foreach ($screenRows as $row): 
                 $isDeposit = ($row['type'] === 'deposit');
             ?>
-                <div class="premium-card bg-[#111111]/90">
+                <div id="entry_<?= $row['type'] ?>_<?= $row['id'] ?>" class="premium-card bg-[#111111]/90">
                     <div class="flex items-start justify-between border-b border-white/[0.04] pb-2.5 mb-2.5">
                         <div>
                             <span class="text-[9px] text-slate-500 font-mono"><?= date('d/m/Y', strtotime($row['date'])) ?></span>
@@ -818,14 +818,14 @@ require_once 'header.php';
                                     <span class="material-symbols-rounded text-base">delete</span>
                                 </a>
                             <?php elseif ($isDeposit): ?>
-                                <a href="deposits.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Entry">
+                                <a href="deposits.php?action=edit&id=<?= $row['id'] ?>&return_url=<?= urlencode("ledger.php?bapari_id={$bapariId}&from={$from}&to={$to}#entry_deposit_{$row['id']}") ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Entry">
                                     <span class="material-symbols-rounded text-base">edit</span>
                                 </a>
                                 <a href="ledger.php?bapari_id=<?= $bapariId ?>&delete_deposit=<?= $row['id'] ?>&from=<?= $from ?>&to=<?= $to ?>" onclick="return confirm('Are you sure you want to delete this deposit entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete Entry">
                                     <span class="material-symbols-rounded text-base">delete</span>
                                 </a>
                             <?php else: ?>
-                                <a href="kaj.php?action=edit&id=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Entry">
+                                <a href="kaj.php?action=edit&id=<?= $row['id'] ?>&return_url=<?= urlencode("ledger.php?bapari_id={$bapariId}&from={$from}&to={$to}#entry_kaj_{$row['id']}") ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Entry">
                                     <span class="material-symbols-rounded text-base">edit</span>
                                 </a>
                                 <a href="ledger.php?bapari_id=<?= $bapariId ?>&delete_kaj=<?= $row['id'] ?>&from=<?= $from ?>&to=<?= $to ?>" onclick="return confirm('Are you sure you want to delete this job entry?')" class="w-8 h-8 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 flex items-center justify-center transition-colors tap-target" title="Delete Entry">
