@@ -618,6 +618,7 @@ require_once 'header.php';
                 <span class="material-symbols-rounded text-4xl text-slate-700 mb-2">receipt</span>
                 <p class="text-xs text-slate-500">No transactions recorded in this date range.</p>
             </div>
+        <?php else: ?>
             <?php 
             $screenRows = array_reverse($activeRows);
             foreach ($screenRows as $row): 
