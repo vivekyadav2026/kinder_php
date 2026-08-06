@@ -50,18 +50,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['settle_ledger'])) {
     exit();
 }
 
-// Handle Delete Deposit directly from Ledger
+// Handle Delete Gold Deposit directly from Ledger
 if (isset($_GET['delete_deposit'])) {
+    if ($isReadOnly) die("Access Denied.");
     $id = intval($_GET['delete_deposit']);
+    
+    $stmt = $pdo->prepare("SELECT date FROM fine_deposits WHERE id = ? AND user_id = ?");
+    $stmt->execute([$id, $userId]);
+    $origTxn = $stmt->fetch();
+    if ($origTxn && isSettled($pdo, $bapariId, $userId, $origTxn['date']) && !$isAdmin) {
+        die("Access Denied: This transaction is settled.");
+    }
+    
     $stmt = $pdo->prepare("DELETE FROM fine_deposits WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
     header("Location: ledger.php?bapari_id=" . $bapariId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : "") . "#transactionsLog");
     exit();
 }
 
-// Handle Delete Kaj directly from Ledger
+// Handle Delete Kaj Entry directly from Ledger
 if (isset($_GET['delete_kaj'])) {
+    if ($isReadOnly) die("Access Denied.");
     $id = intval($_GET['delete_kaj']);
+    
+    $stmt = $pdo->prepare("SELECT date FROM kaj_entries WHERE id = ? AND user_id = ?");
+    $stmt->execute([$id, $userId]);
+    $origTxn = $stmt->fetch();
+    if ($origTxn && isSettled($pdo, $bapariId, $userId, $origTxn['date']) && !$isAdmin) {
+        die("Access Denied: This transaction is settled.");
+    }
+    
     $stmt = $pdo->prepare("DELETE FROM kaj_entries WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
     header("Location: ledger.php?bapari_id=" . $bapariId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : "") . "#transactionsLog");
@@ -70,6 +88,7 @@ if (isset($_GET['delete_kaj'])) {
 
 // Handle Delete Settlement directly from Ledger
 if (isset($_GET['delete_settlement'])) {
+    if ($isReadOnly || !$isAdmin) die("Access Denied: Only Admins can delete settlements.");
     $id = intval($_GET['delete_settlement']);
     $stmt = $pdo->prepare("DELETE FROM ledger_settlements WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);

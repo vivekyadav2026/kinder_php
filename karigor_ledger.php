@@ -52,7 +52,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['settle_karigor_ledger
 
 // Handle Delete Material Issue directly from Ledger
 if (isset($_GET['delete_issue'])) {
+    if ($isReadOnly) die("Access Denied.");
     $id = intval($_GET['delete_issue']);
+    
+    $stmt = $pdo->prepare("SELECT date FROM karigor_material_issues WHERE id = ? AND user_id = ?");
+    $stmt->execute([$id, $userId]);
+    $origTxn = $stmt->fetch();
+    if ($origTxn && isKarigorSettled($pdo, $karigorId, $userId, $origTxn['date']) && !$isAdmin) {
+        die("Access Denied: This transaction is settled.");
+    }
+    
     $stmt = $pdo->prepare("DELETE FROM karigor_material_issues WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
     header("Location: karigor_ledger.php?karigor_id=" . $karigorId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : "") . "#transactionsLog");
@@ -61,7 +70,16 @@ if (isset($_GET['delete_issue'])) {
 
 // Handle Delete Kaj Receive directly from Ledger
 if (isset($_GET['delete_receive'])) {
+    if ($isReadOnly) die("Access Denied.");
     $id = intval($_GET['delete_receive']);
+    
+    $stmt = $pdo->prepare("SELECT date FROM karigor_kaj_receives WHERE id = ? AND user_id = ?");
+    $stmt->execute([$id, $userId]);
+    $origTxn = $stmt->fetch();
+    if ($origTxn && isKarigorSettled($pdo, $karigorId, $userId, $origTxn['date']) && !$isAdmin) {
+        die("Access Denied: This transaction is settled.");
+    }
+    
     $stmt = $pdo->prepare("DELETE FROM karigor_kaj_receives WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
     header("Location: karigor_ledger.php?karigor_id=" . $karigorId . ($from ? "&from=".$from : "") . ($to ? "&to=".$to : "") . "#transactionsLog");
@@ -70,6 +88,7 @@ if (isset($_GET['delete_receive'])) {
 
 // Handle Delete Settlement directly from Ledger
 if (isset($_GET['delete_settlement'])) {
+    if ($isReadOnly || !$isAdmin) die("Access Denied: Only Admins can delete settlements.");
     $id = intval($_GET['delete_settlement']);
     $stmt = $pdo->prepare("DELETE FROM karigor_ledger_settlements WHERE id = ? AND user_id = ?");
     $stmt->execute([$id, $userId]);
@@ -506,6 +525,27 @@ if ($isPrintMode) {
                         <td style="font-size: 10px;"><?= htmlspecialchars($r['remark']) ?></td>
                     </tr>
                 <?php endforeach; ?>
+                <tr style="font-weight: bold; background-color: #f8fafc;">
+                    <td colspan="3" class="text-center">Closing Balance:</td>
+                    <td class="text-right font-mono"><?= number_format($totGross, 3) ?></td>
+                    <td class="text-right font-mono"><?= number_format($totNet, 3) ?></td>
+                    <td></td>
+                    <td class="text-right font-mono">
+                        <?php 
+                        $isCr = $currentOutstandingGold >= 0;
+                        $colorClass = $isCr ? 'text-green' : 'text-red';
+                        echo "<span class='{$colorClass}'>" . number_format(abs($currentOutstandingGold), 3) . ($isCr ? ' Cr' : ' Db') . "</span>";
+                        ?>
+                    </td>
+                    <td class="text-right font-mono">
+                        <?php 
+                        $isCr = $currentOutstandingCash >= 0;
+                        $colorClass = $isCr ? 'text-green' : 'text-red';
+                        echo "<span class='{$colorClass}'>" . number_format(abs($currentOutstandingCash), 0) . ($isCr ? ' Cr' : ' Db') . "</span>";
+                        ?>
+                    </td>
+                    <td></td>
+                </tr>
             </tbody>
         </table>
     </body>

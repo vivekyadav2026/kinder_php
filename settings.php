@@ -153,10 +153,7 @@ $filterKarigors = $stmt->fetchAll();
 $isKarigorTarget = (strpos($accountTarget, 'k_') === 0);
 $targetId = intval(substr($accountTarget, 2));
 
-// Fetch Karigor profit total
-$stmtKarigorRec = $pdo->prepare("SELECT SUM(total_profit_less) as tot_profit_less FROM karigor_kaj_receives WHERE user_id = ?");
-$stmtKarigorRec->execute([$userId]);
-$totalKarigorProfitLess = floatval($stmtKarigorRec->fetch()['tot_profit_less'] ?? 0.0);
+// 
 
 if (!$isKarigorTarget) {
     // Bapari Filtering
@@ -213,6 +210,20 @@ if (!$isKarigorTarget) {
         $stmtItems = $pdo->prepare("SELECT SUM(net) as total_net FROM kaj_items WHERE kaj_entry_id IN ($inClause)");
         $stmtItems->execute($kajEntryIds);
         $totalNetKaj = floatval($stmtItems->fetch()['total_net'] ?? 0.0);
+    }
+
+    if ($filterBapariId == 0) {
+        $kpQuery = "SELECT SUM(total_profit_less) as tot FROM karigor_kaj_receives WHERE user_id = ?";
+        $kpParams = [$userId];
+        if ($fromDate) { $kpQuery .= " AND date >= ?"; $kpParams[] = $fromDate; }
+        if ($toDate) { $kpQuery .= " AND date <= ?"; $kpParams[] = $toDate; }
+        if ($filterYear) { $kpQuery .= " AND YEAR(date) = ?"; $kpParams[] = $filterYear; }
+        if ($filterMonth) { $kpQuery .= " AND MONTH(date) = ?"; $kpParams[] = $filterMonth; }
+        $stmtKp = $pdo->prepare($kpQuery);
+        $stmtKp->execute($kpParams);
+        $totalKarigorProfitLess = floatval($stmtKp->fetch()['tot'] ?? 0.0);
+    } else {
+        $totalKarigorProfitLess = 0.0;
     }
 
     // Calculate accurate running balances for Baparis
@@ -334,9 +345,11 @@ if (!$isKarigorTarget) {
 
     $totalJama = 0.0;
     $totalRec = 0.0;
+    $totalKarigorProfitLess = 0.0;
     foreach ($recEntries as $r) {
         $totalJama += floatval($r['total_receive_fine']);
         $totalRec += floatval($r['cash_paid']);
+        $totalKarigorProfitLess += floatval($r['total_profit_less']);
     }
 
     $totalKajFine = 0.0;
@@ -346,7 +359,20 @@ if (!$isKarigorTarget) {
         $totalBill += floatval($i['cash_paid']);
     }
 
-    $totalProfitFine = 0.0;
+    if ($filterKarigorId == 0) {
+        $bpQuery = "SELECT SUM(total_profit_fine) as tot FROM kaj_entries WHERE user_id = ?";
+        $bpParams = [$userId];
+        if ($fromDate) { $bpQuery .= " AND date >= ?"; $bpParams[] = $fromDate; }
+        if ($toDate) { $bpQuery .= " AND date <= ?"; $bpParams[] = $toDate; }
+        if ($filterYear) { $bpQuery .= " AND YEAR(date) = ?"; $bpParams[] = $filterYear; }
+        if ($filterMonth) { $bpQuery .= " AND MONTH(date) = ?"; $bpParams[] = $filterMonth; }
+        $stmtBp = $pdo->prepare($bpQuery);
+        $stmtBp->execute($bpParams);
+        $totalProfitFine = floatval($stmtBp->fetch()['tot'] ?? 0.0);
+    } else {
+        $totalProfitFine = 0.0;
+    }
+
     $totalNetKaj = 0.0;
     if (!empty($recEntries)) {
         $recEntryIds = array_column($recEntries, 'id');
@@ -661,14 +687,17 @@ require_once 'header.php';
                 <span class="text-slate-500 font-semibold uppercase text-[9px]">Total Net Kaj</span>
                 <span class="font-bold font-mono"><?= number_format($totalNetKaj, 3) ?> g</span>
             </div>
+            <?php if (!$isKarigorTarget): ?>
             <div class="bg-transparent p-3 rounded-xl border border-[#d8a735]/25 flex justify-between items-center text-xs">
                 <span class="text-[#d8a735] font-semibold uppercase text-[9px]">Bapari Profit Fine</span>
                 <span class="font-bold font-mono text-[#d8a735]"><?= number_format($totalProfitFine, 3) ?> g</span>
             </div>
+            <?php else: ?>
             <div class="bg-transparent p-3 rounded-xl border border-emerald-500/25 flex justify-between items-center text-xs">
                 <span class="text-emerald-400 font-semibold uppercase text-[9px]">Karigor Profit Less</span>
                 <span class="font-bold font-mono text-emerald-400"><?= number_format($totalKarigorProfitLess, 3) ?> g</span>
             </div>
+            <?php endif; ?>
 
             <div class="bg-slate-950/60 p-3 rounded-xl border border-white/[0.03] flex justify-between items-center text-xs">
                 <span class="text-slate-500 font-semibold uppercase text-[9px]">Cash Received</span>
@@ -736,6 +765,17 @@ require_once 'header.php';
             reader.readAsDataURL(event.target.files[0]);
         }
     }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        if (window.location.search.indexOf('target=') > -1) {
+            const reportEl = document.getElementById('reportFilterForm');
+            if (reportEl) {
+                // Scroll slightly above the form to account for any sticky headers
+                const y = reportEl.getBoundingClientRect().top + window.scrollY - 80;
+                window.scrollTo({top: y, behavior: 'smooth'});
+            }
+        }
+    });
 </script>
 
 <?php
