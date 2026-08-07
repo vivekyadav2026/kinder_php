@@ -308,4 +308,19 @@ if (session_status() == PHP_SESSION_NONE) {
         $isAdmin = ($uCheck && intval($uCheck['is_admin']) === 1);
         $isReadOnly = isset($_SESSION['impersonator_id']);
     }
+
+    // Global helper functions
+    function isSettled($pdo, $bapariId, $userId, $date) {
+        $stmt = $pdo->prepare("SELECT MAX(settlement_date) as last_settle FROM ledger_settlements WHERE bapari_id = ? AND user_id = ?");
+        $stmt->execute([$bapariId, $userId]);
+        $lastSettle = $stmt->fetch()['last_settle'];
+        return ($lastSettle && $date <= $lastSettle);
+    }
+    
+    function isKarigorSettled($pdo, $karigorId, $userId, $date) {
+        $stmt = $pdo->prepare("SELECT MAX(settlement_date) as last_settle FROM karigor_ledger_settlements WHERE karigor_id = ? AND user_id = ?");
+        $stmt->execute([$karigorId, $userId]);
+        $lastSettle = $stmt->fetch()['last_settle'];
+        return ($lastSettle && $date <= $lastSettle);
+    }
     ?>

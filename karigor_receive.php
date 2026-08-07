@@ -6,13 +6,6 @@ $error = '';
 $success = '';
 $warning = '';
 
-// Helper function to check if a transaction date falls into a settled period for Karigor
-function isKarigorSettled($pdo, $karigorId, $userId, $date) {
-    $stmt = $pdo->prepare("SELECT MAX(settlement_date) as last_settle FROM karigor_ledger_settlements WHERE karigor_id = ? AND user_id = ?");
-    $stmt->execute([$karigorId, $userId]);
-    $lastSettle = $stmt->fetch()['last_settle'];
-    return ($lastSettle && $date <= $lastSettle);
-}
 
 // Handle POST submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -162,9 +155,19 @@ if (isset($_GET['delete'])) {
             }
         }
         
-        $stmt = $pdo->prepare("DELETE FROM karigor_kaj_receives WHERE id = ? AND user_id = ?");
-        $stmt->execute([$id, $userId]);
-        $success = 'Kaj Receive entry deleted successfully!';
+        try {
+            $pdo->beginTransaction();
+            $stmtDelItems = $pdo->prepare("DELETE FROM karigor_kaj_receive_items WHERE karigor_receive_id = ?");
+            $stmtDelItems->execute([$id]);
+
+            $stmtDel = $pdo->prepare("DELETE FROM karigor_kaj_receives WHERE id = ? AND user_id = ?");
+            $stmtDel->execute([$id, $userId]);
+            $pdo->commit();
+            $success = 'Receive entry deleted successfully!';
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            die("Failed to delete entry: " . $e->getMessage());
+        }
     }
     header("Location: karigor_receive.php");
     exit();

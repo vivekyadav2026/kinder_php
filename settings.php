@@ -616,7 +616,7 @@ require_once 'header.php';
     <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block mb-3">Reports</span>
     
     <div class="premium-card bg-[#121212]/80 space-y-4">
-        <form method="GET" id="reportFilterForm">
+        <form method="GET" id="reportFilterForm" action="settings.php#reports_area">
             <div class="mb-3">
                 <select name="target" class="premium-input text-xs">
                     <optgroup label="Bapari / Customers">
@@ -674,7 +674,7 @@ require_once 'header.php';
         </form>
 
         <!-- Dynamic aggregates results inside settings (Matching Image 2) -->
-        <div class="space-y-3 pt-3.5 border-t border-slate-800">
+        <div id="reports_area" class="space-y-3 pt-3.5 border-t border-slate-800">
             <div class="bg-slate-950/60 p-3 rounded-xl border border-white/[0.03] flex justify-between items-center text-xs">
                 <span class="text-slate-500 font-semibold uppercase text-[9px]"><?= $isKarigorTarget ? 'Total Kaj Joma' : 'Total Fine Deposit' ?></span>
                 <span class="font-bold font-mono"><?= number_format($totalJama, 3) ?> g</span>

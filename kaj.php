@@ -6,13 +6,6 @@ $error = '';
 $success = '';
 $warning = '';
 
-// Helper function to check if a transaction date falls into a settled period
-function isSettled($pdo, $bapariId, $userId, $date) {
-    $stmt = $pdo->prepare("SELECT MAX(settlement_date) as last_settle FROM ledger_settlements WHERE bapari_id = ? AND user_id = ?");
-    $stmt->execute([$bapariId, $userId]);
-    $lastSettle = $stmt->fetch()['last_settle'];
-    return ($lastSettle && $date <= $lastSettle);
-}
 
 // Handle POST submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -159,9 +152,20 @@ if (isset($_GET['delete'])) {
                 die("Access Denied: This transaction is settled and cannot be deleted by non-administrators.");
             }
         }
-        $stmt = $pdo->prepare("DELETE FROM kaj_entries WHERE id = ? AND user_id = ?");
-        $stmt->execute([$id, $userId]);
-        $success = 'Kaarigari Job deleted successfully!';
+        
+        try {
+            $pdo->beginTransaction();
+            $stmtDelItems = $pdo->prepare("DELETE FROM kaj_items WHERE kaj_entry_id = ?");
+            $stmtDelItems->execute([$id]);
+
+            $stmtDel = $pdo->prepare("DELETE FROM kaj_entries WHERE id = ? AND user_id = ?");
+            $stmtDel->execute([$id, $userId]);
+            $pdo->commit();
+            $success = 'Kaarigari Job deleted successfully!';
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            die("Failed to delete entry: " . $e->getMessage());
+        }
     }
     header("Location: kaj.php");
     exit();
