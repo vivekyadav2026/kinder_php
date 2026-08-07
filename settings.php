@@ -60,16 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_company'])) {
         $fileType = $_FILES['company_logo']['type'];
         
         // Verify file is an image
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
         if (in_array($fileType, $allowedTypes)) {
-            $uploadDir = __DIR__ . '/assets/uploads/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            $destPath = $uploadDir . 'logo_user_' . $userId . '.png';
-            if (move_uploaded_file($fileTmpPath, $destPath)) {
-                $logoPath = 'assets/uploads/logo_user_' . $userId . '.png';
-            }
+            $base64Image = base64_encode(file_get_contents($fileTmpPath));
+            $logoPath = 'data:' . $fileType . ';base64,' . $base64Image;
         }
     }
     
@@ -521,8 +515,8 @@ require_once 'header.php';
             <div class="flex items-center space-x-4 mb-2">
                 <!-- Clickable Image Container -->
                 <div onclick="document.getElementById('logoFileInput').click()" class="w-14 h-14 rounded-xl border border-dashed border-slate-700 bg-slate-950 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:border-[#d8a735]/40 hover:text-slate-300 transition-colors overflow-hidden relative shrink-0">
-                    <?php if (!empty($currentUser['company_logo']) && file_exists(__DIR__ . '/' . $currentUser['company_logo'])): ?>
-                        <img id="logoPreviewImage" src="<?= htmlspecialchars($currentUser['company_logo']) ?>?v=<?= time() ?>" alt="Logo" class="w-full h-full object-cover">
+                    <?php if (!empty($currentUser['company_logo'])): ?>
+                        <img id="logoPreviewImage" src="<?= htmlspecialchars($currentUser['company_logo']) ?>" alt="Logo" class="w-full h-full object-cover">
                     <?php else: ?>
                         <span id="logoCameraIcon" class="material-symbols-rounded text-lg">photo_camera</span>
                         <span id="logoTextLabel" class="text-[8px] font-bold mt-1 uppercase">Logo</span>

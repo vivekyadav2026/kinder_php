@@ -221,7 +221,9 @@ if (session_status() == PHP_SESSION_NONE) {
         $pdo->exec("ALTER TABLE `users` ADD COLUMN `company_gst` VARCHAR(100) DEFAULT NULL");
     } catch (Exception $e) {}
     try {
-        $pdo->exec("ALTER TABLE `users` ADD COLUMN `company_logo` VARCHAR(255) DEFAULT NULL");
+        // Ensure company_logo is LONGTEXT to support Base64 storage
+        $pdo->exec("ALTER TABLE `users` ADD COLUMN `company_logo` LONGTEXT DEFAULT NULL");
+        $pdo->exec("ALTER TABLE `users` MODIFY COLUMN `company_logo` LONGTEXT DEFAULT NULL");
     } catch (Exception $e) {}
     try {
         $pdo->exec("ALTER TABLE `users` ADD COLUMN `gold_api_key` VARCHAR(255) DEFAULT NULL");

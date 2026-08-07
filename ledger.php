@@ -472,7 +472,7 @@ if ($isPrintMode) {
         <!-- Company Header Block for Printed Statements -->
         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 15px;">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <?php if (!empty($currentUser['company_logo']) && file_exists(__DIR__ . '/' . $currentUser['company_logo'])): ?>
+                <?php if (!empty($currentUser['company_logo'])): ?>
                     <img src="<?= htmlspecialchars($currentUser['company_logo']) ?>" style="max-height: 55px; max-width: 120px; object-fit: contain;">
                 <?php endif; ?>
                 <div>
