@@ -168,7 +168,7 @@ require_once 'header.php';
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-[#d8a735] mb-2">Select Karigor *</label>
-                    <select name="karigor_id" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input">
+                      <select name="karigor_id" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input searchable-select" placeholder="-- Choose Karigor --">
                         <option value="">-- Choose Karigor --</option>
                         <?php foreach ($karigorsList as $k): ?>
                             <option value="<?= $k['id'] ?>" <?= (isset($_GET['karigor_id']) && $_GET['karigor_id'] == $k['id']) ? 'selected' : '' ?>><?= htmlspecialchars($k['name']) ?></option>
@@ -251,7 +251,7 @@ require_once 'header.php';
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Select Karigor *</label>
-                    <select name="karigor_id" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input">
+                      <select name="karigor_id" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input searchable-select" placeholder="-- Choose Karigor --">
                         <?php foreach ($karigorsList as $k): ?>
                             <option value="<?= $k['id'] ?>" <?= $issue['karigor_id'] == $k['id'] ? 'selected' : '' ?>><?= htmlspecialchars($k['name']) ?></option>
                         <?php endforeach; ?>

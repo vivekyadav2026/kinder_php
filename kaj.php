@@ -281,7 +281,7 @@ require_once 'header.php';
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-[#d8a735] mb-2">Select Customer *</label>
-                    <select name="bapari_id" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input">
+                    <select name="bapari_id" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input searchable-select" placeholder="-- Choose Customer --">
                         <option value="">-- Choose Customer --</option>
                         <?php foreach ($baparisList as $b): 
                             $selected = ($action === 'edit' && intval($editEntry['bapari_id']) === intval($b['id'])) ? 'selected' : '';
@@ -360,11 +360,11 @@ require_once 'header.php';
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Mel / Purity (%) *</label>
-                        <input type="number" step="0.01" name="items[${rowCount}][milting]" id="milting_${rowCount}" value="${milting}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" placeholder="0.00" oninput="calculateRow(${rowCount})">
+                        <input type="number" step="0.001" name="items[${rowCount}][milting]" id="milting_${rowCount}" value="${milting}" required ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" placeholder="0.000" oninput="calculateRow(${rowCount})">
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-200 mb-1.5">Chhij / Wastage (%)</label>
-                        <input type="number" step="0.01" name="items[${rowCount}][wastage]" id="wastage_${rowCount}" value="${wastage}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" oninput="calculateRow(${rowCount})">
+                        <input type="number" step="0.001" name="items[${rowCount}][wastage]" id="wastage_${rowCount}" value="${wastage}" ${formBlocked ? 'disabled' : ''} class="premium-input text-right font-mono text-sm" oninput="calculateRow(${rowCount})">
                     </div>
                 </div>
                 
@@ -396,7 +396,7 @@ require_once 'header.php';
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold uppercase tracking-wider text-[#d8a735] mb-1">Part 1 Hisab / Wastage (%)</label>
-                            <input type="number" step="0.01" id="wastage1_${rowCount}" name="items[${rowCount}][wastage1]" value="${wastage1}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="Default Mel+Wst">
+                            <input type="number" step="0.001" id="wastage1_${rowCount}" name="items[${rowCount}][wastage1]" value="${wastage1}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="Default Mel+Wst">
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -406,7 +406,7 @@ require_once 'header.php';
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold uppercase tracking-wider text-[#d8a735] mb-1">Part 2 Hisab / Wastage (%)</label>
-                            <input type="number" step="0.01" id="wastage2_${rowCount}" name="items[${rowCount}][wastage2]" value="${wastage2}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="e.g. 3.50 or 95.30">
+                            <input type="number" step="0.001" id="wastage2_${rowCount}" name="items[${rowCount}][wastage2]" value="${wastage2}" oninput="calculateRow(${rowCount})" class="premium-input text-xs font-mono" placeholder="e.g. 3.50 or 95.30">
                         </div>
                     </div>
                 </div>

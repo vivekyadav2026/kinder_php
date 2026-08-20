@@ -61,6 +61,10 @@
     <!-- Favicon -->
     <link class="rounded-lg" rel="icon" type="image/png" href="assets/images/karigor-icon.png">
     
+    <!-- Tom Select (For Searchable Dropdowns) -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    
     <style>
         .material-symbols-rounded {
             font-family: 'Material Symbols Rounded';
@@ -114,8 +118,64 @@
         }
         
         .gold-border {
-            border: 1px solid rgba(216, 167, 53, 0.35);
-            box-shadow: 0 4px 20px rgba(216, 167, 53, 0.05);
+            border-color: rgba(216, 167, 53, 0.3);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(216, 167, 53, 0.1);
+        }
+
+        /* Tom Select Dark Mode Override */
+        .ts-wrapper.premium-input {
+            padding: 0;
+            background: none;
+            border: none;
+        }
+        .ts-control {
+            background-color: var(--card-color) !important;
+            border: 1px solid rgba(255,255,255,0.06) !important;
+            color: #fff !important;
+            border-radius: 12px !important;
+            padding: 0.75rem 1rem !important;
+            font-family: inherit !important;
+            min-height: auto !important;
+            display: flex;
+            align-items: center;
+            box-shadow: none !important;
+        }
+        .ts-wrapper.focus .ts-control {
+            border-color: rgba(216, 167, 53, 0.3) !important;
+            box-shadow: 0 0 0 2px rgba(216, 167, 53, 0.1) !important;
+        }
+        .ts-control input {
+            color: #fff !important;
+            font-size: 14px !important;
+        }
+        .ts-control .item {
+            color: #fff !important;
+        }
+        .ts-dropdown {
+            background-color: #1a1a1a !important;
+            border: 1px solid rgba(255,255,255,0.06) !important;
+            border-radius: 12px !important;
+            color: #fff !important;
+            margin-top: 4px !important;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5) !important;
+            overflow: hidden;
+        }
+        .ts-dropdown .ts-dropdown-content {
+            padding: 5px 0 !important;
+        }
+        .ts-dropdown .option {
+            padding: 10px 15px !important;
+            color: #94A3B8 !important;
+            font-size: 13px !important;
+        }
+        .ts-dropdown .option.active, .ts-dropdown .option:hover {
+            background-color: rgba(216, 167, 53, 0.1) !important;
+            color: #d8a735 !important;
+        }
+        .ts-dropdown .create {
+            color: #d8a735 !important;
+            padding: 10px 15px !important;
         }
 
         /* Typography Override */

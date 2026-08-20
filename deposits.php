@@ -179,7 +179,7 @@ require_once 'header.php';
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-[#d8a735] mb-2">Select Customer *</label>
-                    <select name="bapari_id" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input">
+                      <select name="bapari_id" required <?= $isReadOnly ? 'disabled' : '' ?> class="premium-input searchable-select" placeholder="-- Choose Customer --">
                         <option value="">-- Choose Customer --</option>
                         <?php foreach ($baparisList as $b): ?>
                             <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
@@ -283,7 +283,7 @@ require_once 'header.php';
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Select Customer *</label>
-                    <select name="bapari_id" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input">
+                      <select name="bapari_id" required <?= $blockForm ? 'disabled' : '' ?> class="premium-input searchable-select" placeholder="-- Choose Customer --">
                         <?php foreach ($baparisList as $b): ?>
                             <option value="<?= $b['id'] ?>" <?= $dep['bapari_id'] == $b['id'] ? 'selected' : '' ?>><?= htmlspecialchars($b['name']) ?></option>
                         <?php endforeach; ?>

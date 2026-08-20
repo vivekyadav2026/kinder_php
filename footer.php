@@ -66,6 +66,22 @@
             });
         }
 
+        // Initialize Tom Select for searchable dropdowns
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof TomSelect !== 'undefined') {
+                document.querySelectorAll('.searchable-select').forEach(function(el) {
+                    new TomSelect(el, {
+                        create: false,
+                        sortField: {
+                            field: "text",
+                            direction: "asc"
+                        },
+                        placeholder: el.getAttribute('placeholder') || 'Search...',
+                    });
+                });
+            }
+        });
+
         // PWA Native Installation Prompter Logic
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {

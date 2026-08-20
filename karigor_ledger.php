@@ -727,7 +727,8 @@ require_once 'header.php';
                         <?php if ($row['remark']): ?>
                             <div class="mt-1 text-slate-500 font-sans">Narration: <?= htmlspecialchars($row['remark']) ?></div>
                         <?php endif; ?>
-                                        <?php if (!$isReadOnly): ?>
+                    </div>
+                    <?php if (!$isReadOnly): ?>
                         <div class="flex items-center justify-end space-x-2.5 mt-3 pt-2.5 border-t border-white/[0.03] no-print">
                             <?php if ($row['is_settlement']): ?>
                                 <a href="karigor_ledger.php?karigor_id=<?= $karigorId ?>&edit_settlement=<?= $row['id'] ?>" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/[0.05] flex items-center justify-center text-slate-400 transition-colors tap-target" title="Edit Settlement">
