@@ -595,7 +595,7 @@ require_once 'header.php';
             }
             
             document.getElementById(`netLabel_${id}`).innerText = net.toFixed(3) + ' g';
-            document.getElementById(`hisabLabel_${id}`).innerText = hisab.toFixed(2) + '%';
+            document.getElementById(`hisabLabel_${id}`).innerText = hisab.toFixed(3) + '%';
             document.getElementById('kajfine_' + id).innerText = kajFine.toFixed(3);
             document.getElementById('profit_' + id).innerText = profitFine.toFixed(3);
             

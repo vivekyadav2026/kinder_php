@@ -750,7 +750,7 @@ require_once 'header.php';
         }
         
         document.getElementById(`netLabel_${idx}`).textContent = net.toFixed(3) + " g";
-        document.getElementById(`hisabLabel_${idx}`).textContent = hisab.toFixed(2) + "%";
+        document.getElementById(`hisabLabel_${idx}`).textContent = hisab.toFixed(3) + "%";
         document.getElementById(`kajFineLabel_${idx}`).textContent = kajFine.toFixed(3) + " g";
         document.getElementById(`profitLabel_${idx}`).textContent = profitFine.toFixed(3) + " g";
         
