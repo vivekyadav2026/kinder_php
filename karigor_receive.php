@@ -430,6 +430,14 @@ require_once 'header.php';
                     </div>
                 </div>
 
+                <!-- Net Weight Display -->
+                <div class="bg-slate-950/80 p-2.5 rounded-xl border border-white/[0.08] mb-1 flex items-center justify-between">
+                    <div>
+                        <span class="text-slate-300 text-[10px] uppercase font-bold tracking-wider block">Net Weight</span>
+                        <div class="text-sm font-bold text-white font-mono mt-0.5" id="netLabel_${rowCount}">0.000 g</div>
+                    </div>
+                </div>
+
                 <!-- Action Controls: Split Net & Extra Pure Gold -->
                 <div class="flex items-center space-x-4 pt-1">
                     <div class="flex items-center space-x-1.5">
@@ -504,6 +512,9 @@ require_once 'header.php';
             var net = Math.max(0, gross - less);
             var mel = parseFloat(document.getElementById('milting_' + id).value) || 0;
             var wst = parseFloat(document.getElementById('wastage_' + id).value) || 0;
+            
+            var netLabel = document.getElementById('netLabel_' + id);
+            if (netLabel) netLabel.innerText = net.toFixed(3) + ' g';
             
             const epEl = document.getElementById(`extraPure_${id}`);
             const extraPure = (epEl && epEl.offsetParent !== null) ? (parseFloat(epEl.value) || 0) : 0;
