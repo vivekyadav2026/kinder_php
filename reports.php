@@ -138,34 +138,22 @@ require_once 'header.php';
 <form id="ledgerForm" method="GET" action="ledger.php" class="space-y-6">
     <!-- Select Bapari Dropdown -->
     <div id="bapariSelectGroup" class="relative">
-        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-            <span class="material-symbols-rounded text-lg">person</span>
-        </span>
-        <select name="bapari_id" id="bapariId" class="premium-input pl-10 text-sm appearance-none">
+        <select name="bapari_id" id="bapariId" class="searchable-select premium-input text-sm" placeholder="Select Bapari">
             <option value="">Select Bapari</option>
             <?php foreach ($baparis as $b): ?>
                 <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></option>
             <?php endforeach; ?>
         </select>
-        <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500">
-            <span class="material-symbols-rounded text-lg">keyboard_arrow_down</span>
-        </span>
     </div>
 
     <!-- Select Karigor Dropdown (Hidden initially) -->
     <div id="karigorSelectGroup" class="relative hidden">
-        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-            <span class="material-symbols-rounded text-lg">engineering</span>
-        </span>
-        <select name="karigor_id" id="karigorId" class="premium-input pl-10 text-sm appearance-none">
+        <select name="karigor_id" id="karigorId" class="searchable-select premium-input text-sm" placeholder="Select Karigor">
             <option value="">Select Karigor</option>
             <?php foreach ($karigors as $k): ?>
                 <option value="<?= $k['id'] ?>"><?= htmlspecialchars($k['name']) ?></option>
             <?php endforeach; ?>
         </select>
-        <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500">
-            <span class="material-symbols-rounded text-lg">keyboard_arrow_down</span>
-        </span>
     </div>
 
 

@@ -58,6 +58,46 @@ $stmt = $pdo->prepare("SELECT * FROM baparis WHERE user_id = ? ORDER BY name ASC
 $stmt->execute([$userId]);
 $baparis = $stmt->fetchAll();
 
+function getBapariBalance($pdo, $bid, $userId) {
+    $settleStmt = $pdo->prepare("SELECT * FROM ledger_settlements WHERE bapari_id = ? AND user_id = ? ORDER BY settlement_date DESC, created_at DESC LIMIT 1");
+    $settleStmt->execute([$bid, $userId]);
+    $settlement = $settleStmt->fetch();
+    
+    $gold = 0.0;
+    $cash = 0.0;
+    
+    if ($settlement) {
+        $gold = floatval($settlement['closing_gold']);
+        $cash = floatval($settlement['closing_cash']);
+        
+        $depStmt = $pdo->prepare("SELECT SUM(jama_fine) as g, SUM(cash_received) as c FROM fine_deposits WHERE bapari_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))");
+        $depStmt->execute([$bid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']]);
+        $dep = $depStmt->fetch();
+        
+        $kajStmt = $pdo->prepare("SELECT SUM(total_kaj_fine) as g, SUM(cash_bill) as c FROM kaj_entries WHERE bapari_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))");
+        $kajStmt->execute([$bid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']]);
+        $kaj = $kajStmt->fetch();
+    } else {
+        $depStmt = $pdo->prepare("SELECT SUM(jama_fine) as g, SUM(cash_received) as c FROM fine_deposits WHERE bapari_id = ? AND user_id = ?");
+        $depStmt->execute([$bid, $userId]);
+        $dep = $depStmt->fetch();
+        
+        $kajStmt = $pdo->prepare("SELECT SUM(total_kaj_fine) as g, SUM(cash_bill) as c FROM kaj_entries WHERE bapari_id = ? AND user_id = ?");
+        $kajStmt->execute([$bid, $userId]);
+        $kaj = $kajStmt->fetch();
+    }
+    
+    $depG = $dep['g'] ?? 0;
+    $depC = $dep['c'] ?? 0;
+    $kajG = $kaj['g'] ?? 0;
+    $kajC = $kaj['c'] ?? 0;
+    
+    $gold += ($depG - $kajG);
+    $cash += ($depC - $kajC);
+    
+    return ['gold' => $gold, 'cash' => $cash];
+}
+
 require_once 'header.php';
 ?>
 
@@ -177,12 +217,23 @@ require_once 'header.php';
                 <p class="text-xs text-slate-500 mt-1">Register your first Bapari to start tracking gold/cash balances.</p>
             </div>
         <?php else: ?>
-            <?php foreach ($baparis as $b): ?>
+            <?php foreach ($baparis as $b): 
+                $bal = getBapariBalance($pdo, $b['id'], $userId);
+                $goldCr = $bal['gold'] >= 0;
+                $cashCr = $bal['cash'] >= 0;
+            ?>
                 <div class="premium-card bg-[#111111]/85 p-4 flex items-center justify-between">
                     <a href="ledger.php?bapari_id=<?= $b['id'] ?>" class="flex-1 min-w-0 pr-3 select-none">
                         <h3 class="text-sm font-bold text-white leading-tight truncate hover:text-[#d8a735] transition-colors"><?= htmlspecialchars($b['name']) ?></h3>
-                        <p class="text-[10px] text-slate-500 mt-0.5 truncate"><?= htmlspecialchars($b['mobile'] ?: 'No mobile number') ?></p>
-                        <p class="text-[9px] text-slate-600 truncate"><?= htmlspecialchars($b['address'] ?: 'No address registered') ?></p>
+                        <div class="flex items-center space-x-3 mt-1.5 mb-1">
+                            <span class="text-[10px] font-mono <?= $goldCr ? 'text-emerald-400' : 'text-rose-400' ?>">
+                                G: <?= $goldCr ? '+' : '-' ?><?= number_format(abs($bal['gold']), 3) ?>
+                            </span>
+                            <span class="text-[10px] font-mono <?= $cashCr ? 'text-emerald-400' : 'text-rose-400' ?>">
+                                ₹ <?= $cashCr ? '+' : '-' ?><?= number_format(abs($bal['cash']), 0) ?>
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 truncate"><?= htmlspecialchars($b['mobile'] ?: 'No mobile') ?></p>
                     </a>
                     
                     <div class="flex items-center space-x-2 shrink-0">

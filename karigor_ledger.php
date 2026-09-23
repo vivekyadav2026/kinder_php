@@ -427,6 +427,11 @@ if ($isPrintMode) {
             .font-mono { font-family: monospace; }
             .text-green { color: #047857; font-weight: bold; }
             .text-red { color: #b91c1c; font-weight: bold; }
+            .stacked-val {
+                display: block;
+                font-size: 9.5px;
+                color: #555555;
+            }
         </style>
     </head>
     <body onload="window.print()">
@@ -443,14 +448,14 @@ if ($isPrintMode) {
         <table>
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Ref No</th>
+                    <th style="width: 75px;">Date</th>
+                    <th style="width: 85px;">Ref No</th>
                     <th>Item / Particulars</th>
-                    <th>Gross</th>
-                    <th>Net</th>
-                    <th>Tch / Wst</th>
-                    <th>Fine</th>
-                    <th>Cash</th>
+                    <th style="width: 65px;">Gross<br><span style="font-size:9px; font-weight:normal;">Less</span></th>
+                    <th style="width: 65px;">Net</th>
+                    <th style="width: 55px;">Tch<br><span style="font-size:9px; font-weight:normal;">Wst</span></th>
+                    <th style="width: 80px;">Fine</th>
+                    <th style="width: 75px;">Cash</th>
                     <th>Remark</th>
                 </tr>
             </thead>
@@ -483,8 +488,9 @@ if ($isPrintMode) {
                                 <?php if ($hasSplit): ?>
                                     <span style="font-size: 9px; font-weight: bold;">P1: <?= number_format($p1, 3) ?></span><br>
                                     <span class="stacked-val" style="font-weight: bold;">P2: <?= number_format($p2, 3) ?></span>
-                                <?php elseif ($r['gross'] > 0): ?>
-                                    <?= number_format($r['gross'], 3) ?>
+                                <?php else: ?>
+                                    <?= number_format(floatval($r['gross'] ?? 0), 3) ?><br>
+                                    <span class="stacked-val"><?= number_format(floatval($r['less'] ?? 0), 3) ?></span>
                                 <?php endif; ?>
                             <?php endif; ?>
                         </td>
@@ -501,8 +507,9 @@ if ($isPrintMode) {
                                 <?php if ($hasSplit): ?>
                                     <span style="font-size: 9px; font-weight: bold; color: #b45309;"><?= number_format($eff1, 2) ?>%</span><br>
                                     <span class="stacked-val" style="font-weight: bold; color: #b45309;"><?= number_format($eff2, 2) ?>%</span>
-                                <?php elseif ($r['tch'] > 0): ?>
-                                    <?= number_format($r['tch'], 1) ?>%
+                                <?php else: ?>
+                                    <?= number_format(floatval($r['tch'] ?? 0), 2) ?>%<br>
+                                    <span class="stacked-val"><?= number_format(floatval($r['wst'] ?? 0), 2) ?>%</span>
                                 <?php endif; ?>
                             <?php endif; ?>
                         </td>

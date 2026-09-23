@@ -58,6 +58,46 @@ $stmt = $pdo->prepare("SELECT * FROM karigors WHERE user_id = ? ORDER BY name AS
 $stmt->execute([$userId]);
 $karigors = $stmt->fetchAll();
 
+function getKarigorBalance($pdo, $kid, $userId) {
+    $settleStmt = $pdo->prepare("SELECT * FROM karigor_ledger_settlements WHERE karigor_id = ? AND user_id = ? ORDER BY settlement_date DESC, created_at DESC LIMIT 1");
+    $settleStmt->execute([$kid, $userId]);
+    $settlement = $settleStmt->fetch();
+    
+    $gold = 0.0;
+    $cash = 0.0;
+    
+    if ($settlement) {
+        $gold = floatval($settlement['closing_gold']);
+        $cash = floatval($settlement['closing_cash']);
+        
+        $issStmt = $pdo->prepare("SELECT SUM(issue_fine) as g, SUM(cash_paid) as c FROM karigor_material_issues WHERE karigor_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))");
+        $issStmt->execute([$kid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']]);
+        $iss = $issStmt->fetch();
+        
+        $recStmt = $pdo->prepare("SELECT SUM(total_receive_fine) as g, SUM(cash_paid) as c FROM karigor_kaj_receives WHERE karigor_id = ? AND user_id = ? AND (date > ? OR (date = ? AND created_at > ?))");
+        $recStmt->execute([$kid, $userId, $settlement['settlement_date'], $settlement['settlement_date'], $settlement['created_at']]);
+        $rec = $recStmt->fetch();
+    } else {
+        $issStmt = $pdo->prepare("SELECT SUM(issue_fine) as g, SUM(cash_paid) as c FROM karigor_material_issues WHERE karigor_id = ? AND user_id = ?");
+        $issStmt->execute([$kid, $userId]);
+        $iss = $issStmt->fetch();
+        
+        $recStmt = $pdo->prepare("SELECT SUM(total_receive_fine) as g, SUM(cash_paid) as c FROM karigor_kaj_receives WHERE karigor_id = ? AND user_id = ?");
+        $recStmt->execute([$kid, $userId]);
+        $rec = $recStmt->fetch();
+    }
+    
+    $issG = $iss['g'] ?? 0;
+    $issC = $iss['c'] ?? 0;
+    $recG = $rec['g'] ?? 0;
+    $recC = $rec['c'] ?? 0;
+    
+    $gold += ($recG - $issG);
+    $cash += ($recC - $issC);
+    
+    return ['gold' => $gold, 'cash' => $cash];
+}
+
 require_once 'header.php';
 ?>
 
@@ -177,12 +217,23 @@ require_once 'header.php';
                 <p class="text-xs text-slate-500 mt-1">Register your first Karigor / Artisan to start tracking material issues and receipts.</p>
             </div>
         <?php else: ?>
-            <?php foreach ($karigors as $k): ?>
+            <?php foreach ($karigors as $k): 
+                $bal = getKarigorBalance($pdo, $k['id'], $userId);
+                $goldCr = $bal['gold'] >= 0;
+                $cashCr = $bal['cash'] >= 0;
+            ?>
                 <div class="premium-card bg-[#111111]/85 p-4 flex items-center justify-between">
                     <a href="karigor_ledger.php?karigor_id=<?= $k['id'] ?>" class="flex-1 min-w-0 pr-3 select-none">
                         <h3 class="text-sm font-bold text-white leading-tight truncate hover:text-[#d8a735] transition-colors"><?= htmlspecialchars($k['name']) ?></h3>
-                        <p class="text-[10px] text-slate-500 mt-0.5 truncate"><?= htmlspecialchars($k['mobile'] ?: 'No mobile number') ?></p>
-                        <p class="text-[9px] text-slate-600 truncate"><?= htmlspecialchars($k['address'] ?: 'No workshop registered') ?></p>
+                        <div class="flex items-center space-x-3 mt-1.5 mb-1">
+                            <span class="text-[10px] font-mono <?= $goldCr ? 'text-emerald-400' : 'text-rose-400' ?>">
+                                G: <?= $goldCr ? '+' : '-' ?><?= number_format(abs($bal['gold']), 3) ?>
+                            </span>
+                            <span class="text-[10px] font-mono <?= $cashCr ? 'text-emerald-400' : 'text-rose-400' ?>">
+                                ₹ <?= $cashCr ? '+' : '-' ?><?= number_format(abs($bal['cash']), 0) ?>
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 truncate"><?= htmlspecialchars($k['mobile'] ?: 'No mobile') ?></p>
                     </a>
                     
                     <div class="flex items-center space-x-2 shrink-0">
